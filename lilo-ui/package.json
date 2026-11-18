@@ -4,7 +4,6 @@
   "version": "0.21.0",
   "license": "MIT",
   "type": "module",
-  "packageManager": "npm@10.9.9",
   "engines": {
     "node": ">=22.8"
   },
@@ -15,7 +14,7 @@
     "test": "tsx --test --experimental-test-isolation=none $(find src -name '*.test.ts')",
     "test:e2e": "playwright test",
     "check": "svelte-check --tsconfig ./tsconfig.json",
-    "lint": "eslint --cache --cache-location node_modules/.cache/eslint/ . & eslint=$!; npm run check; check=$?; wait $eslint && [ $check -eq 0 ]"
+    "lint": "eslint --cache --cache-location node_modules/.cache/eslint/ . & eslint=$!; pnpm run check; check=$?; wait $eslint && [ $check -eq 0 ]"
   },
   "devDependencies": {
     "@eslint/js": "10.0.1",
