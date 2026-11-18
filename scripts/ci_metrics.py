@@ -11,6 +11,7 @@ import argparse
 import json
 import subprocess
 import sys
+import urllib.error
 import urllib.request
 from datetime import datetime
 
@@ -95,6 +96,15 @@ def job_rows(all_jobs):
     return durations, steps
 
 
+def failed_jobs(jobs_by_run):
+    counts = {}
+    for jobs in jobs_by_run.values():
+        for job in jobs:
+            if job.get("conclusion") == "failure":
+                counts[job["name"]] = counts.get(job["name"], 0) + 1
+    return dict(sorted(counts.items()))
+
+
 def summarize(runs, jobs_by_run, macos_prefixes):
     per_run = [analyze_run(run, jobs_by_run[run["id"]], macos_prefixes) for run in runs]
     durations, steps = job_rows(list(jobs_by_run.values()))
@@ -108,6 +118,7 @@ def summarize(runs, jobs_by_run, macos_prefixes):
         "retried": sum(1 for r in per_run if r["attempt"] > 1),
         "makespan_s": {"median": median([r["makespan_s"] for r in measured]), "p95": percentile([r["makespan_s"] for r in measured], 0.95)},
         "first_signal_s": {"median": median([r["first_signal_s"] for r in measured]), "p95": percentile([r["first_signal_s"] for r in measured], 0.95)},
+        "failed_jobs": failed_jobs(jobs_by_run),
         "skip_rate": sum(r["skipped"] for r in per_run) / total_jobs if total_jobs else 0.0,
         "macos_slot_min": {"median": median([r["macos_slot_min"] for r in measured]), "p95": percentile([r["macos_slot_min"] for r in measured], 0.95)},
         "macos_max_concurrent": max((r["macos_max_concurrent"] for r in per_run), default=0),
@@ -126,6 +137,8 @@ def print_summary(summary, out=None):
     out = out or sys.stdout
     pair = lambda d: f"median {minutes(d['median'])}, p95 {minutes(d['p95'])}"
     print(f"Runs: {summary['runs']} ({summary['failed']} failed, {summary['cancelled']} cancelled, {summary['retried']} re-run)", file=out)
+    if summary["failed_jobs"]:
+        print("Failed jobs: " + ", ".join(f"{name} x{count}" for name, count in summary["failed_jobs"].items()), file=out)
     print(f"Time to first signal: {pair(summary['first_signal_s'])}", file=out)
     print(f"Makespan: {pair(summary['makespan_s'])}", file=out)
     print(f"Queue before a job starts: median {summary['queue_s']['median']:.0f} s, p95 {summary['queue_s']['p95']:.0f} s", file=out)
@@ -155,7 +168,11 @@ def main(argv):
     parser.add_argument("--macos", default="xcode,macos", help="comma-separated runner label prefixes counted as macOS slots")
     parser.add_argument("--json", action="store_true")
     args = parser.parse_args(argv)
-    runs, jobs = collect(args.repo, args.workflow, args.runs, args.branch, args.event)
+    try:
+        runs, jobs = collect(args.repo, args.workflow, args.runs, args.branch, args.event)
+    except (urllib.error.URLError, OSError) as error:
+        print(f"GitHub API unavailable ({error}); sign in with `gh auth login` or retry later.", file=sys.stderr)
+        return 1
     summary = summarize(runs, jobs, tuple(args.macos.lower().split(",")))
     if args.json:
         json.dump(summary, sys.stdout, indent=2)

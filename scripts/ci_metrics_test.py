@@ -32,6 +32,7 @@ class CiMetricsTests(unittest.TestCase):
         self.assertEqual(summary["macos_max_concurrent"], 2)
         self.assertAlmostEqual(summary["macos_slot_min"]["median"], (300 + 360) / 60)
         self.assertEqual(summary["skip_rate"], 0.25)
+        self.assertEqual(summary["failed_jobs"], {})
         self.assertEqual(summary["jobs"]["App (macOS, 1/3)"]["median"], 300)
         self.assertEqual(summary["steps"]["App (macOS, 1/3) / Run make swift-test"]["median"], 180)
 
