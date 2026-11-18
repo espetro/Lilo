@@ -1,0 +1,34 @@
+# Host tools for working on Lilo with an AI agent. `mise install` fetches them; none is needed to
+# build Lilo itself, so the Makefile stays the only command surface the project requires.
+#
+#   mise install    # fetch the tools below
+#   mise exec -- rtk git status    # run one with the project's versions
+#
+# mise reads the Node.js version from .nvmrc, so node is not listed here.
+
+[tools]
+# The Node.js version the website and the documentation site need (site/.nvmrc pins the same one).
+node = "22.23.4"
+
+# rtk summarizes the output of git, gh, rg and the other commands an agent runs most, which keeps
+# their output out of the model's context. It is a host convenience: no Makefile target needs it.
+rtk = "1.2.0"
+
+# flock locks a file while a command runs. macOS has lockf, which locks a byte range instead, so
+# the two do not interlock: a project that locks with flock needs flock here.
+"github:discoteq/flock" = { version = "0.4.0", asset_pattern = "flock-{{ version }}.tar.gz", postinstall = "cd \"$MISE_TOOL_INSTALL_PATH\" && ./configure --prefix=\"$MISE_TOOL_INSTALL_PATH\" && make && make install" }
+
+# jq reads the JSON that the energy and extension benchmarks write. The benchmarks need it.
+jq = "1.8.2"
+
+# Zig compiles libghostty-vt from source, which `make vt-build-source` asks for when the prebuilt
+# download is unavailable. The version is the one the Ghostty pin builds with.
+zig = "0.16.0"
+
+# shellcheck lints the shell scripts in scripts/.
+shellcheck = "0.11.0"
+
+[settings]
+# The lockfile pins the checksums of what the tools above download, so a version can never be
+# swapped for another build of the same version.
+lockfile = true
