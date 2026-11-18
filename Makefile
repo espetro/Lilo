@@ -73,8 +73,13 @@ XCC_LIMIT ?= 10737418240
 export XCC_DIR XCC_LIMIT
 # CI's runners start empty and have no cache for it yet: it keeps Xcode's defaults.
 XCC_SETTINGS := $(if $(CI),,COMPILATION_CACHE_ENABLE_CACHING=YES COMPILATION_CACHE_CAS_PATH=$(XCC_DIR) COMPILATION_CACHE_LIMIT_SIZE=$(XCC_LIMIT) COMPILER_INDEX_STORE_ENABLE=NO)
+# The package checkouts (GRDB, Sparkle: about 480 MB) are cloned once per Package.resolved, not once per worktree:
+# keyed by its hash, two worktrees with different pins never share a folder. CI caches its own copy, so it keeps
+# the default one.
+SPM_PACKAGES_DIR ?= $(HOME)/.cache/lilo/spm-$(shell shasum -a 256 Lilo.xcodeproj/project.xcworkspace/xcshareddata/swiftpm/Package.resolved | cut -d' ' -f1)
+SPM_SETTINGS := $(if $(CI),,-clonedSourcePackagesDirPath $(SPM_PACKAGES_DIR) -onlyUsePackageVersionsFromResolvedFile)
 # Inside the checkout, so a worktree's build goes with the worktree instead of staying in ~/Library.
-XCODEBUILD := xcodebuild -project Lilo.xcodeproj -scheme Lilo -destination 'platform=macOS' -derivedDataPath $(CURDIR)/.derived.noindex/xcode $(XCC_SETTINGS)
+XCODEBUILD := xcodebuild -project Lilo.xcodeproj -scheme Lilo -destination 'platform=macOS' -derivedDataPath $(CURDIR)/.derived.noindex/xcode $(SPM_SETTINGS) $(XCC_SETTINGS)
 # They wait out real clocks (a worker's 30 s unload, a controller's first 5 s, a terminal's 5 s between
 # line counts): about 100 s together. The ruleset compile takes a second alone, but WebKit starves it while
 # the other test runs keep every core busy: past its 120 s bound, it only skips.
