@@ -93,7 +93,7 @@ The Metal toolchain is a separate Apple-ID-authenticated download of a few GB (`
 
 Every `make` build shares one compilation cache, `~/.cache/lilo/xcc` (capped at 10 GB by `XCC_LIMIT`,
 in bytes), so a new worktree's first build reuses what another compiled. Delete the folder to reset
-it; Xcode's own builds don't use it.
+it; Xcode's own builds and CI don't use it.
 
 ### Interface only
 
