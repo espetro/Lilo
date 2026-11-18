@@ -56,8 +56,15 @@ VAULTWARDEN_SRC := build/vaultwarden-$(VAULTWARDEN_VERSION)-src
 # Bitwarden talks to its server over HTTPS only: a self-signed certificate valid for 127.0.0.1 alone, which
 # ext-e2e-passwords-trust has the keychain trust once.
 VAULTWARDEN_CERT := build/vaultwarden-tls/cert.pem
+# The Xcode compilation cache, shared by every worktree: a fresh derived data path starts from this instead of
+# compiling from scratch. Only make-driven builds use it (not the xcconfig), so the IDE keeps its index store.
+# Cache keys include output paths, so reuse is partial; the limit (bytes) bounds the growth.
+XCC_DIR ?= $(HOME)/.cache/lilo/xcc
+XCC_LIMIT ?= 10737418240
+export XCC_DIR XCC_LIMIT
+XCC_SETTINGS := COMPILATION_CACHE_ENABLE_CACHING=YES COMPILATION_CACHE_CAS_PATH=$(XCC_DIR) COMPILATION_CACHE_LIMIT_SIZE=$(XCC_LIMIT) COMPILER_INDEX_STORE_ENABLE=NO
 # Inside the checkout, so a worktree's build goes with the worktree instead of staying in ~/Library.
-XCODEBUILD := xcodebuild -project Lilo.xcodeproj -scheme Lilo -destination 'platform=macOS' -derivedDataPath $(CURDIR)/.derived.noindex/xcode
+XCODEBUILD := xcodebuild -project Lilo.xcodeproj -scheme Lilo -destination 'platform=macOS' -derivedDataPath $(CURDIR)/.derived.noindex/xcode $(XCC_SETTINGS)
 # They wait out real clocks (a worker's 30 s unload, a controller's first 5 s, a terminal's 5 s between
 # line counts): about 100 s together. The ruleset compile takes a second alone, but WebKit starves it while
 # the other test runs keep every core busy: past its 120 s bound, it only skips.
