@@ -35,9 +35,8 @@ Python 3 comes with Xcode. No Apple Developer account is needed.
 
 [`mise.toml`](mise.toml) pins the host tools that are useful around the build but that no `make`
 target requires: [rtk](https://www.rtk-ai.app/) (summarizes `git`, `gh` and `rg` output for AI
-agents), `flock` (locks a file while a command runs, for agents whose host rules use it),
-`jq`, Zig 0.16, shellcheck and the Node.js version the websites need. Everything is also listed
-in the requirements table above under its plain name, and CI installs none of it.
+agents), `jq`, Zig 0.16, shellcheck and the Node.js version the websites need. Everything is also
+listed in the requirements table above under its plain name, and CI installs none of it.
 
 ```bash
 mise install          # fetch what mise.toml pins; mise.lock fixes their checksums
@@ -46,6 +45,21 @@ mise exec -- rtk git status   # run a tool with the project's version
 
 An activated mise (`mise activate` in your shell) also reads `.nvmrc`, so `node` resolves to
 the pinned version outside a `mise exec` too.
+
+### Locking across machines
+
+`scripts/lockf.py` runs a command while holding a lock on a file, with only the Python standard
+library, so a rule written as `flock /tmp/tsc.lock <command>` runs on macOS and Linux alike:
+
+```bash
+scripts/lockf.py /tmp/tsc.lock make validate      # one validate at a time machine-wide
+scripts/lockf.py -n /tmp/tsc.lock make validate   # fail instead of waiting
+scripts/lockf.py -w 60 /tmp/tsc.lock make validate  # wait at most a minute
+```
+
+It is a lockf(3) byte-range lock: it interoperates with macOS's `lockf` (which the Makefile's test
+lock uses) and Linux's `lockf`, not with the `flock(2)` system call behind GNU `flock` and
+`discoteq/flock`. Keep the two lock families on separate lock files.
 
 ## Setup
 
