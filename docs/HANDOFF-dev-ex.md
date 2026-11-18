@@ -19,7 +19,7 @@ For continuing the work from another device. Everything below is either committe
 
 **Branch model**: `develop` on the fork accumulates every stage (so its CI history shows cumulative gains); each upstream PR is a scoped subset with its own measurement table. Upstream is ROADMAP-gated (KISS, solo maintainer) so upstream PRs must stay minimal and each link its issue.
 
-**Current state**: `main` = `c24fc63c` (unchanged from upstream), `develop` = `68040323` (plan doc, this handoff, and `mise.toml`+`mise.lock`+CONTRIBUTING note pinning the host tools — see §5). **No stage implementation has been written yet** — Stage 0 is next.
+**Current state**: `main` = `c24fc63c` (unchanged from upstream), `develop` = head of the fork's `develop` (plan doc, this handoff, `mise.toml`+`mise.lock`+CONTRIBUTING pinning the host tools, and `scripts/lockf.py` — see §5). **No stage implementation has been written yet** — Stage 0 is next.
 
 ---
 
@@ -110,20 +110,19 @@ The spike results are in §6 below. Expected shape: Linux agents run the JS/docs
 
 **This verdict changed on 2026-11-18.** The maintainer's answer was: include the host tools in the
 repo, via `mise.toml`, and extend `mise.toml` to cover whatever else the host needs. That landed on
-`develop` as `68040323 build: pin the host tools an agent needs in mise.toml`.
+`develop` as `68040323 build: pin the host tools an agent needs in mise.toml`, refined by
+`scripts/lockf.py` (see below).
 
 **What the earlier assessment had established, and still holds:**
 
 - **rtk** (1.1.0, host-level token-compressing CLI proxy) is genuinely effective for the *agent's* reading path (`git`, `gh`, `rg`, `read`, `grep`; 42% token savings measured on this machine) — **but it has no `make`, `xcodebuild`, `swift` or `swiftlint` filter** (those pass through with generic transforms only). The two heaviest streams in Lilo's own loop are **already compressed by the repo**: `make validate` runs 9 groups in parallel with per-group logs and prints only the failing one (Makefile:136-146); `scripts/retried_tests.py` truncates to 300 chars; `scripts/perf_summary.py` summarizes traces.
-- The two lock families are **not interchangeable**: `lockf` locks a byte range, `flock` the file. Lilo keeps `lockf` (Makefile:83) — base macOS, portable; GNU `flock` is Homebrew-only.
-- mise / uv / docker / ast-grep / mdformat: **no benefit for this repo** (Lilo's Python is stdlib-only; Lilo pins its own build tools in the Makefile).
+- The two lock families are **not interchangeable**: `lockf` locks a byte range, `flock` the file. The repo's `scripts/lockf.py` and the Makefile's `lockf` (Makefile:83) are one family; GNU `flock` and `discoteq/flock` are the other.
 
 **What `mise.toml` now pins, and how each was verified on this machine:**
 
 | Tool | Version | Why it is in the repo | Install path (verified) |
 |---|---|---|---|
 | `rtk` | 1.2.0 | summarizes `git`/`gh`/`rg` output for agents | mise registry entry; asset `rtk-aarch64-apple-darwin.tar.gz` |
-| `flock` | 0.4.0 | the host's rule (`~/AGENTS.md`) locks with `flock`, which macOS lacks | `github:discoteq/flock` **+ a `postinstall` build**: its release tarball is *source only* (no prebuilt binary), so the postinstall runs `./configure --prefix="$MISE_TOOL_INSTALL_PATH" && make && make install` |
 | `jq` | 1.8.2 | `scripts/bench_extensions.sh` and `scripts/energy_idle_check.sh` read JSON with it | mise registry |
 | `zig` | 0.16.0 | `make vt-build-source` needs Zig 0.16.x (Homebrew ships 0.17.1, which the check rejects) | mise registry |
 | `shellcheck` | 0.11.0 | lints `scripts/*.sh` | mise registry |
@@ -131,13 +130,35 @@ repo, via `mise.toml`, and extend `mise.toml` to cover whatever else the host ne
 
 `mise.lock` pins the per-platform sha256 of every download, and `[settings] lockfile = true` keeps
 it that way. Verified end to end: `mise install` then `mise exec -- rtk --version` (1.2.0),
-`flock /tmp/x.lock echo ok`, `jq --version` (1.8.2), `zig version` (0.16.0), `shellcheck --version`
-(0.11.0), `node --version` (22.23.4).
+`jq --version` (1.8.2), `zig version` (0.16.0), `shellcheck --version` (0.11.0),
+`node --version` (22.23.4).
 
-**Two traps worth knowing:**
+### The lock: `scripts/lockf.py`, not flock
 
-- **A tool-level `postinstall` runs with the *current directory*, not the tool's install path.** The first attempt failed with `sh: ./configure: No such file or directory`. The working form is `cd "$MISE_TOOL_INSTALL_PATH" && …`; `$MISE_INSTALL_PREFIX` is *not* set.
-- **Node needs an explicit entry.** mise's `.nvmrc` autodetection does not override a *global* `node` pin, so a host with `node = "24"` in `~/.config/mise/config.toml` silently kept 24. Listing `node = "22.23.4"` in `[tools]` fixes it.
+The host rule (`~/AGENTS.md`) says heavy compiles run under `flock /tmp/tsc.lock <cmd>`. GNU
+`flock` is Homebrew-only, so the first attempt was `github:discoteq/flock` in `mise.toml`. **That
+was the wrong call**, and the maintainer corrected it: prefer a small Python script over building
+a C tool.
+
+`scripts/lockf.py` does it with the standard library only (`fcntl.lockf`), so it needs no install
+at all, runs identically on macOS and Linux, and lives in the repository so every machine uses the
+same lock. It is modelled on [dspinellis's gist](https://gist.github.com/dspinellis/eb924c195206f57e896d026dbe14befa)
+(Apache-2.0), **with the bug that gist has fixed**: Python opens descriptors close-on-exec (PEP
+446), so the lock is released by the `execvp` that runs the command. Measured here: with the gist's
+code a second process took the lock *while the command ran*; with `os.set_inheritable(descriptor,
+True)` the lock is held for the command's whole life. Verified: mutual exclusion between two
+waiters, `-n` fast-fail, `-w SECONDS` timeout, and the command's own exit code.
+
+**The two lock families are not interchangeable**: `lockf` locks a byte range, `flock(2)` the file.
+`scripts/lockf.py` is a `lockf` lock, so it interoperates with the Makefile's `lockf` test lock
+(Makefile:83) and with Linux's `lockf`, but not with `flock(2)`. Keep the families on separate
+lock files.
+
+**One trap worth knowing:**
+
+- **Node needs an explicit entry.** mise's `.nvmrc` autodetection does not override a *global*
+  `node` pin, so a host with `node = "24"` in `~/.config/mise/config.toml` silently kept 24.
+  Listing `node = "22.23.4"` in `[tools]` fixes it.
 
 **No release note was added**: dev-infra commits in this repo (Makefile targets, CI changes) carry
 none, per precedent (`2974a4f9`, `f72a0c98`).
@@ -146,16 +167,23 @@ none, per precedent (`2974a4f9`, `f72a0c98`).
 
 ## 6. Linux spike results (the Swift-on-Linux question)
 
-The spike ran on `ssh ovhcloud` (Debian 13, 6 cores, 11 GB RAM). Full detail is in the session's report; the load-bearing conclusions:
+The spike ran on `ssh ovhcloud` (Debian 13 trixie, 6 cores, 11 GB RAM) against `main` = `c24fc63`, with real command output. The load-bearing conclusions:
 
-- **CI already runs most of the loop on Linux**: the `release-tooling`, `ui`, `e2e` (3 shards) and `bridge` jobs all run on `ubuntu-latest` (build.yml:44-151). A Linux agent can already run `make ui-lint ui-test`, `make e2e`, `make site-check site-test`, `make docs-check docs-test`, `make ext-bridge-test`, `make release-status`.
-- **What genuinely needs macOS**: `make app`, `make install`, `make swift-test`, `make swift-test-slow` — AppKit and WebKit do not exist on Linux; 195 of 323 app files import them.
+- **CI already runs most of the loop on Linux**: the `release-tooling`, `ui`, `e2e` (3 shards) and `bridge` jobs all run on `ubuntu-latest` (build.yml:44-151). Verified on Debian 13: `ui-lint` (svelte-check 0 errors), `ui-test` (654/654), `ext-bridge-test` (587/587), `site-check`/`site-test` (0 errors, 86/86), `docs-check`/`docs-test` (no broken links, 4,503 audits), `e2e` (714/715 — the one failure is a wall-clock perf guard on a shared box), `site-e2e` (114/115 — an iframe race that passes in isolation), `release-status`, `release-test`, `release-media-test`, `perf-summary-test`, `hooks-test`, `lint-commits`, `site-deploy-check`, `docs-deploy-check`, `bridge-gen`, `vt-build`, `ui-build` (both generated Swift files produced identically on Linux).
+- **What genuinely needs macOS**: `make app`, `make install`, `make swift-test`, `make swift-test-slow`, `make release*`, `make dmg`, `make ext-smoke*`, every `*-bench`, `make agent-call`, `make project-sync`'s xcodegen step — AppKit and WebKit do not exist on Linux; 195 of 323 app files import them.
+- **Two fixes make more of the lane work on Linux**, both small:
+  - **`make swiftlint` fails on Linux only because the Makefile pins the macOS zip** (Makefile:24, 166-171 download `portable_swiftlint.zip`, a Mach-O universal). The Linux asset `swiftlint_linux_amd64.zip` runs and reports **0 violations on Lilo's 321 files**. The fix mirrors what `CHANGIE_OS`/`CHANGIE_ARCH` already do (Makefile:18-20): detect `uname -s`, download the Linux zip with its own pinned SHA256.
+  - **`make project-sync` works up to the xcodegen step** — the UI bundle and `NativeStrings.swift` generate fine on Linux; only `xcodegen` (Mach-O only, no Linux asset) stops it.
+- **A gotcha any agent must know**: `make chrome-surface` and `make public-suffix-list` are *network-fresh regenerators* — they rewrite the committed `.gen.*` files and `public-suffix-list.dat` from live data, dirtying the tree and making `ext-bridge-test` fail until `git checkout -- Lilo/Extensions …`. They are write targets, not test targets; never run them "to check".
+- **No Mac on the tailnet is reachable**: `quinos-mac-mini` has been offline 56 days, `quinos-mac-mini-lan` times out, `kinosmac` offline, `kinosmac-legacy` refuses the connection. OVHcloud **does not sell Mac minis** (its catalog has no Apple plan; the EU provider that does is Scaleway). So a self-hosted Mac is a purchase (Scaleway Paris from €0.22/h, JUUZ €119/mo, MacStadium $149/mo, MacinCloud $164/mo) — and the spike found nothing worth buying while GitHub-hosted `xcode-27` is free, already wired and already correct.
 - **The three iOS-oriented projects** (`xtool-org/xtool`, `MobAI-App/simslim`, `MobAI-App/mobai-dev`):
-  - **xtool** is the interesting one: "Cross-platform Xcode replacement. Build and deploy iOS apps with SwiftPM on Linux, Windows, macOS" (MIT, 15.7k stars, actively pushed). Its `SDKBuilder.swift` **does** handle the `MacOSX` platform with `arm64-apple-macosx` and `x86_64-apple-macosx` triples. **But** its Linux install requires you to download **Xcode 27.1** from Apple's developer site yourself (it extracts the .xip to build a Swift SDK) — so it does not remove the Apple-SDK dependency, it relocates it, and it is a SwiftPM-based flow, not `xcodebuild`. Lilo's XcodeGen project, XPC services, asset catalogs, entitlements, Metal shaders and ad-hoc signing are all outside its model.
-  - **simslim** (Go, 4.3k stars) is "Run more iOS simulators on one Mac" — a Mac-only tool, irrelevant to a Linux box.
-  - **mobai-dev** is "Everything a coding agent needs to build and run iOS apps from a Linux sandbox" — an agent harness around the iOS flow, same Apple-SDK dependency.
-- **Verdict for Stage 6**: the honest promise is a **split**, not a Swift-on-Linux miracle: Linux cloud agents carry the JS/docs/site/bridge lane (already CI-proven) and the Swift lane stays on a macOS runner. For Swift, the practical options are GitHub-hosted macOS runners (free and unlimited on a public repo; the binding constraint is the **5 concurrent job cap**, not cost) or a self-hosted Mac mini as a self-hosted Actions runner (needs an Xcode install + Metal toolchain; the tailnet `quinos-mac-mini` was unreachable at handoff).
-- **Darling** cannot run `xcodebuild`; **GNUstep** is not Apple's AppKit (WebKit/WKWebExtension/Metal/Sparkle XPC are all unavailable, so Lilo would not compile against it); the iOS-on-Linux toolchains (theos, swift-android) are for iOS targets, not macOS apps.
+  - **xtool** is the interesting one: "Cross-platform Xcode replacement. Build and deploy iOS apps with SwiftPM on Linux, Windows, macOS" (MIT, 15.7k stars, actively pushed). Its `SDKBuilder.swift` **does** handle the `MacOSX` platform with `arm64-apple-macosx` and `x86_64-apple-macosx` triples. **But** its Linux install requires you to download **Xcode 27.1** from Apple's developer site yourself (it extracts the .xip to build a Swift SDK) — so it does not remove the Apple-SDK dependency, it relocates it, and it is a SwiftPM-based flow, not `xcodebuild`. Lilo's XcodeGen project, XPC services, asset catalogs, entitlements, Metal shaders and ad-hoc signing are all outside its model. The 2.0 beta (2026-11-16) adds a macOS triple but still cannot sign a Mac app, still lacks asset-catalog support, and cannot run or test anything.
+  - **simslim** (Go, 4.3k stars) is "Run more iOS simulators on one Mac" — a Mac-only tool, irrelevant for a Linux box.
+  - **mobai-dev** is "Everything a coding agent needs to build and run iOS apps from a Linux sandbox" — an agent harness around the iOS flow, same Apple-SDK dependency. Its *pattern* (snapshot → hosted macOS CI → artifact) is the template for Lilo's Linux lane.
+- **Verdict for Stage 6**: the honest promise is a **split**, not a Swift-on-Linux miracle: Linux cloud agents carry the JS/docs/site/bridge lane (already CI-proven and now measured on Debian) and the Swift lane stays on a macOS runner. For Swift, the practical option is GitHub-hosted macOS runners (free and unlimited on a public repo; the binding constraint is the **5 concurrent job cap**, and Lilo's 3 test shards + release build already use 4 of them, so there is **one spare slot**), with a self-hosted Mac mini as the fallback when that cap actually queues a PR.
+- **Darling** cannot run `xcodebuild` (its own README: "Xcode itself doesn't run yet"; issue #1414 closed as a duplicate of #488); **GNUstep** is not Apple's AppKit (WebKit/WKWebExtension/Metal/Sparkle XPC are all unavailable, so Lilo would not compile against it); the iOS-on-Linux toolchains (theos, swift-android) are for iOS targets, not macOS apps. The Apple SDK licence (§2.2.A, §2.5 of the Xcode and Apple SDKs Agreement) forbids running the Apple toolchain on non-Apple hardware, so the macOS SDK route is a licence violation, not just an engineering gap.
+- **The closest thing to a Linux Apple builder** is `apple-cross-toolchain/rules_applecross` (Apache-2.0, Bazel): it builds macOS apps, extensions and frameworks on Linux, with clean-room `actool`/`ibtool`/`momc` reimplementations and even notarization from Linux. Its limits: **Metal has no Linux version** (relaxed compile only), `.xib` support is narrow, and — the killer — "it builds; it doesn't run … `bazel test` has nothing to run them on". It would also mean replacing the Makefile with Bazel. Watch-list only.
+
 
 ---
 
