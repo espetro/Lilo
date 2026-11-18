@@ -4,7 +4,8 @@
 #   mise install    # fetch the tools below
 #   mise exec -- rtk git status    # run one with the project's versions
 #
-# mise reads the Node.js version from .nvmrc, so node is not listed here.
+# scripts/lockf.py is not here: it needs only Python, which comes with Xcode, and it is in the
+# repository so every machine runs the same lock.
 
 [tools]
 # The Node.js version the website and the documentation site need (site/.nvmrc pins the same one).
@@ -13,10 +14,6 @@ node = "22.23.4"
 # rtk summarizes the output of git, gh, rg and the other commands an agent runs most, which keeps
 # their output out of the model's context. It is a host convenience: no Makefile target needs it.
 rtk = "1.2.0"
-
-# flock locks a file while a command runs. macOS has lockf, which locks a byte range instead, so
-# the two do not interlock: a project that locks with flock needs flock here.
-"github:discoteq/flock" = { version = "0.4.0", asset_pattern = "flock-{{ version }}.tar.gz", postinstall = "cd \"$MISE_TOOL_INSTALL_PATH\" && ./configure --prefix=\"$MISE_TOOL_INSTALL_PATH\" && make && make install" }
 
 # jq reads the JSON that the energy and extension benchmarks write. The benchmarks need it.
 jq = "1.8.2"
