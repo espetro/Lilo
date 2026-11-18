@@ -62,7 +62,8 @@ VAULTWARDEN_CERT := build/vaultwarden-tls/cert.pem
 XCC_DIR ?= $(HOME)/.cache/lilo/xcc
 XCC_LIMIT ?= 10737418240
 export XCC_DIR XCC_LIMIT
-XCC_SETTINGS := COMPILATION_CACHE_ENABLE_CACHING=YES COMPILATION_CACHE_CAS_PATH=$(XCC_DIR) COMPILATION_CACHE_LIMIT_SIZE=$(XCC_LIMIT) COMPILER_INDEX_STORE_ENABLE=NO
+# CI's runners start empty and have no cache for it yet: it keeps Xcode's defaults.
+XCC_SETTINGS := $(if $(CI),,COMPILATION_CACHE_ENABLE_CACHING=YES COMPILATION_CACHE_CAS_PATH=$(XCC_DIR) COMPILATION_CACHE_LIMIT_SIZE=$(XCC_LIMIT) COMPILER_INDEX_STORE_ENABLE=NO)
 # Inside the checkout, so a worktree's build goes with the worktree instead of staying in ~/Library.
 XCODEBUILD := xcodebuild -project Lilo.xcodeproj -scheme Lilo -destination 'platform=macOS' -derivedDataPath $(CURDIR)/.derived.noindex/xcode $(XCC_SETTINGS)
 # They wait out real clocks (a worker's 30 s unload, a controller's first 5 s, a terminal's 5 s between
