@@ -27,8 +27,25 @@ extensions.
 | Changie | 1.26.0 (downloaded by Make) | release notes and app versioning |
 | SwiftLint, XcodeGen | 0.65.0 and 2.46.0 (downloaded by Make) | `make validate` and `make project-sync` |
 | Zig | 0.16.x (`brew install zig`) | only `make vt-build-source`, which compiles libghostty-vt instead of downloading it |
+| mise | any recent release (`curl https://mise.run | sh`) | optional: the agent conveniences and pinned versions in `mise.toml` |
 
 Python 3 comes with Xcode. No Apple Developer account is needed.
+
+### With mise (optional)
+
+[`mise.toml`](mise.toml) pins the host tools that are useful around the build but that no `make`
+target requires: [rtk](https://www.rtk-ai.app/) (summarizes `git`, `gh` and `rg` output for AI
+agents), `flock` (locks a file while a command runs, for agents whose host rules use it),
+`jq`, Zig 0.16, shellcheck and the Node.js version the websites need. Everything is also listed
+in the requirements table above under its plain name, and CI installs none of it.
+
+```bash
+mise install          # fetch what mise.toml pins; mise.lock fixes their checksums
+mise exec -- rtk git status   # run a tool with the project's version
+```
+
+An activated mise (`mise activate` in your shell) also reads `.nvmrc`, so `node` resolves to
+the pinned version outside a `mise exec` too.
 
 ## Setup
 
