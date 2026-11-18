@@ -34,3 +34,13 @@ Measured (the package resolution step, which does not need the broken `xcodebuil
 The whole build with a fresh derived data path was not timed, for the reason in the section above.
 The folder name carries the hash, so two worktrees on different pins can never read each other's checkouts.
 Known limits: the Xcode IDE keeps its own copy; XcodeGen cannot express the flag, so it stays on the invocation lines; a pin change needs `Package.resolved` updated first, since the flag refuses to resolve anything else; `scripts/ext-smoke.mjs`, `scripts/ext-e2e-passwords.mjs` and the `bench_*` and `energy_*` scripts keep their own invocations and are not changed.
+
+## 2026-11-18, Stage 2 PR 4: per-worktree test data
+
+What changed: `make` exports `TEST_RUNNER_LILO_APP_SUPPORT_DIR=$(CURDIR)/.derived.noindex/test-data`, outside CI, so the test host reads `LILO_APP_SUPPORT_DIR` and its database, agent socket and downloads live in the worktree.
+The plan wrote the override as a `TEST_CONFIG` argument; an `xcodebuild` argument of that form is a build setting and never reaches the host's environment, whereas `TEST_RUNNER_` variables do (the Makefile's bench targets already rely on this).
+
+Not measured: the two concurrent `swift-test` lanes with `lsof` on the database and the socket.
+`make swift-test` cannot run on this Mac (`xcodebuild` fails to load its CoreSimulator plug-in), so there was no test host to inspect.
+Checked instead: with a throwaway makefile that includes the real one, a recipe sees the variable set to the worktree's folder, and sees nothing with `CI=1`.
+`BuildIdentityTests` unsets and restores the override itself; its assertion on the default socket path is skipped when the process started with an override, because that URL is computed once per process.
