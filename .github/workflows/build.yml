@@ -317,3 +317,23 @@ jobs:
           name: startup-bench-${{ github.sha }}
           path: build/startup-bench/
           if-no-files-found: ignore
+
+  # The one required check. A job skipped because only documentation changed, or because it runs on main only,
+  # counts as passed; one that failed or was cancelled does not. Without always() the gate would be skipped when a
+  # dependency fails, and a skipped required check passes. A job added above goes into needs, and branch protection
+  # never changes again.
+  gate:
+    name: Gate
+    needs: [changes, release-tooling, ui, e2e, bridge, app, release-build]
+    if: always()
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Fail on any failed or cancelled job
+        env:
+          RESULTS: ${{ join(needs.*.result, ' ') }}
+        run: |
+          echo "Job results: $RESULTS"
+          case " $RESULTS " in
+            *" failure "* | *" cancelled "*) echo "::error::A job failed or was cancelled."; exit 1 ;;
+          esac

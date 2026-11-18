@@ -9,3 +9,10 @@ Measured by reading the workflow, not by running it: a pull request now starts 3
 The saved time per pull request is the `release-build` job itself, 10.8 min of macOS runner time in the baseline run `43823427506`; the makespan does not change, because that job ran beside the 5.9 to 9.5 min shards and only the `app` shards set it.
 The cost is stated in the plan: a Release-only build break reaches main and surfaces there about 30 minutes after the merge instead of on the pull request.
 Not measured: the real change in queueing, which needs the Stage 0 CI scrape (`make ci-metrics`) over runs made after this lands.
+
+## After PR 7b: the gate job (2026-11-18)
+
+No timing change: `gate` is one `ubuntu-latest` step of a few seconds that runs after every other job, so it adds seconds to the end of a run and no macOS minute.
+Checked locally with actionlint and by running the gate's `case` on result lists: `success skipped` and `success success skipped` pass, `success failure` and `cancelled success` fail.
+Not measured: the behaviour on a real failed run, which needs the first CI run of this branch.
+The branch-protection change (require only `Gate` and Conventional Commits) is a maintainer action in the repository settings and is not part of this diff.
