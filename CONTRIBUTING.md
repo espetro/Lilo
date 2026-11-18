@@ -82,6 +82,10 @@ not available. `make install-debug` installs the Debug build into `~/Application
 Run `sudo DevToolsSecurity -enable` once: otherwise `xcodebuild` eventually fails to launch the test
 host with `INTERNAL ERROR: childPID > 0`, once its cached debugger authorization expires.
 
+Every `make` build shares one compilation cache, `~/.cache/lilo/xcc` (capped at 10 GB by `XCC_LIMIT`,
+in bytes), so a new worktree's first build reuses what another compiled. Delete the folder to reset
+it; Xcode's own builds don't use it.
+
 ### Interface only
 
 To work on the sidebar, the command bar, settings or onboarding, Node.js is enough:
