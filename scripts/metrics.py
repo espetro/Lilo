@@ -127,12 +127,22 @@ def alive(pid):
     return True
 
 
-def other_active():
-    """Recipes recording right now on this machine, other than this one, found without a process scan."""
+def other_active(worktree):
+    """Recipes running right now in other worktrees (parallel recipes of one make are by design), with no process scan."""
+    count = 0
     try:
-        return sum(1 for name in os.listdir(active_dir()) if name.isdigit() and int(name) != os.getpid() and alive(int(name)))
+        names = os.listdir(active_dir())
     except OSError:
         return 0
+    for name in names:
+        if not name.isdigit() or int(name) == os.getpid() or not alive(int(name)):
+            continue
+        try:
+            with open(os.path.join(active_dir(), name), encoding="utf-8") as file:
+                count += json.load(file).get("worktree") != worktree
+        except (OSError, ValueError):
+            pass
+    return count
 
 
 def sweep_orphans():
@@ -188,7 +198,7 @@ def finish_record(record, started, code, overhead_before):
     record["dur_s"] = round(mark - started, 3)
     record["exit"] = code
     record["loadavg1"] = round(os.getloadavg()[0], 2)
-    record["concurrent"] = other_active()
+    record["concurrent"] = other_active(record["worktree"])
     record["disk_free_gb"] = round(shutil.disk_usage(os.getcwd()).free / 2**30, 1)
     record["level"] = max(int(os.environ.get("MAKELEVEL", "1")) - 1, 0)
     record["overhead_ms"] = round((overhead_before + time.perf_counter() - mark) * 1000, 1)
@@ -198,7 +208,8 @@ def finish_record(record, started, code, overhead_before):
 def run(command):
     """Run COMMAND with bash and record it. Returns bash's exit status (128+N when a signal ended it)."""
     target = os.environ.get("LILO_METRICS_TARGET", "")
-    if target.startswith(SKIPPED):
+    # No target: a $(shell) that make expanded inside a recipe's context. The metrics targets stay out of their own records.
+    if not target or target.startswith(SKIPPED):
         os.execv("/bin/bash", ["/bin/bash", "-c", command])
     begin = time.perf_counter()
     sweep_orphans()
@@ -209,6 +220,7 @@ def run(command):
     except OSError:
         marker = None
     environment = dict(os.environ, LILO_METRICS_DIRTY="1" if record["dirty"] else "0")
+    del environment["LILO_METRICS_TARGET"]  # make sets it afresh per recipe; a sub-make's $(shell) must not inherit it
     child = None
     for name in (signal.SIGINT, signal.SIGTERM, signal.SIGHUP):
         # make signals its recipe's shell alone; pass it on, and stay alive to record the run as interrupted.

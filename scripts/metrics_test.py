@@ -20,8 +20,8 @@ class MetricsTests(unittest.TestCase):
         self.file = os.path.join(self.directory.name, "metrics.jsonl")
         self.env = dict(os.environ, LILO_METRICS_FILE=self.file, LILO_METRICS_TARGET="demo", MAKELEVEL="1")
 
-    def wrapper(self, *args):
-        return subprocess.Popen([sys.executable, SCRIPT, *args], env=self.env, cwd=self.directory.name)
+    def wrapper(self, *args, cwd=None):
+        return subprocess.Popen([sys.executable, SCRIPT, *args], env=self.env, cwd=cwd or self.directory.name)
 
     def records(self):
         with open(self.file, encoding="utf-8") as file:
@@ -53,6 +53,23 @@ class MetricsTests(unittest.TestCase):
         self.assertEqual(self.wrapper("-c", "exit 0").wait(), 0)
         self.assertEqual([r["phase"] for r in self.records()], ["orphaned", "recipe"])
         self.assertIsNone(self.records()[0]["exit"])
+
+    def test_a_run_without_a_target_is_not_recorded(self):
+        del self.env["LILO_METRICS_TARGET"]
+        self.assertEqual(self.wrapper("-c", "exit 0").wait(), 0)
+        self.assertFalse(os.path.exists(self.file))
+
+    def test_counts_only_recipes_running_in_other_worktrees(self):
+        process = self.wrapper("-c", "sleep 2")
+        time.sleep(0.5)
+        marker = os.path.join(self.directory.name, "metrics-active", str(process.pid))
+        self.assertTrue(os.path.exists(marker))
+        self.assertEqual(self.wrapper("-c", "exit 0").wait(), 0)
+        elsewhere = os.path.join(self.directory.name, "elsewhere")
+        os.makedirs(elsewhere)
+        self.assertEqual(self.wrapper("-c", "exit 0", cwd=elsewhere).wait(), 0)
+        process.wait()
+        self.assertEqual([r["concurrent"] for r in self.records()[:2]], [0, 1])
 
     def test_the_metrics_targets_do_not_record_themselves(self):
         self.env["LILO_METRICS_TARGET"] = "metrics"
