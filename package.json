@@ -1,5 +1,5 @@
 {
   "name": "lilo",
   "private": true,
-  "packageManager": "npm@10.9.9"
+  "packageManager": "pnpm@12.16.1"
 }

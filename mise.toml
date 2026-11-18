@@ -11,6 +11,10 @@
 # The Node.js version the website and the documentation site need (site/.nvmrc pins the same one).
 node = "22.23.4"
 
+# The package manager of the website, the documentation site and the interface (`pnpm-workspace.yaml`).
+# Keep it equal to the `packageManager` field of the root package.json: Corepack and Cloudflare read that one.
+pnpm = "12.16.1"
+
 # rtk summarizes the output of git, gh, rg and the other commands an agent runs most, which keeps
 # their output out of the model's context. It is a host convenience: no Makefile target needs it.
 rtk = "1.2.0"
