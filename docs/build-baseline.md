@@ -345,3 +345,14 @@ The per-target table is in [LINUX-AGENTS.md](LINUX-AGENTS.md#measurements).
 | `make validate` on this Mac | not run: `make swift-test` cannot run here (CoreSimulator plug-in and Metal toolchain missing) |
 | the CI `swiftlint` step on `ubuntu-latest` | not measured: it needs a push that triggers the workflow |
 | worktree to macOS runner latency | not measured: no Mac was reachable |
+||||||| parent of 9bee88e0 (ci(build): upload failing-tests.md per shard and cache the XCC CAS)
+=======
+
+## After PR 7c: failing-tests.md and the XCC cache entry (2026-11-18)
+
+Size of what an agent reads, measured on a synthetic Playwright report with one failed test and one flaky test (the shape CI writes): `failing-tests.md` is under 400 bytes for those two tests, bounded at 300 characters of failure text per test, against the multi-megabyte xcodebuild log or `.xcresult` bundle it replaces.
+The real size of an xcodebuild log and result bundle was not measured here, because `xcodebuild` cannot run on this Mac.
+`make retried-tests-test` covers the Xcode and Playwright parsers (10 tests, under 10 ms); the `xcresulttool` JSON shape is mocked from the tree the existing retry parser already reads, so the first CI run with a failing Swift test is the real check.
+The XCC cache entry is wired but inert until the Stage 2 change points `COMPILATION_CACHE_CAS_PATH` at `~/.cache/lilo/xcc`: the path stays empty and nothing is saved.
+Not measured: the CI hit rate and the CAS correctness spot-check, which ride Stage 0 metric 6 once the Stage 2 change lands.
+>>>>>>> 9bee88e0 (ci(build): upload failing-tests.md per shard and cache the XCC CAS)
