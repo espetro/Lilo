@@ -72,15 +72,21 @@ make app               # Debug build in build/debug/export/Lilo.app
 open build/debug/export/Lilo.app
 ```
 
-`make bootstrap` says what is missing and how to install it, and is a no-op once everything is
-in place. It downloads libghostty-vt, the terminal library, prebuilt for the pinned Ghostty commit
+`make bootstrap` runs every check first (macOS, Xcode 27, the Metal toolchain, Developer mode, Node.js against the `engines` of all five packages, free disk space, Zig when libghostty-vt cannot be downloaded) and installs nothing until they all pass, so a broken setup fails in under a second instead of after the downloads. It says what is missing and how to fix it, and is a no-op once everything is in place. It downloads libghostty-vt, the terminal library, prebuilt for the pinned Ghostty commit
 and checked against the sha256 in the `Makefile`; `make vt-build-source` (or `VT_FROM_SOURCE=1`)
 compiles it with Zig instead, which is also what happens, with a message, when the download is
 not available. `make install-debug` installs the Debug build into `~/Applications`, and
 `make install` a Release build into `/Applications`.
 
-Run `sudo DevToolsSecurity -enable` once: otherwise `xcodebuild` eventually fails to launch the test
+Options go in `BOOTSTRAP_ARGS`: `--with-sites` also installs the website and documentation dependencies and Changie, which `make validate` otherwise fetches on its first run (about 1.4 GB); `--json` prints one JSON object with a status per check and sends make's output to stderr, for scripts and agents. The exit code tells what to do next: `0` ready, `1` a build step failed, `2` a tool is missing and installs without an account (Node.js, Zig), `3` a person must act (a `sudo` command, the Apple ID download of the Metal toolchain, a system update, free disk space). On Linux it checks Node.js and disk, installs the JavaScript dependencies and lists the `make` targets that work there.
+
+```bash
+make bootstrap BOOTSTRAP_ARGS="--with-sites --json"
+```
+
+Developer mode is one of those checks: without `sudo DevToolsSecurity -enable`, `xcodebuild` eventually fails to launch the test
 host with `INTERNAL ERROR: childPID > 0`, once its cached debugger authorization expires.
+The Metal toolchain is a separate Apple-ID-authenticated download of a few GB (`xcodebuild -downloadComponent MetalToolchain`, about 10 minutes).
 
 ### Interface only
 
