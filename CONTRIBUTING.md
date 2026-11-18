@@ -46,6 +46,15 @@ mise exec -- rtk git status   # run a tool with the project's version
 An activated mise (`mise activate` in your shell) also reads `.nvmrc`, so `node` resolves to
 the pinned version outside a `mise exec` too.
 
+### Package manager
+
+Every `package.json` (the repository root and the five projects) sets `packageManager` to the same
+exact npm, `npm@10.9.9`, the one Node.js 22.23.4 ships with, so CI, Cloudflare's builds and your
+machine install with one version. npm itself ignores the field. Only Corepack (`corepack enable`)
+enforces it, and then refuses another package manager or an npm of another version with an error
+naming the expected one: run `corepack install` there, or leave Corepack off and use the npm that
+comes with the pinned Node.js. `.nvmrc` holds the one Node.js version CI and mise both read.
+
 ### Locking across machines
 
 `scripts/lockf.py` runs a command while holding a lock on a file, with only the Python standard
