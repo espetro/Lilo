@@ -108,6 +108,7 @@ fi
 rm -rf "$OUT_DIR"
 mkdir -p "$EXPORT_DIR" "$(dirname "$ZIP")"
 
+# The compilation cache is shared by every worktree (the Makefile's XCC_* settings, same defaults).
 # A build with an archive's postprocessing rather than xcodebuild archive, which starts from an empty build folder
 # every time: this one compiles only what changed, and a change of signing settings compiles nothing.
 xcodebuild \
@@ -116,6 +117,10 @@ xcodebuild \
     -configuration "$XCODE_CONFIGURATION" \
     -derivedDataPath "$DERIVED_DATA_DIR" \
     -destination "generic/platform=macOS" \
+    COMPILATION_CACHE_ENABLE_CACHING=YES \
+    COMPILATION_CACHE_CAS_PATH="${XCC_DIR:-$HOME/.cache/lilo/xcc}" \
+    COMPILATION_CACHE_LIMIT_SIZE="${XCC_LIMIT:-10737418240}" \
+    COMPILER_INDEX_STORE_ENABLE=NO \
     CODE_SIGN_STYLE=Manual \
     AD_HOC_CODE_SIGNING_ALLOWED=YES \
     DEPLOYMENT_POSTPROCESSING=YES \
