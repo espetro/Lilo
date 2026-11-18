@@ -6,8 +6,9 @@ Multi-stage PR series making Lilo lean for agent-first, multi-worktree developme
 
 - Author: espetro (fork: `github.com/espetro/Lilo`), upstream: `github.com/Alexays/Lilo` (solo maintainer Alexays, ROADMAP-gated, KISS rules in AGENTS.md).
 - Two-track flow: everything lands on the fork's `develop` branch first (accumulative, fully measured), curated minimal PRs go upstream, one logical change each.
-- Machine: M1, 8 GB RAM, 4 P-cores, ~5 GB free disk right now (needs cleanup before the baseline).
-- Measured baseline facts this plan builds on: cold `make app` 2m17s; fresh-worktree Debug build 28s cold CAS / 17s with shared XCC CAS (measured A/B); per-worktree state ~2.3 GB; machine-global Swift test lock (Makefile:83); CI: 4 of 5 free macOS slots per PR.
+- Machine: M1, 8 GB RAM, 4 P-cores, ~7 GB free disk after cleanup (the S0 baseline wants ≥10 GB).
+- Measured baseline facts this plan builds on: cold `make app` 6m58s with the Metal toolchain installed; fresh-worktree Debug build 28s cold CAS / 17s with shared XCC CAS (measured A/B); per-worktree state ~2.3 GB; machine-global Swift test lock (Makefile:83); CI: 4 of 5 free macOS slots per PR.
+- Host tools (`rtk`, `flock`, `jq`, `zig`, `shellcheck`, the websites' Node.js) are pinned in `mise.toml` with `mise.lock` (commit 68040323): the maintainer asked for the repo to carry them. They stay outside the required toolchain — no `make` target depends on mise.
 
 **Guidelines honored per stage**
 
@@ -110,16 +111,17 @@ Files: `scripts/bootstrap.sh`, `Makefile` (bootstrap target args), `CONTRIBUTING
 - Rollback story: the sites deploy independently of code merges; a failed CF build reverts by restoring the old build command; app/bridge are untouched by this stage.
 - Sequencing inside the stage: (a) workspace + lockfile + Makefile + CI on the fork (`develop`) with full measurement; (b) maintainer does the CF change on a CF preview; (c) only then the upstream PR. release-media and bridge-src stay npm (separate concerns, tiny trees) unless the discussion says otherwise.
 
-## Stage 6 — Linux development flow (PRs 10+; spike running now)
+## Stage 6 — Linux development flow (PRs 10+; spike done, upstream issue #376 open)
 
-Frame (stated in every artifact): development infrastructure, not a port — ROADMAP's "No Windows or Linux port" non-goal is about the product. Per ROADMAP process, open a discussion first.
+Frame (stated in every artifact): development infrastructure, not a port — ROADMAP's "No Windows or Linux port" non-goal is about the product. Per ROADMAP process, open a discussion first (upstream issue #376).
 
-Planned content (to be finalized with the ovhcloud spike results):
+Content:
 - `docs/LINUX-AGENTS.md`: verified partition of make targets into Linux-capable / macOS-only (CI already runs release-tooling, ui, e2e, bridge on ubuntu-latest — the docs formalize what contributors' Linux agents can run).
 - `make linux-checks` (or scoped equivalents) exercised in CI on ubuntu.
-- Swift-on-Linux verdict section (expectation from known facts: AppKit/WebKit do not exist on Linux; no xcodebuild via Darling; the flow is Linux-for-JS/docs/site + macOS runner for Swift, not a Swift build on Linux) — spike will confirm/correct with current project states (Darling, GNUstep, theos, swift-corelibs).
-- macOS remote story: the tailnet `quinos-mac-mini` as a self-hosted Actions runner (was unreachable at plan time — spike checks), GitHub-hosted macOS runners stay primary (free/unlimited on the public repo, 5-slot concurrency cap is the constraint, not money).
+- **Swift-on-Linux verdict (researched, not guessed).** No toolchain compiles, links, runs and tests an AppKit/WebKit macOS app on Linux as of 2026-11. 195 of 323 app files import AppKit or WebKit; WebKit, Metal, NSXPC and IOKit do not exist on Linux; `swift build` fails on the first `import AppKit` (and `LiloMCP/main.swift` imports the Linux-nonexistent `Darwin`). Darling cannot run `xcodebuild` (open issues since 2019) and lacks the current Swift framework surface; GNUstep is not Apple's AppKit (no WebKit port, per its own docs). The two credible Apple-side builders — `xtool` 2.0 beta and `rules_applecross` — compile and bundle but **cannot execute or test**, lack Icon Composer and Metal parity, and still require an Xcode `.xip` the user licensed on a Mac. So the promise is a **split**, not a Swift-on-Linux miracle: Linux agents carry the JS/docs/site/bridge lane, the Swift lane stays on macOS.
+- macOS remote story: the tailnet `quinos-mac-mini` as a self-hosted Actions runner (was unreachable at plan time), GitHub-hosted macOS runners stay primary (free/unlimited on the public repo, the 5-slot concurrency cap is the constraint, not money). `-derivedDataPath` and `-clonedSourcePackagesDirPath` are remote-side paths, so plain SSH `xcodebuild` works unchanged over a synced worktree.
 - Measurement: which of `make ui-lint ui-test e2e site-check site-test docs-check docs-test ext-bridge-test` pass on Debian 13, with timings and disk; the Swift-remote latency for a worktree→macOS-runner loop.
+- Watch list: `rules_applecross` — the closest existing project to building a macOS app on Linux; revisit if it gains byte-identical Metal and a run story.
 
 ## Branch & review mechanics
 
@@ -138,15 +140,16 @@ S2 PR2 CAS ─► PR3 SPM dir ─► PR4 app-support-dir ─► PR5 slots (needs
 S3 CI trio              (independent of S2, needs S0 CI scrape for before/after)
 S4 packageManager       (independent; prerequisite for S5)
 S5 pnpm workspace       (needs S4 + discussion + maintainer CF change)
-S6 Linux flow           (needs spike results; independent otherwise)
+S6 Linux flow           (needs the maintainer's answer on #376; independent otherwise)
 ```
 
 ## What is deliberately NOT in this plan
 
-Bazel/Tuist/rules_xcodeproj (Xcode 27 unsupported; project specifics unbuilt), sccache (cannot cache Swift; disables module caching), bun migration (same Cloudflare coupling as pnpm, smaller ecosystem win), sharing DerivedData across worktrees (build.db corruption, verified by community reports), replacing GRDB's vendored SQLite (runtime behavior change), merge queue (only after S3 frees slots and >3 merges/hour is real), self-hosted macOS runner fleet (free hosted macOS on public repos; concurrency cap is the constraint).
+Bazel/Tuist/rules_xcodeproj (Xcode 27 unsupported; project specifics unbuilt), sccache (cannot cache Swift; disables module caching), bun migration (same Cloudflare coupling as pnpm, smaller ecosystem win), sharing DerivedData across worktrees (build.db corruption, verified by community reports), replacing GRDB's vendored SQLite (runtime behavior change), merge queue (only after S3 frees slots and >3 merges/hour is real), self-hosted macOS runner fleet (free hosted macOS on public repos; concurrency cap is the constraint), and anything that makes a `make` target depend on mise (the host tools live in `mise.toml` precisely so the required toolchain stays what the Makefile checks for; landed as 68040323 after the maintainer asked for the repo to carry them).
 
 ## Open items
 
-1. Spike results (ovhcloud Debian run: which targets pass, Swift-on-Linux verdict, mac mini reachability) → finalize S6.
-2. Maintainer buy-in: discussions for S5/S6 before their PRs; S2-S3 PRs are safe to send without discussion (pure build hygiene, no ROADMAP tension).
-3. This machine's disk: cleanup to ≥10 GB before Stage 0's baseline run.
+1. Maintainer buy-in: upstream issues #375 (pnpm) and #376 (Linux agents) are open with no reply — they gate S5 and S6; S2-S3 PRs are safe to send without one (pure build hygiene, no ROADMAP tension).
+2. This machine's disk: ~7 GB free after cleanup; still short of the ≥10 GB the S0 baseline wants (flock/rtk installs freed nothing more of size; the remaining big consumers are the repo's own builds).
+
+

@@ -19,7 +19,7 @@ For continuing the work from another device. Everything below is either committe
 
 **Branch model**: `develop` on the fork accumulates every stage (so its CI history shows cumulative gains); each upstream PR is a scoped subset with its own measurement table. Upstream is ROADMAP-gated (KISS, solo maintainer) so upstream PRs must stay minimal and each link its issue.
 
-**Current state**: `main` = `c24fc63c` (unchanged from upstream), `develop` = `37cae94e` (plan doc only). **No implementation has been written yet** — this is the plan, its tracking, and the measurements.
+**Current state**: `main` = `c24fc63c` (unchanged from upstream), `develop` = `68040323` (plan doc, this handoff, and `mise.toml`+`mise.lock`+CONTRIBUTING note pinning the host tools — see §5). **No stage implementation has been written yet** — Stage 0 is next.
 
 ---
 
@@ -32,8 +32,8 @@ For continuing the work from another device. Everything below is either committe
 | Metal toolchain | **now installed** (`Apple metal version 32023.922`) — `make app` was failing before this; the 838 MB download unblocks it |
 | Node / pnpm / bun | v24.22.2 / 12.16.1 / 1.3.14 (mise-installed) |
 | Hardware | M1, **8 GB RAM, 4 P-cores** — the binding constraint on concurrent worktrees |
-| Disk | ~8 GB free at handoff (was 5 GB; npm cache + Metal toolchain accounted for the difference) |
-| `rtk` | 1.1.0 at `/opt/homebrew/bin/rtk` (host-level only — see §5) |
+| Disk | ~7 GB free at handoff (cleaned `go-build`, `~/.npm/_npx`, Xcode DerivedData and the swiftpm cache) |
+| `rtk` | 1.2.0, also pinned for the repo in `mise.toml` (see §5) |
 
 **Remote hosts**: `ssh ovhcloud` (Debian 13, 6 cores, 11 GB RAM) — the Linux spike box. `quinos-mac-mini` on the tailnet **timed out** on connect during the session; check before relying on it as a self-hosted runner.
 
@@ -106,14 +106,41 @@ The spike results are in §6 below. Expected shape: Linux agents run the JS/docs
 
 ---
 
-## 5. rtk and the other host tools — verdict (do not put them in the repo)
+## 5. rtk and the other host tools — verdict (they are in the repo now, via `mise.toml`)
 
-A dedicated assessment concluded:
-- **rtk** (1.1.0, host-level token-compressing CLI proxy) is genuinely effective for the *agent's* reading path (`git`, `gh`, `rg`, `read`, `grep`; 42% token savings measured on this machine) — **but it has no `make`, `xcodebuild`, `swift` or `swiftlint` filter** (those pass through with generic transforms only).
-- The two heaviest streams in Lilo's own loop are **already compressed by the repo**: `make validate` runs 9 groups in parallel with per-group logs and prints only the failing one (Makefile:136-146); `scripts/retried_tests.py` truncates to 300 chars; `scripts/perf_summary.py` summarizes traces; the CI step summary carries the signal.
-- **Verdict: keep rtk out of `AGENTS.md`/`CONTRIBUTING.md`.** It is a machine-level agent convenience, already automatic via the host hook. Documenting it upstream would add a dependency (CI runners lack it) for zero gain on the command that matters, and would violate "the Makefile is the only command surface" (AGENTS.md:7).
-- **flock vs lockf**: keep Lilo's `lockf` (Makefile:83) — it is base macOS and portable; GNU `flock` is Homebrew-only. The *host* rule (`~/AGENTS.md`, `flock /tmp/tsc.lock`) is the portability nit worth fixing on the host, not in the repo. Note the two lock families are not interchangeable, but they guard different work today.
-- mise / uv / docker / ast-grep / mdformat: **no benefit for this repo** (Lilo's Python is stdlib-only; Lilo pins its own tools).
+**This verdict changed on 2026-11-18.** The maintainer's answer was: include the host tools in the
+repo, via `mise.toml`, and extend `mise.toml` to cover whatever else the host needs. That landed on
+`develop` as `68040323 build: pin the host tools an agent needs in mise.toml`.
+
+**What the earlier assessment had established, and still holds:**
+
+- **rtk** (1.1.0, host-level token-compressing CLI proxy) is genuinely effective for the *agent's* reading path (`git`, `gh`, `rg`, `read`, `grep`; 42% token savings measured on this machine) — **but it has no `make`, `xcodebuild`, `swift` or `swiftlint` filter** (those pass through with generic transforms only). The two heaviest streams in Lilo's own loop are **already compressed by the repo**: `make validate` runs 9 groups in parallel with per-group logs and prints only the failing one (Makefile:136-146); `scripts/retried_tests.py` truncates to 300 chars; `scripts/perf_summary.py` summarizes traces.
+- The two lock families are **not interchangeable**: `lockf` locks a byte range, `flock` the file. Lilo keeps `lockf` (Makefile:83) — base macOS, portable; GNU `flock` is Homebrew-only.
+- mise / uv / docker / ast-grep / mdformat: **no benefit for this repo** (Lilo's Python is stdlib-only; Lilo pins its own build tools in the Makefile).
+
+**What `mise.toml` now pins, and how each was verified on this machine:**
+
+| Tool | Version | Why it is in the repo | Install path (verified) |
+|---|---|---|---|
+| `rtk` | 1.2.0 | summarizes `git`/`gh`/`rg` output for agents | mise registry entry; asset `rtk-aarch64-apple-darwin.tar.gz` |
+| `flock` | 0.4.0 | the host's rule (`~/AGENTS.md`) locks with `flock`, which macOS lacks | `github:discoteq/flock` **+ a `postinstall` build**: its release tarball is *source only* (no prebuilt binary), so the postinstall runs `./configure --prefix="$MISE_TOOL_INSTALL_PATH" && make && make install` |
+| `jq` | 1.8.2 | `scripts/bench_extensions.sh` and `scripts/energy_idle_check.sh` read JSON with it | mise registry |
+| `zig` | 0.16.0 | `make vt-build-source` needs Zig 0.16.x (Homebrew ships 0.17.1, which the check rejects) | mise registry |
+| `shellcheck` | 0.11.0 | lints `scripts/*.sh` | mise registry |
+| `node` | 22.23.4 | what `site/` and `docs-site/` require (`site/.nvmrc` pins the same) | mise registry |
+
+`mise.lock` pins the per-platform sha256 of every download, and `[settings] lockfile = true` keeps
+it that way. Verified end to end: `mise install` then `mise exec -- rtk --version` (1.2.0),
+`flock /tmp/x.lock echo ok`, `jq --version` (1.8.2), `zig version` (0.16.0), `shellcheck --version`
+(0.11.0), `node --version` (22.23.4).
+
+**Two traps worth knowing:**
+
+- **A tool-level `postinstall` runs with the *current directory*, not the tool's install path.** The first attempt failed with `sh: ./configure: No such file or directory`. The working form is `cd "$MISE_TOOL_INSTALL_PATH" && …`; `$MISE_INSTALL_PREFIX` is *not* set.
+- **Node needs an explicit entry.** mise's `.nvmrc` autodetection does not override a *global* `node` pin, so a host with `node = "24"` in `~/.config/mise/config.toml` silently kept 24. Listing `node = "22.23.4"` in `[tools]` fixes it.
+
+**No release note was added**: dev-infra commits in this repo (Makefile targets, CI changes) carry
+none, per precedent (`2974a4f9`, `f72a0c98`).
 
 ---
 
