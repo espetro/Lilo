@@ -213,3 +213,21 @@ Checked instead: the four settings exist in this Xcode's build service (`SWBCore
 Not verified: the unit of `COMPILATION_CACHE_LIMIT_SIZE`.
 The Xcode specs do not document it; the Makefile passes bytes (10 GB).
 If it were megabytes, the cap would simply never trigger, which fails safe, and `XCC_LIMIT` overrides it.
+
+## 2026-11-18, Stage 2 PR 3: shared Swift package checkouts
+
+What changed: make-driven `xcodebuild` runs and `scripts/build-app.sh` pass `-clonedSourcePackagesDirPath ~/.cache/lilo/spm-<sha256 of Package.resolved> -onlyUsePackageVersionsFromResolvedFile`.
+CI is untouched: it keeps its cached `.derived.noindex/xcode/SourcePackages`.
+
+Measured (the package resolution step, which does not need the broken `xcodebuild` plug-in): resolving the pinned GRDB.swift 7.11.1 and Sparkle 2.10.0 with `swift package --scratch-path <empty dir> resolve --only-use-versions-from-resolved-file`.
+
+| | Result |
+|---|---|
+| Disk per fresh derived data path today | 481 MB (checkouts 178 MB, git repositories 277 MB, Sparkle binary artifact 27 MB) |
+| Network clone and download per fresh derived data path | 44 s on this connection |
+| After the change, first worktree on a given pin | the same 481 MB and 44 s, once |
+| After the change, every other worktree on that pin | 0 MB and no clone |
+
+The whole build with a fresh derived data path was not timed, for the reason in the section above.
+The folder name carries the hash, so two worktrees on different pins can never read each other's checkouts.
+Known limits: the Xcode IDE keeps its own copy; XcodeGen cannot express the flag, so it stays on the invocation lines; a pin change needs `Package.resolved` updated first, since the flag refuses to resolve anything else; `scripts/ext-smoke.mjs`, `scripts/ext-e2e-passwords.mjs` and the `bench_*` and `energy_*` scripts keep their own invocations and are not changed.
