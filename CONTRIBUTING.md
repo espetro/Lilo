@@ -91,6 +91,10 @@ Developer mode is one of the checks: without `sudo DevToolsSecurity -enable`, `x
 host with `INTERNAL ERROR: childPID > 0`, once its cached debugger authorization expires.
 The Metal toolchain is a separate Apple-ID-authenticated download of a few GB (`xcodebuild -downloadComponent MetalToolchain`, about 10 minutes).
 
+Every `make` build shares one compilation cache, `~/.cache/lilo/xcc` (capped at 10 GB by `XCC_LIMIT`,
+in bytes), so a new worktree's first build reuses what another compiled. Delete the folder to reset
+it; Xcode's own builds don't use it.
+
 ### Interface only
 
 To work on the sidebar, the command bar, settings or onboarding, Node.js is enough:
