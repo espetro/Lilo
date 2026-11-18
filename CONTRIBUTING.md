@@ -294,6 +294,7 @@ only makes the French reference tables stale, which warns.
 | `make agent-eval-test` | tests of the fixture agent tasks' server and grading (no browser, no model); `make agent-eval` runs them with Claude Code against the Debug app |
 | `make retried-tests-test` | tests of the failed and retried test report CI writes |
 | `make metrics-test` | tests of the opt-in recipe timing recorder (`make metrics-on`, `make metrics`) |
+| `make ci-metrics-test` | tests of the CI timing summary (`make ci-metrics`) |
 | `make lint-commit-message` | checks a commit header or PR title read from stdin |
 | `make lint-commits` | checks non-merge commit headers in `BASE..COMMIT_HEAD` (default `origin/main..HEAD`) |
 | `make release-status` | pending release notes, changelog and app version consistency |
