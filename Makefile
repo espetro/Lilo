@@ -69,6 +69,9 @@ XCC_SETTINGS := $(if $(CI),,COMPILATION_CACHE_ENABLE_CACHING=YES COMPILATION_CAC
 # the default one.
 SPM_PACKAGES_DIR ?= $(HOME)/.cache/lilo/spm-$(shell shasum -a 256 Lilo.xcodeproj/project.xcworkspace/xcshareddata/swiftpm/Package.resolved | cut -d' ' -f1)
 SPM_SETTINGS := $(if $(CI),,-clonedSourcePackagesDirPath $(SPM_PACKAGES_DIR) -onlyUsePackageVersionsFromResolvedFile)
+# Handed to ext-smoke and ext-e2e-passwords, which run their own xcodebuild in the same derived data: differing settings
+# would rebuild the app each time they follow a make build.
+export LILO_XCODEBUILD_EXTRA := $(SPM_SETTINGS) $(XCC_SETTINGS)
 # Inside the checkout, so a worktree's build goes with the worktree instead of staying in ~/Library.
 XCODEBUILD := xcodebuild -project Lilo.xcodeproj -scheme Lilo -destination 'platform=macOS' -derivedDataPath $(CURDIR)/.derived.noindex/xcode $(SPM_SETTINGS) $(XCC_SETTINGS)
 # They wait out real clocks (a worker's 30 s unload, a controller's first 5 s, a terminal's 5 s between
