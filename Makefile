@@ -100,6 +100,12 @@ TEST_LOCK := lockf -k $(or $(TMPDIR),/tmp/)lilo-swift-test.lock
 # A test that never ends would hold the lock for good: past its allowance, rounded up to the minute, xcodebuild
 # samples it, ends it as failed and goes on. A test that needs longer sets its own executionTimeAllowance.
 TEST_TIMEOUTS := -test-timeouts-enabled YES -default-test-execution-time-allowance 120 -maximum-test-execution-time-allowance 600
+# The test host's data folder (database, agent socket, downloads) is per worktree: two worktrees' runs would
+# otherwise share Lilo-Debug's database and socket. xcodebuild gives the test host the TEST_RUNNER_ variables as
+# LILO_APP_SUPPORT_DIR; a build setting of that name would not reach it. CI runs one job per machine and keeps the default.
+ifndef CI
+export TEST_RUNNER_LILO_APP_SUPPORT_DIR ?= $(CURDIR)/.derived.noindex/test-data
+endif
 TEST_CONFIG := $(XCODEBUILD) -configuration Debug LILO_BUNDLE_ID_SUFFIX=.tests $(DEBUG_SIGNING)
 TEST := $(TEST_LOCK) $(TEST_CONFIG) test-without-building $(TEST_TIMEOUTS)
 # CI (which sets CI) runs a failed test once more and lists it in the job summary; locally a flake fails.

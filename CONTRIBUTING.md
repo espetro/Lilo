@@ -121,7 +121,7 @@ Xcode) and the test host never touch its data:
 |-------|-----------|------|
 | Release | `fr.arouillard.lilo` | `~/Library/Application Support/Lilo` |
 | Debug | `fr.arouillard.lilo.debug` | `~/Library/Application Support/Lilo-Debug` |
-| `make swift-test` host | `fr.arouillard.lilo.tests` | temporary folders per test |
+| `make swift-test` host | `fr.arouillard.lilo.tests` | temporary folders per test, and `.derived.noindex/test-data` in the worktree for what falls back to the default folder |
 
 The bundle id also separates the preferences (`~/Library/Preferences/<bundle id>.plist`), the
 WebKit data (`~/Library/WebKit/<bundle id>`) and the launch-at-login item;
@@ -129,6 +129,12 @@ WebKit data (`~/Library/WebKit/<bundle id>`) and the launch-at-login item;
 power helper's launch daemon). `LILO_APP_SUPPORT_DIR` overrides the data folder, agent socket
 included. Tests wipe the WebKit stores they create when the run ends, and the next run removes
 what an interrupted one left under `~/Library/WebKit/fr.arouillard.lilo.tests`.
+
+`make` sets `LILO_APP_SUPPORT_DIR` for the test host (through `TEST_RUNNER_LILO_APP_SUPPORT_DIR`, which
+`xcodebuild` passes on) to `.derived.noindex/test-data`, so two worktrees' test runs never share a
+database or an agent socket; delete the folder to start from nothing. CI keeps the default. The
+keychain is not per worktree: an ad-hoc signed host asks once more for the WebCrypto key in each
+worktree, which a stable signing identity (`LILO_DEBUG_TEAM_ID`, above) avoids.
 
 ## Development workflow
 
