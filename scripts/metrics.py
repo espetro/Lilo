@@ -13,7 +13,6 @@ docs/build-baseline.md.
 """
 import json
 import os
-import shutil
 import signal
 import subprocess
 import sys
@@ -102,13 +101,24 @@ def git_head(directory):
 
 
 def is_dirty(directory):
-    """Tracked files differ from HEAD. A git process (about 15 ms), so once per make run, not per recipe."""
+    """Tracked files differ from HEAD: a git process (about 15 ms), so once per make run, not per recipe line."""
     if "LILO_METRICS_DIRTY" in os.environ:
         return os.environ["LILO_METRICS_DIRTY"] == "1"
+    cached = os.path.join(active_dir(), f"dirty-{os.getppid()}")  # the parent is the make that runs every recipe line
     try:
-        return subprocess.run(["git", "-C", directory, "diff-index", "--quiet", "HEAD", "--"], capture_output=True).returncode != 0
+        with open(cached, encoding="utf-8") as file:
+            return file.read() == "1"
+    except OSError:
+        pass
+    try:
+        dirty = subprocess.run(["git", "-C", directory, "diff-index", "--quiet", "HEAD", "--"], capture_output=True).returncode != 0
     except OSError:
         return False
+    try:
+        write_atomically(cached, "1" if dirty else "0")
+    except OSError:
+        pass
+    return dirty
 
 
 def agent():
@@ -152,9 +162,13 @@ def sweep_orphans():
     except OSError:
         return
     for name in names:
-        if not name.isdigit() or alive(int(name)):
+        pid = name.removeprefix("dirty-")
+        if not pid.isdigit() or alive(int(pid)):
             continue
         path = os.path.join(active_dir(), name)
+        if pid != name:
+            os.unlink(path)  # a make that has ended
+            continue
         try:
             with open(path, encoding="utf-8") as file:
                 record = json.load(file)
@@ -199,7 +213,7 @@ def finish_record(record, started, code, overhead_before):
     record["exit"] = code
     record["loadavg1"] = round(os.getloadavg()[0], 2)
     record["concurrent"] = other_active(record["worktree"])
-    record["disk_free_gb"] = round(shutil.disk_usage(os.getcwd()).free / 2**30, 1)
+    record["disk_free_gb"] = round((lambda v: v.f_bavail * v.f_frsize)(os.statvfs(".")) / 2**30, 1)
     record["level"] = max(int(os.environ.get("MAKELEVEL", "1")) - 1, 0)
     record["overhead_ms"] = round((overhead_before + time.perf_counter() - mark) * 1000, 1)
     return record
