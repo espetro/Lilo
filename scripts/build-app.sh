@@ -119,6 +119,13 @@ if [ -z "${CI:-}" ]; then
     )
 fi
 
+# The package checkouts are shared by every worktree, one folder per Package.resolved (the Makefile's SPM_PACKAGES_DIR).
+PACKAGE_SETTINGS=()
+if [ -z "${CI:-}" ]; then
+    RESOLVED="$(shasum -a 256 "$ROOT/Lilo.xcodeproj/project.xcworkspace/xcshareddata/swiftpm/Package.resolved" | cut -d' ' -f1)"
+    PACKAGE_SETTINGS=(-clonedSourcePackagesDirPath "${SPM_PACKAGES_DIR:-$HOME/.cache/lilo/spm-$RESOLVED}" -onlyUsePackageVersionsFromResolvedFile)
+fi
+
 # A build with an archive's postprocessing rather than xcodebuild archive, which starts from an empty build folder
 # every time: this one compiles only what changed, and a change of signing settings compiles nothing.
 xcodebuild \
@@ -127,6 +134,7 @@ xcodebuild \
     -configuration "$XCODE_CONFIGURATION" \
     -derivedDataPath "$DERIVED_DATA_DIR" \
     -destination "generic/platform=macOS" \
+    ${PACKAGE_SETTINGS[@]+"${PACKAGE_SETTINGS[@]}"} \
     ${CACHE_SETTINGS[@]+"${CACHE_SETTINGS[@]}"} \
     CODE_SIGN_STYLE=Manual \
     AD_HOC_CODE_SIGNING_ALLOWED=YES \
