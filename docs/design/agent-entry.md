@@ -60,3 +60,73 @@ The slicing below orders the work so each PR stands alone and is verified before
 2. **Per-tab hover affordance.** The agents action appears on tab hover beside close (and in the tab's context menu for keyboard and non-hover access), enabled only when `agentsEnabled`. Clicking it posts a message naming the tab; the chrome opens the Ask bar pre-bound to that tab, fetching its selection the way `askAgent` does today. Verification: `make ui-lint ui-test`, fakeHost e2e covering hover reveal, context-menu path and binding to a background tab, `make docs-check` for new strings in every catalog.
 3. **Docked agent panel.** Generalize the side-panel slot so a conversation panel can dock per tab beside extension panels (one panel at a time, Chrome's order), hosting the Ask field then the thread for the bound tab. The badge's per-tab indicator lands here. Verification: `make project-sync` after the Swift changes, `make validate` under the lock, Swift tests for panel follow/close semantics mirroring `SidePanelController`'s, fakeHost e2e for open/close/dismiss, `make docs-check`.
 4. **Tier promotion.** "Open in new tab" from the panel reuses `startConversation` with the panel's context; the agent tab gains a way back to the panel on its source tab. Verification: `make validate`, e2e for both directions, release note via `make change`.
+
+## Wireframes
+
+The recommended option at its three tiers. Chrome landmarks keep their fixed places ([DESIGN.md](../DESIGN.md)); the panel docks right of the content exactly where `SidePanelController` puts an extension panel, with the same divider.
+
+### Tier 1: the Ask bar (light)
+
+One floating bar over the page it is about, opened by `⇧⌘A` or the badge. The page stays readable under the scrim; Enter starts the conversation in the background so focus never leaves the tab.
+
+```
++------------------------------------------------------------------+
+| < >  [example.com          ]  [site] [ext]        [mascot]       |
++------------------------------------------------------------------+
+|                                                                  |
+|   +----------------------------------------------------------+   |
+|   | Ask about this page...                            [agent v]|   |
+|   | (example.com)  "quoted selection"   [project v]      [send] |   |
+|   +----------------------------------------------------------+   |
+|                                                                  |
+|                     the page you are reading                     |
+|                                                                  |
++------------------------------------------------------------------+
+```
+
+### Tier 2: the docked panel (middle)
+
+The per-tab hover action opens the panel bound to that tab. It starts as the Ask field with the tab attached, then becomes the live thread beside the page. The page keeps the full height minus the panel width; the tab strip shows the mascot badge on the bound tab.
+
+```
++------------------------------------------------------------------+
+| < >  [example.com          ]  [site] [ext]        [mascot]       |
++------------------------------------------------------------------+
+| [tab A*] [tab B] [tab C]                              [+] [N]    |
++------------------------------------------------------------------+-----------------+
+|                                                                  | Agent - tab A   |
+|                     the page you are reading                     | [Claude v] [..] |
+|                                                                  |-----------------|
+|                                                                  | > Fix the typo  |
+|                                                                  |   in the header |
+|                                                                  |                 |
+|                                                                  | Claude          |
+|                                                                  | Done: changed   |
+|                                                                  | h1 in          |
+|                                                                  | style.css       |
+|                                                                  |                 |
+|                                                                  | [Diff] [Open    |
+|                                                                  |  in tab]        |
+|                                                                  |                 |
+|                                                                  | >                |
+|                                                                  |-----------------|
+|                                                                  | needs you: 1    |
++------------------------------------------------------------------+-----------------+
+```
+
+### Tier 3: the agent tab (heavy)
+
+Work that outgrows the panel promotes explicitly to a conversation tab: its own folder in the sidebar, the pages the agent opens nested under it, and the full thread. Reached from the panel's "Open in new tab" or from `⌘↩`-style background starts that need room.
+
+```
++------------------------------------------------------------------+
+| Sidebar                              | < > [agent: Fix typo]    |
+|----------------------+---------------+-------------------------+
+| Space               | [New Conversation]|                       |
+|  v Fix typo    (mascot)| agent thread     |   page the agent      |
+|    > index.html       | > prompt        |   opened or edited    |
+|    > style.css        |   answer...     |                       |
+|  > Other tabs         | [Diff] [..]     |                       |
+|----------------------+---------------+-------------------------+
+```
+
