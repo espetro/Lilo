@@ -553,8 +553,9 @@ xcode-build-release: vt-build $(CHROME_UI_ASSETS) $(NATIVE_STRINGS)
 run-ui-dev: app
 	@LILO_UI_DEV_SERVER=http://localhost:5173 ./build/debug/export/Lilo.app/Contents/MacOS/Lilo
 
-# LILO_AGENT_ALLOW_ALL lets any agent client in without asking, and LILO_HEADLESS keeps the app from taking
-# focus, a Dock icon or a visible window (HEADLESS=0 opts out): only a Debug build reads either.
+# LILO_AGENT_ALLOW_ALL lets any agent client in without asking, LILO_AGENT_CLICKS=allow|deny (CLICKS=, allow by
+# default) answers every question before a send, payment or deletion yes or no at once, and LILO_HEADLESS keeps
+# the app from taking focus, a Dock icon or a visible window (HEADLESS=0 opts out): only a Debug build reads them.
 AGENT_DATA = $(or $(LILO_APP_SUPPORT_DIR),$(HOME)/Library/Application Support/Lilo-Debug)
 # A fresh Debug profile has agent control off, and the app reads that setting only at launch: it is switched on
 # in the profile's database, which a first launch creates, before the app a client talks to starts.
@@ -567,8 +568,21 @@ agent-app:
 			LILO_HEADLESS=$(or $(HEADLESS),1) "$(CURDIR)/build/debug/export/Lilo.app/Contents/MacOS/Lilo" >/dev/null 2>&1 & first=$$!; \
 			until sqlite3 "$(AGENT_DATA)/global.db" "$$on" 2>/dev/null; do sleep 1; done; \
 			kill $$first; wait $$first 2>/dev/null; /bin/rm -f "$(AGENT_DATA)/agent.sock"; }; \
-		LILO_AGENT_ALLOW_ALL=1 LILO_HEADLESS=$(or $(HEADLESS),1) "$(CURDIR)/build/debug/export/Lilo.app/Contents/MacOS/Lilo" >/dev/null 2>&1 & \
+		LILO_AGENT_ALLOW_ALL=1 LILO_AGENT_CLICKS=$(or $(CLICKS),allow) LILO_HEADLESS=$(or $(HEADLESS),1) "$(CURDIR)/build/debug/export/Lilo.app/Contents/MacOS/Lilo" >/dev/null 2>&1 & \
+		echo $$! > "$(AGENT_DATA)/agent-app.pid"; \
 		until [ -S "$(AGENT_DATA)/agent.sock" ] && sleep 3; do sleep 1; done; }
+
+## Stop the Debug app agent-app started (never another one)
+agent-app-stop:
+	@pid=$$(cat "$(AGENT_DATA)/agent-app.pid" 2>/dev/null); \
+	if [ -n "$$pid" ] && ps -p $$pid -o command= | grep -q "^$(CURDIR)/build/debug/export/Lilo.app/Contents/MacOS/Lilo$$"; then \
+		kill $$pid; while kill -0 $$pid 2>/dev/null; do sleep 0.2; done; fi; \
+		/bin/rm -f "$(AGENT_DATA)/agent-app.pid" "$(AGENT_DATA)/agent.sock"
+
+## Start the Debug app in a click mode (CLICKS=allow|deny), replacing the one agent-app started
+agent-app-restart: agent-app-stop agent-app
+	@kill -0 "$$(cat "$(AGENT_DATA)/agent-app.pid" 2>/dev/null)" 2>/dev/null || { \
+		echo "A Debug app that make did not start is running: quit it to run in CLICKS=$(CLICKS)" >&2; exit 1; }
 
 ## Call the debug app's agent tools from a shell, starting the app first if needed (CALLS=calls.json, see scripts/agent_call.mjs)
 agent-call:
@@ -577,10 +591,16 @@ agent-call:
 	@node scripts/agent_call.mjs build/debug/export/Lilo.app/Contents/MacOS/lilo-mcp "$(CALLS)"
 
 ## Run the fixture agent tasks with Claude Code, graded in code (TOOL=lilo|playwright|chrome-devtools MODEL=sonnet PASSES=1 TASK=name)
+# The gate tasks (`asks`) run against an app answering every action question no, the others against one answering yes.
 agent-eval:
-	@$(if $(filter-out lilo,$(or $(TOOL),lilo)),,$(MAKE) --no-print-directory agent-app)
-	@LILO_MCP="$(CURDIR)/build/debug/export/Lilo.app/Contents/MacOS/lilo-mcp" python3 -I bench/mcp/fixtures.py run \
-		--tool $(or $(TOOL),lilo) --model $(or $(MODEL),sonnet) --passes $(or $(PASSES),1) $(if $(TASK),--task $(TASK))
+	@set -e; for clicks in allow deny; do \
+		tasks=$$(python3 -I bench/mcp/fixtures.py tasks --tool $(or $(TOOL),lilo) --clicks $$clicks $(if $(TASK),--task $(TASK))); \
+		[ -n "$$tasks" ] || continue; \
+		$(if $(filter-out lilo,$(or $(TOOL),lilo)),,$(MAKE) --no-print-directory agent-app-restart CLICKS=$$clicks;) \
+		LILO_MCP="$(CURDIR)/build/debug/export/Lilo.app/Contents/MacOS/lilo-mcp" python3 -I bench/mcp/fixtures.py run \
+			--tool $(or $(TOOL),lilo) --model $(or $(MODEL),sonnet) --passes $(or $(PASSES),1) $$(printf -- '--task %s ' $$tasks); \
+	done
+	@$(if $(filter-out lilo,$(or $(TOOL),lilo)),,$(MAKE) --no-print-directory agent-app-stop)
 
 ## Test the fixture agent tasks' server and grading (no browser, no model)
 agent-eval-test:
