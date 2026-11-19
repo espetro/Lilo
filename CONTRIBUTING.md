@@ -130,6 +130,21 @@ make validate
   is the official build, and `swift run` lacks the app's Info.plist: use `make run-ui-dev` to launch
   a real bundle.
 
+### Locking across machines
+
+`scripts/lockf.py` runs a command while holding a lock on a file, with only the Python standard
+library, so it runs on macOS and Linux alike:
+
+```bash
+scripts/lockf.py /tmp/tsc.lock make validate      # one validate at a time machine-wide
+scripts/lockf.py -n /tmp/tsc.lock make validate   # fail instead of waiting
+scripts/lockf.py -w 60 /tmp/tsc.lock make validate  # wait at most a minute
+```
+
+It is a lockf(3) byte-range lock: it interoperates with macOS's `lockf` (which the Makefile's test
+lock uses) and Linux's `lockf`, not with the `flock(2)` system call behind GNU `flock` and
+`discoteq/flock`. Keep the two lock families on separate lock files.
+
 ## Tests and validation
 
 `make validate` is the gate: UI lint, type checks, tests and build; the extension bridge build and
@@ -149,6 +164,7 @@ only makes the French reference tables stale, which warns.
 | `make ext-bridge-test` | extension bridge TypeScript tests |
 | `make hooks-test` | commit-message validation and real Git hook/range checks in temporary repositories |
 | `make perf-summary-test` | tests of the performance recording summary and comparison script |
+| `make lockf-test` | tests of `scripts/lockf.py`, the stdlib lock wrapper |
 | `make lint-commit-message` | checks a commit header or PR title read from stdin |
 | `make lint-commits` | checks non-merge commit headers in `BASE..COMMIT_HEAD` (default `origin/main..HEAD`) |
 | `make release-status` | pending release notes, changelog and app version consistency |
