@@ -85,6 +85,10 @@ class MetricsTests(unittest.TestCase):
             "median_s": 20.0, "p95_s": 30, "max_concurrent": 1, "max_overhead_ms": 5,
         }])
 
+    def test_summary_ignores_the_per_check_records_of_make_validate(self):
+        check = {"target": "ui-lint", "phase": "check", "exit": 1, "dur_s": 9, "tier": "pre-push", "scope": "full", "rerun_of": 1.5}
+        self.assertEqual(summarize([check]), [])
+
     def test_on_and_off_edit_only_their_own_block(self):
         path = os.path.join(self.directory.name, "Makefile.local")
         with open(path, "w", encoding="utf-8") as file:

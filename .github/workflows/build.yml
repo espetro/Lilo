@@ -50,7 +50,7 @@ jobs:
       - uses: ./.github/actions/setup-pnpm
       # The documentation generators read the app's sources, so a Swift or UI change that breaks one fails here.
       # swiftlint keeps the Linux download path working; its static build skips two SourceKit rules that the macOS job runs.
-      - run: make release-status release-test release-media-test perf-summary-test retried-tests-test swiftlint metrics-test ci-metrics-test site-check site-test site-deploy-check docs-check docs-test docs-deploy-check
+      - run: make release-status release-test release-media-test perf-summary-test retried-tests-test swiftlint metrics-test ci-metrics-test check-summary-test site-check site-test site-deploy-check docs-check docs-test docs-deploy-check
 
   ui:
     name: UI (lint, test, build)
