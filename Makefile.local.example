@@ -19,3 +19,10 @@ export LILO_DEBUG_TEAM_ID := REPLACE_WITH_TEAM_ID
 # Release signing only, once Apple grants the browser passkey entitlement: a Developer ID
 # provisioning profile that includes it. See docs/RELEASING.md.
 # export LILO_PROVISIONING_PROFILE := /path/to/Lilo_Developer_ID.provisionprofile
+
+# Test slots: how many swift-test runs (of any worktree) may go at once. The default, 1, is one run per machine:
+# each run already fills every performance core, and concurrent WebKit hosts can saturate runningboardd and stall the
+# whole Mac. At 2, each run gets half the workers (TEST_WORKERS), and ext-smoke and ext-e2e still wait for every run.
+# Leave it at 1 until you have compared `log stream --predicate 'sender == "runningboardd"'` during one run and two
+# at once on your Mac (docs/build-baseline.md); it is RAM-bound on 8 GB.
+# TEST_SLOTS := 2

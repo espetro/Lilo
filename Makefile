@@ -102,11 +102,17 @@ DEBUG_SIGNING := $(if $(DEBUG_TEAM_ID),DEVELOPMENT_TEAM=$(DEBUG_TEAM_ID) CODE_SI
 energy-browsers:
 	@scripts/energy_browsers.sh --rounds $(or $(ROUNDS),3) --duration $(or $(DURATION),60) --session $(or $(SESSION),900) $(if $(SCENARIOS),--scenarios '$(SCENARIOS)') $(if $(BROWSERS),--browsers '$(BROWSERS)') $(if $(OUT),--out $(OUT)) $(if $(APP),--app '$(abspath $(APP))')
 
-# One run at a time per machine, whatever the worktree and whichever test host: each already fills every
+# One run at a time per machine by default, whatever the worktree and whichever test host: each already fills every
 # performance core, and concurrent runs' WebKit processes saturate runningboardd until the whole Mac stalls.
+# TEST_SLOTS=2 in Makefile.local lets that many runs go at once and halves each one's workers (TEST_WORKERS): do it
+# only after the runningboardd A/B of docs/build-baseline.md came out clean on your Mac. ext-smoke and ext-e2e use
+# network, keychain and one Store: they take every slot. See scripts/test_slot.sh.
 # The build runs before taking the lock: other worktrees build while one runs its tests.
 TEST_LOCK := lockf -k $(or $(TMPDIR),/tmp/)lilo-swift-test.lock
 CHECK_SUMMARY := python3 scripts/check_summary.py
+TEST_SLOTS ?= 1
+TEST_LOCK := scripts/test_slot.sh $(TEST_SLOTS)
+TEST_LOCK_ALL := scripts/test_slot.sh --all $(TEST_SLOTS)
 # A test that never ends would hold the lock for good: past its allowance, rounded up to the minute, xcodebuild
 # samples it, ends it as failed and goes on. A test that needs longer sets its own executionTimeAllowance.
 TEST_TIMEOUTS := -test-timeouts-enabled YES -default-test-execution-time-allowance 120 -maximum-test-execution-time-allowance 600
@@ -120,12 +126,13 @@ TEST_CONFIG := $(XCODEBUILD) -configuration Debug LILO_BUNDLE_ID_SUFFIX=.tests $
 TEST := $(TEST_LOCK) $(TEST_CONFIG) test-without-building $(TEST_TIMEOUTS)
 # CI (which sets CI) runs a failed test once more and lists it in the job summary; locally a flake fails.
 TEST_RETRY := $(if $(CI),-retry-tests-on-failure -test-iterations 2)
-TEST_WORKERS = $(shell sysctl -n hw.perflevel0.physicalcpu 2>/dev/null || sysctl -n hw.ncpu)
+TEST_WORKERS = $(shell cores=$$(sysctl -n hw.perflevel0.physicalcpu 2>/dev/null || sysctl -n hw.ncpu); echo $$((cores / $(TEST_SLOTS) > 0 ? cores / $(TEST_SLOTS) : 1)))
 
 .PHONY: help site-release-import validate validate-ui linux-checks swiftlint project-sync ui-build ui-watch ui-dev ui-lint ui-test e2e e2e-energy \
 	swift-test swift-test-slow blocker-coverage blocker-bench script-bench speedometer-bench page-bench preload-bench terminal-bench ext-bridge-build ext-bridge-test ext-smoke ext-nightly ext-e2e-passwords ext-e2e-passwords-trust top-extensions top-manifests chrome-surface \
 	chrome-contracts chrome-smoke public-suffix-list app install install-debug xcode-build xcode-build-release \
 	run-ui-dev release release-notarize release-archive dmg dmg-background bridge-gen vt-build vt-build-source vt-zip webkit-fork bootstrap bootstrap-test ui-preview check-commits startup-bench ext-bench energy-sample energy-compare energy-browsers perf-summary perf-compare perf-summary-test check-summary-test agent-app agent-app-stop agent-app-restart agent-call agent-eval agent-eval-test \
+	run-ui-dev release release-notarize release-archive dmg dmg-background bridge-gen vt-build vt-build-source vt-zip webkit-fork bootstrap ui-preview check-commits startup-bench ext-bench energy-sample energy-compare energy-browsers perf-summary perf-compare perf-summary-test lockf-test slot-test agent-call \
 	logs logs-stream site-dev site-dev-stop site-preview site-native-preview site-generate site-check site-fix site-test site-e2e site-release-capture site-capture-server site-capture-deps site-lock site-audit site-add-svelte site-playground-deps site-demo-icons site-deploy site-deploy-check emoji-data password-manager-icons \
 	docs-dev docs-build docs-check docs-test docs-preview docs-deploy-check docs-deploy docs-translate docs-eval docs-lock \
 	hooks-install hooks-test lint-commit-message lint-commits \
@@ -176,6 +183,9 @@ validate: $(UI_DEPS) $(BRIDGE_DEPS) $(SITE_DEPS) $(DOCS_DEPS) $(SWIFTLINT) $(CHA
 	for group in ui-lint ui-test "site-check site-test" "docs-check docs-test" "hooks-test bootstrap-test perf-summary-test check-summary-test agent-eval-test ext-bridge-test swiftlint release-status"; do \
 		name=$${group%% *}; names="$$names $$name"; \
 		$(CHECK_SUMMARY) run $$name "$$logs" -- $(MAKE) -k --no-print-directory $$group & pids="$$pids $$!"; \
+	@logs=$$(mktemp -d); checks=; \
+	for group in ui-lint ui-test "site-check site-test" "docs-check docs-test" "hooks-test perf-summary-test lockf-test slot-test ext-bridge-test swiftlint release-status"; do \
+		name=$${group%% *}; $(MAKE) -k --no-print-directory $$group > "$$logs/$$name.log" 2>&1 & checks="$$checks $$!:$$name"; \
 	done; \
 	$(CHECK_SUMMARY) run bridge-build "$$logs" -- $(MAKE) --no-print-directory $(BRIDGE_STAMP) & bridge=$$!; \
 	$(CHECK_SUMMARY) run ui-build "$$logs" -- $(MAKE) --no-print-directory $(UI_STAMP); ui=$$?; wait $$bridge; bridge=$$?; \
@@ -453,7 +463,7 @@ ext-bridge-test: $(BRIDGE_DEPS)
 
 ## Install the most used Chrome Web Store extensions and the MV3 probe in parallel runs, and check they run and what a few do on a page (network; TOP=100 IDS=a,b SHARDS=6)
 ext-smoke: vt-build $(BRIDGE_STAMP) $(UI_STAMP) $(CHROME_UI_ASSETS) $(NATIVE_STRINGS)
-	@$(TEST_LOCK) node scripts/ext-smoke.mjs --top '$(or $(TOP),100)' --ids '$(IDS)' --shards '$(or $(SHARDS),6)'
+	@$(TEST_LOCK_ALL) node scripts/ext-smoke.mjs --top '$(or $(TOP),100)' --ids '$(IDS)' --shards '$(or $(SHARDS),6)'
 
 ## Unattended ext-smoke of the top 500 (TOP=1000 for every listed one); report in .derived.noindex/ext-smoke/report.txt, non-zero exit on a regression
 ext-nightly:
@@ -467,7 +477,7 @@ ext-smoke-pr:
 ext-e2e-passwords: vt-build $(BRIDGE_STAMP) $(UI_STAMP) $(CHROME_UI_ASSETS) $(NATIVE_STRINGS) $(VAULTWARDEN)
 	@security verify-cert -q -c $(VAULTWARDEN_CERT) -p ssl -s 127.0.0.1 >/dev/null 2>&1 \
 		|| { echo "make ext-e2e-passwords: no trusted, unexpired $(VAULTWARDEN_CERT): run make ext-e2e-passwords-trust once." >&2; exit 1; }
-	@NODE_EXTRA_CA_CERTS='$(abspath $(VAULTWARDEN_CERT))' $(TEST_LOCK) node scripts/ext-e2e-passwords.mjs '$(abspath $(VAULTWARDEN))' '$(abspath $(VAULTWARDEN_CERT))'
+	@NODE_EXTRA_CA_CERTS='$(abspath $(VAULTWARDEN_CERT))' $(TEST_LOCK_ALL) node scripts/ext-e2e-passwords.mjs '$(abspath $(VAULTWARDEN))' '$(abspath $(VAULTWARDEN_CERT))'
 
 # Valid 397 days, the most macOS accepts for a TLS server certificate: one about to expire is made again, and trusted again.
 ## Make ext-e2e-passwords' 127.0.0.1 certificate and trust it for SSL in the login keychain, once (macOS asks for your password; CI: the system keychain)
@@ -720,6 +730,10 @@ perf-summary-test:
 ## Test the quiet check summary behind validate
 check-summary-test:
 	@python3 scripts/check_summary_test.py -q
+
+## Test the slot locks that keep test runs to TEST_SLOTS at a time (stub commands, no xcodebuild)
+slot-test:
+	@scripts/test_slot.test.sh
 
 # --info --debug are required: os_log info/debug messages are memory-only and absent from `log show` without them.
 ## Dump the app log to lilo-log.txt (SINCE=15m OUT=path)
