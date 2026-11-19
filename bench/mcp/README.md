@@ -150,6 +150,52 @@ commander window; `launchctl asuser` only re-enters the same user's session, and
 second account with fast user switching; a virtual display hides the window but not the focus, which is per
 session, not per display.
 
+## Headless runs
+
+The owner's Mac is also the machine the fixtures run on, so a run must not take the keyboard, the mouse or a
+Space. `make agent-app`, and so `make agent-eval` and `make agent-call`, start the Debug app headless
+(`LILO_HEADLESS=1`); `HEADLESS=0` opts out and shows the window as before. Only a Debug build reads the
+variable.
+
+What headless changes (`Lilo/App/LiloApplication.swift`, `AppDelegate.swift`, `LiloWindow`): the app runs as an
+accessory app (no Dock icon, no menu bar), `NSApp.activate` is a no-op, and its windows are transparent
+(alpha 0), clickless, hidden from Mission Control and never key or main. Everything the agent does goes
+through the web views, which stay in those windows, so no tool needed more.
+
+Measured on a Mac with another app frontmost, the frontmost app read every 100 ms (`NSWorkspace`) and the
+debug app's windows listed by the window server (`CGWindowListCopyWindowInfo`):
+
+| What | Takes focus? | Evidence |
+| --- | --- | --- |
+| Launch, `HEADLESS=0` (default of the app) | Yes, by construction | Not measured live: it would take the owner's focus. `AppDelegate.applicationDidFinishLaunching` sets the policy to regular, `makeKeyAndOrderFront` and `NSApp.activate(ignoringOtherApps: true)` |
+| Launch, `make agent-app` (headless) | No | Policy `accessory` (`lsappinfo`: `UIElement`), not active, frontmost app unchanged, windows at alpha 0 |
+| Agent opens tabs and windows | No | The new-tab fixture passes headless; agent tabs live in the Agents space or in an off-screen parking window at (-20000, 20156), alpha 0. `tabRequestsForeground` already ignores agent tabs |
+| Native clicks, drag, keys, scroll | No | `AgentInput` hands `NSEvent`s straight to the `WKWebView` (`mouseDown`, `keyDown`), never through window routing. 15 of 16 fixtures pass with a non-key window, among them drag-reorder, contenteditable, custom-combobox, hover-menu and date-input |
+| `make agent-eval`, 16 fixtures | No | One frontmost app for the whole run (about 3.5 minutes), 15 of 16 pass (stale-list failed on the agent's behavior: two `done` reports) |
+| `make swift-test` | No | `PageWorldTests` and `AgentInputTests` ran with the frontmost app unchanged; the test host runs `.prohibited` under XCTest (`AppDelegate.main`) |
+| `make e2e` | No, by configuration | Playwright's `chrome-headless-shell`, not the app; not measured live because that browser was not installed on the measuring Mac |
+
+Native events need a window, not a key window. `AgentInput` reads `webView.window` for the window number of
+every event and for the screen point of a scroll, so a web view in no window gets no native scroll; agent tabs
+of a space no window shows are therefore parked in an off-screen window. A headless window is not key, so
+`document.hasFocus()` reads false there (measured; `visibilityState` stays `visible`): a page that gates on
+it behaves as in a background tab, and no fixture does. Tools that only run script, read the page or
+screenshot never need a window, and a plain Swift script driving an off-screen `WKWebView` checked the
+fixtures' pages with their solutions in JavaScript (no native events), which is the fallback when no app is
+wanted at all.
+
+What stays outside headless: a system sheet or an alert the app itself raises (a keychain prompt, a file open
+panel, the first notification permission) is modal and takes focus whatever the policy; the Little window,
+Picture in Picture panels and extension popups set their own levels and are not hidden; `HEADLESS=0` is the
+way to watch a run. The visible Chromium of `TOOL=playwright` and the Chrome of `TOOL=chrome-devtools`
+(`--isolated` is headed) are other tools' windows, left alone.
+
+Options weighed and not taken: `LSUIElement` in `Info.plist` is the accessory policy fixed at build time, so it
+would reach Release builds; `.prohibited` (what the test host uses) cannot show a window, and the agent needs a
+commander window; `launchctl asuser` only re-enters the same user's session, and a second login session needs a
+second account with fast user switching; a virtual display hides the window but not the focus, which is per
+session, not per display.
+
 ## Not comparable with the published leaderboard
 
 These scores compare tools within our runs only. They are not comparable with Browser Use's
