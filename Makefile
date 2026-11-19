@@ -203,7 +203,7 @@ validate-ui: ui-lint ui-test ui-build
 
 # `validate` without the Xcode build and Swift tests: every other group, in order. Runs on macOS too.
 ## Run every check that needs no Xcode: UI, website, docs, bridge, hooks, release and Swift lint (what Linux can run)
-linux-checks: ui-lint ui-test site-check site-test docs-check docs-test hooks-test perf-summary-test lockf-test ext-bridge-test swiftlint release-status
+linux-checks: ui-lint ui-test site-check site-test docs-check docs-test hooks-test perf-summary-test retried-tests-test metrics-test ci-metrics-test lockf-test ext-bridge-test swiftlint release-status
 
 ## Run Swift lint only
 swiftlint: $(SWIFTLINT)
