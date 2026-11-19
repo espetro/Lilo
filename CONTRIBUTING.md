@@ -88,6 +88,10 @@ Developer mode is one of those checks: without `sudo DevToolsSecurity -enable`, 
 host with `INTERNAL ERROR: childPID > 0`, once its cached debugger authorization expires.
 The Metal toolchain is a separate Apple-ID-authenticated download of a few GB (`xcodebuild -downloadComponent MetalToolchain`, about 10 minutes).
 
+Every `make` build shares one compilation cache, `~/.cache/lilo/xcc` (capped at 10 GB by `XCC_LIMIT`,
+in bytes), so a new worktree's first build reuses what another compiled. Delete the folder to reset
+it; Xcode's own builds and CI don't use it.
+
 ### Interface only
 
 To work on the sidebar, the command bar, settings or onboarding, Node.js is enough:
@@ -123,7 +127,7 @@ Xcode) and the test host never touch its data:
 |-------|-----------|------|
 | Release | `fr.arouillard.lilo` | `~/Library/Application Support/Lilo` |
 | Debug | `fr.arouillard.lilo.debug` | `~/Library/Application Support/Lilo-Debug` |
-| `make swift-test` host | `fr.arouillard.lilo.tests` | temporary folders per test |
+| `make swift-test` host | `fr.arouillard.lilo.tests` | temporary folders per test, and `.derived.noindex/test-data` in the worktree for what falls back to the default folder |
 
 The bundle id also separates the preferences (`~/Library/Preferences/<bundle id>.plist`), the
 WebKit data (`~/Library/WebKit/<bundle id>`) and the launch-at-login item;
@@ -131,6 +135,12 @@ WebKit data (`~/Library/WebKit/<bundle id>`) and the launch-at-login item;
 power helper's launch daemon). `LILO_APP_SUPPORT_DIR` overrides the data folder, agent socket
 included. Tests wipe the WebKit stores they create when the run ends, and the next run removes
 what an interrupted one left under `~/Library/WebKit/fr.arouillard.lilo.tests`.
+
+`make` sets `LILO_APP_SUPPORT_DIR` for the test host (through `TEST_RUNNER_LILO_APP_SUPPORT_DIR`, which
+`xcodebuild` passes on) to `.derived.noindex/test-data`, so two worktrees' test runs never share a
+database or an agent socket; delete the folder to start from nothing. CI keeps the default. The
+keychain is not per worktree: an ad-hoc signed host asks once more for the WebCrypto key in each
+worktree, which a stable signing identity (`LILO_DEBUG_TEAM_ID`, above) avoids.
 
 ## Development workflow
 

@@ -56,8 +56,24 @@ VAULTWARDEN_SRC := build/vaultwarden-$(VAULTWARDEN_VERSION)-src
 # Bitwarden talks to its server over HTTPS only: a self-signed certificate valid for 127.0.0.1 alone, which
 # ext-e2e-passwords-trust has the keychain trust once.
 VAULTWARDEN_CERT := build/vaultwarden-tls/cert.pem
+# The Xcode compilation cache, shared by every worktree: a fresh derived data path starts from this instead of
+# compiling from scratch. Only make-driven builds use it (not the xcconfig), so the IDE keeps its index store.
+# Cache keys include output paths, so reuse is partial; the limit (bytes) bounds the growth.
+XCC_DIR ?= $(HOME)/.cache/lilo/xcc
+XCC_LIMIT ?= 10737418240
+export XCC_DIR XCC_LIMIT
+# CI's runners start empty and have no cache for it yet: it keeps Xcode's defaults.
+XCC_SETTINGS := $(if $(CI),,COMPILATION_CACHE_ENABLE_CACHING=YES COMPILATION_CACHE_CAS_PATH=$(XCC_DIR) COMPILATION_CACHE_LIMIT_SIZE=$(XCC_LIMIT) COMPILER_INDEX_STORE_ENABLE=NO)
+# The package checkouts (GRDB, Sparkle: about 480 MB) are cloned once per Package.resolved, not once per worktree:
+# keyed by its hash, two worktrees with different pins never share a folder. CI caches its own copy, so it keeps
+# the default one.
+SPM_PACKAGES_DIR ?= $(HOME)/.cache/lilo/spm-$(shell shasum -a 256 Lilo.xcodeproj/project.xcworkspace/xcshareddata/swiftpm/Package.resolved | cut -d' ' -f1)
+SPM_SETTINGS := $(if $(CI),,-clonedSourcePackagesDirPath $(SPM_PACKAGES_DIR) -onlyUsePackageVersionsFromResolvedFile)
+# Handed to ext-smoke and ext-e2e-passwords, which run their own xcodebuild in the same derived data: differing settings
+# would rebuild the app each time they follow a make build.
+export LILO_XCODEBUILD_EXTRA := $(SPM_SETTINGS) $(XCC_SETTINGS)
 # Inside the checkout, so a worktree's build goes with the worktree instead of staying in ~/Library.
-XCODEBUILD := xcodebuild -project Lilo.xcodeproj -scheme Lilo -destination 'platform=macOS' -derivedDataPath $(CURDIR)/.derived.noindex/xcode
+XCODEBUILD := xcodebuild -project Lilo.xcodeproj -scheme Lilo -destination 'platform=macOS' -derivedDataPath $(CURDIR)/.derived.noindex/xcode $(SPM_SETTINGS) $(XCC_SETTINGS)
 # They wait out real clocks (a worker's 30 s unload, a controller's first 5 s, a terminal's 5 s between
 # line counts): about 100 s together. The ruleset compile takes a second alone, but WebKit starves it while
 # the other test runs keep every core busy: past its 120 s bound, it only skips.
@@ -84,6 +100,12 @@ TEST_LOCK := lockf -k $(or $(TMPDIR),/tmp/)lilo-swift-test.lock
 # A test that never ends would hold the lock for good: past its allowance, rounded up to the minute, xcodebuild
 # samples it, ends it as failed and goes on. A test that needs longer sets its own executionTimeAllowance.
 TEST_TIMEOUTS := -test-timeouts-enabled YES -default-test-execution-time-allowance 120 -maximum-test-execution-time-allowance 600
+# The test host's data folder (database, agent socket, downloads) is per worktree: two worktrees' runs would
+# otherwise share Lilo-Debug's database and socket. xcodebuild gives the test host the TEST_RUNNER_ variables as
+# LILO_APP_SUPPORT_DIR; a build setting of that name would not reach it. CI runs one job per machine and keeps the default.
+ifndef CI
+export TEST_RUNNER_LILO_APP_SUPPORT_DIR ?= $(CURDIR)/.derived.noindex/test-data
+endif
 TEST_CONFIG := $(XCODEBUILD) -configuration Debug LILO_BUNDLE_ID_SUFFIX=.tests $(DEBUG_SIGNING)
 TEST := $(TEST_LOCK) $(TEST_CONFIG) test-without-building $(TEST_TIMEOUTS)
 # CI (which sets CI) runs a failed test once more and lists it in the job summary; locally a flake fails.

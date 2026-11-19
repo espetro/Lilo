@@ -22,7 +22,8 @@ const team = process.env.LILO_DEBUG_TEAM_ID || process.env.LILO_TEAM_ID;
 const signing = team ? [`DEVELOPMENT_TEAM=${team}`, `CODE_SIGN_IDENTITY=${process.env.LILO_DEBUG_CODE_SIGN_IDENTITY || 'Apple Development'}`, 'CODE_SIGN_STYLE=Manual'] : [];
 const xcodebuild = ['-project', 'Lilo.xcodeproj', '-scheme', 'Lilo', '-configuration', 'Debug', '-destination', 'platform=macOS',
   '-derivedDataPath', join(root, '.derived.noindex/xcode'),
-  'LILO_BUNDLE_ID_SUFFIX=.tests', ...signing];
+  'LILO_BUNDLE_ID_SUFFIX=.tests', ...signing,
+  ...(process.env.LILO_XCODEBUILD_EXTRA ?? '').split(' ').filter(Boolean)];
 const start = Date.now();
 const build = spawnSync('xcodebuild', ['build-for-testing', ...xcodebuild, '-quiet'], { cwd: root, stdio: 'inherit' });
 if (build.status !== 0) process.exit(build.status ?? 1);
