@@ -23,6 +23,7 @@ stub xcrun '[ "${STUB_METAL:-1}" = 1 ]'
 stub DevToolsSecurity 'echo "Developer mode is currently ${STUB_DEV:-enabled}."'
 stub node 'echo "${STUB_NODE:-v24.0.0}"'
 stub curl '[ "${STUB_CURL:-1}" = 1 ]'
+stub pnpm 'echo "${STUB_PNPM:-12.16.1}"; [ "${STUB_PNPM:-1}" != none ]'
 stub zig 'echo 0.16.0'
 stub make 'echo "MAKE-NOISE"; echo "$*" >> "$STUB_LOG"'
 export STUB_LOG="$T/make.log"
@@ -72,6 +73,10 @@ expect_makes 0
 contains "free some disk space"
 
 # A missing tool is exit 2; a person's action outranks it.
+run 2 STUB_PNPM=none -- "deps" "build" "sites"
+expect_makes 0
+contains "corepack enable"
+
 run 2 STUB_NODE=v20.0.0 -- "deps" "build" "sites"
 expect_makes 0
 run 3 STUB_NODE=v20.0.0 STUB_METAL=0 -- "deps" "build" "sites"

@@ -1,7 +1,7 @@
 #!/bin/bash
 # make bootstrap: checks everything building Lilo needs, and only then installs anything.
 # Usage: bootstrap.sh [--with-sites] [--json] <deps-targets> <build-targets> [<site-targets>]
-#   deps-targets   make targets installing the npm dependencies of the interface and the bridge
+#   deps-targets   make targets installing the JavaScript dependencies of the interface and the bridge
 #   build-targets  make targets building the rest (libghostty-vt, bundles, SwiftLint, XcodeGen)
 #   site-targets   make targets installing the website, docs and Changie tools, run with --with-sites
 # Exit codes: 0 ready; 1 a make step failed; 2 a tool is missing and installs without an account
@@ -104,6 +104,14 @@ if [ -n "$node_version" ] && [ "$(printf '%s\n' "$wanted_node" "${node_version#v
 else
     check node missing "Node.js $wanted_node or later, as the packages require (found: ${node_version:-none})" \
         "install it with nvm (nvm install, which reads .nvmrc), fnm, mise, or from https://nodejs.org"
+fi
+
+# The version the root package.json pins is Corepack's to fetch; any other pnpm refuses to install.
+if pnpm -v >/dev/null 2>&1; then
+    check pnpm ok "pnpm $(pnpm -v)"
+else
+    check pnpm missing "pnpm, which the web projects install with" \
+        "corepack enable (it comes with Node.js 22), or mise install"
 fi
 
 need_gb=${LILO_BOOTSTRAP_DISK_GB:-5}
