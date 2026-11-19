@@ -364,14 +364,26 @@ final class AgentControl {
         }
     }
 
+    #if DEBUG
+    /// Unattended harness runs: nobody is there to answer a click's question. `LILO_AGENT_CLICKS=allow|deny`
+    /// answers it yes or no at once (no is the `needs_user` of a user who declined, without the wait); unset,
+    /// `LILO_AGENT_ALLOW_ALL=1` means allow. Nil asks the user. A Release build never reads either.
+    static func debugClickAnswer(_ environment: [String: String] = ProcessInfo.processInfo.environment) -> Bool? {
+        switch environment["LILO_AGENT_CLICKS"] {
+        case "allow": return true
+        case "deny": return false
+        default: return environment["LILO_AGENT_ALLOW_ALL"] == "1" ? true : nil
+        }
+    }
+    #endif
+
     /// Asked in every window's address-bar drawer, which leaves the user's typing alone; the Dock icon
     /// bounces when Lilo is in the background. Nil when nothing could ask, or unanswered after `timeout`, or cancelled.
     func askConsent(
         _ name: String, executable: String = "", profileName: String? = nil, action: [String: String]? = nil, timeout: TimeInterval = 120
     ) async -> Bool? {
         #if DEBUG
-        // Unattended harness runs: nobody is there to answer a click's question either.
-        if action != nil, ProcessInfo.processInfo.environment["LILO_AGENT_ALLOW_ALL"] == "1" { return true }
+        if action != nil, let answer = Self.debugClickAnswer() { return answer }
         #endif
         guard let windows = context?.windows.windows, !windows.isEmpty else { return nil }
         let requestId = UUID().uuidString
