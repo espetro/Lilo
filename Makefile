@@ -511,7 +511,7 @@ release-notarize: vt-build $(UI_STAMP) $(BRIDGE_STAMP) $(if $(WEBKIT_FORK_URL),w
 	@scripts/build-app.sh release notarize
 
 # CI's release path: the UI is built or restored beforehand and the committed bridge bundles are checked
-# against bridge-src on main, so neither needs npm here.
+# against bridge-src on main, so neither installs anything here.
 ## Archive and export the release app from the UI already built (CI)
 release-archive: release-media-stage vt-build $(CHROME_UI_ASSETS) $(NATIVE_STRINGS) $(if $(WEBKIT_FORK_URL),webkit-fork)
 	@scripts/build-app.sh release
