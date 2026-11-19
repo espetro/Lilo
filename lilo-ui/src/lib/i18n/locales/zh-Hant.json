@@ -211,6 +211,17 @@
 			"more": "另有 {count} 項。請搜尋以縮小範圍。"
 		},
 		"items": {
+			"customAgent": {
+				"title": "自訂代理",
+				"description": "將你自己的程式作為代理啟動，與登錄庫中的代理並列。",
+				"keywords": "自訂 代理 指令 acp 本機 腳本 環境 變數 引數",
+				"name": "名稱",
+				"namePlaceholder": "我的代理",
+				"executable": "指令",
+				"arguments": "引數，每行一個",
+				"environment": "環境，每行 NAME=值",
+				"note": "指令是可執行檔的完整路徑，該檔案透過標準輸入輸出使用 Agent Client Protocol。儲存後它會加入代理清單；清空指令即可移除。"
+			},
 			"appIcon": {
 				"title": "App 圖像",
 				"description": "只有「經典」會配合 macOS 的深色、色調與透明圖像樣式。"
@@ -496,6 +507,11 @@
 				"title": "傳送、付款、刪除或發佈前先詢問",
 				"description": "代理程式會等待你的回應。",
 				"keywords": "代理程式 核准 確認 付款 購買 訂單 刪除 傳送 發佈"
+			},
+			"agentActionLog": {
+				"title": "記錄代理程式的操作",
+				"description": "本機檔案逐條列出每次呼叫,絕不包含輸入的文字或頁面內容。",
+				"keywords": "代理程式 日誌 歷史 稽核 操作 重播"
 			},
 			"agentAlwaysAllowed": {
 				"title": "一律允許",
@@ -2456,6 +2472,8 @@
 		"%@ did not match its checksum and was not installed.": "%@ 的檢查碼不符，未安裝。",
 		"%@ needs Node.js: install it from nodejs.org, then try again.": "%@ 需要 Node.js：請從 nodejs.org 安裝，然後再試一次。",
 		"%@ needs uv: install it from astral.sh/uv, then try again.": "%@ 需要 uv：請從 astral.sh/uv 安裝，然後再試一次。",
+		"%@ must be the full path of an executable file: %@": "%@ 必須是可執行檔的完整路徑：%@",
+		"%@ has an environment line that is not NAME=value: %@": "%@ 有一行環境設定不是 NAME=值 的格式：%@",
 		"Choose": "選擇",
 		"New Conversation": "新對話",
 		"Screenshot of %@": "%@ 的截圖",

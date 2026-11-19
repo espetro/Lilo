@@ -211,6 +211,17 @@
 			"more": "{count} weitere. Grenze die Liste mit der Suche ein."
 		},
 		"items": {
+			"customAgent": {
+				"title": "Eigener Agent",
+				"description": "Starte ein eigenes Programm als Agent, neben denen der Registry.",
+				"keywords": "eigener agent befehl acp lokal skript umgebung variablen argumente",
+				"name": "Name",
+				"namePlaceholder": "Mein Agent",
+				"executable": "Befehl",
+				"arguments": "Argumente, eines pro Zeile",
+				"environment": "Umgebung, NAME=Wert pro Zeile",
+				"note": "Der Befehl ist der vollständige Pfad einer ausführbaren Datei, die das Agent Client Protocol über Standardeingabe und -ausgabe spricht. Nach dem Sichern erscheint er in der Agentenliste; ein leerer Befehl entfernt ihn."
+			},
 			"appIcon": {
 				"title": "App-Symbol",
 				"description": "Nur „Klassisch“ unterstützt die macOS-Symbolstile „Dunkel“, „Eingefärbt“ und „Transparent“."
@@ -496,6 +507,11 @@
 				"title": "Vor Senden, Bezahlen, Löschen oder Veröffentlichen fragen",
 				"description": "Der Agent wartet auf deine Antwort.",
 				"keywords": "agent erlaubnis bestätigen zahlung kauf bestellung löschen senden veröffentlichen"
+			},
+			"agentActionLog": {
+				"title": "Protokoll der Agentenaktionen führen",
+				"description": "Eine lokale Datei listet jeden Aufruf, nie eingegebenen Text oder Seiteninhalt.",
+				"keywords": "agent protokoll verlauf audit aktionen wiedergabe"
 			},
 			"agentAlwaysAllowed": {
 				"title": "Immer erlaubt",
@@ -2456,6 +2472,8 @@
 		"%@ did not match its checksum and was not installed.": "%@ stimmte nicht mit seiner Prüfsumme überein und wurde nicht installiert.",
 		"%@ needs Node.js: install it from nodejs.org, then try again.": "%@ benötigt Node.js: Installiere es von nodejs.org und versuche es dann erneut.",
 		"%@ needs uv: install it from astral.sh/uv, then try again.": "%@ benötigt uv: Installiere es von astral.sh/uv und versuche es dann erneut.",
+		"%@ must be the full path of an executable file: %@": "%@ muss der vollständige Pfad einer ausführbaren Datei sein: %@",
+		"%@ has an environment line that is not NAME=value: %@": "%@ hat eine Umgebungszeile, die nicht NAME=Wert lautet: %@",
 		"Choose": "Auswählen",
 		"New Conversation": "Neue Unterhaltung",
 		"Screenshot of %@": "Bildschirmfoto von %@",
