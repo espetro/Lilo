@@ -257,3 +257,41 @@ Not measured: the two concurrent `swift-test` lanes with `lsof` on the database 
 `make swift-test` cannot run on this Mac (`xcodebuild` fails to load its CoreSimulator plug-in), so there was no test host to inspect.
 Checked instead: with a throwaway makefile that includes the real one, a recipe sees the variable set to the worktree's folder, and sees nothing with `CI=1`.
 `BuildIdentityTests` unsets and restores the override itself; its assertion on the default socket path is skipped when the process started with an override, because that URL is computed once per process.
+
+## 2026-11-18, Stage 2 PR 5: test slot locks
+
+What changed: the machine-global test lock is now `scripts/test_slot.sh`, which holds one of `TEST_SLOTS` locks (`lilo-swift-test.lock`, `lilo-swift-test-2.lock`, and so on).
+`TEST_SLOTS` defaults to 1, where the script runs exactly `lockf -k lilo-swift-test.lock <command>` as before: same lock file, same waiting, same 4 workers on this Mac.
+Only a `TEST_SLOTS := 2` in `Makefile.local` changes anything: two runs go at once, `TEST_WORKERS` halves, and `ext-smoke` and `ext-e2e-passwords` take every slot, so they still run alone.
+`make slot-test` (also in `make validate`) checks it with stub commands in about 3 s: the exit code comes through, the first slot is the old lock file, three runs overlap two at a time at most, a command exiting 75 (lockf's "slot taken") is not mistaken for a taken slot, and `--all` and a lane exclude each other.
+
+Not measured, and a prerequisite: the runningboardd A/B (`log stream --predicate 'sender == "runningboardd"'` during one solo run, then two slot-locked runs at `TEST_WORKERS=2`, plus the pre-retry failure rate staying flat).
+It needs a test host, and `make swift-test` cannot run on this Mac (`xcodebuild` fails to load its CoreSimulator plug-in; the Metal toolchain is missing too).
+The plan's expected throughput gain at two lanes (about 1.7x) is therefore unmeasured here and not promised: on 8 GB the lanes may be RAM-bound.
+Nobody should raise `TEST_SLOTS`, and the change should not go upstream, before that A/B has been run on a Mac that can run the tests and its result is appended here.
+
+## 2026-11-18, Stage 2 PR 6: scoped validation
+
+What changed: `make validate-scope` runs `scripts/scope_checks.sh`, which maps the diff against `origin/main` (merge base, work tree and new files included) to check targets, then runs only those.
+The code split is the one of CI's `changes` job; `make scope-test` (also in `make validate`) reads the regex out of `build.yml` and fails if the two disagree.
+A diff of `lilo-ui/` alone runs `ui-lint ui-test`; of the website, `site-check site-test`; of `docs-site/`, `docs-check docs-test`; of `docs/`, other Markdown and release notes, `release-status` only.
+A change to the docs reference generator's input paths in `lilo-ui/` (the settings model, the `en` and `fr` catalogs) adds `docs-check docs-test`.
+Everything else, including `COMPATIBILITY.md`, an empty diff and a base git cannot read, is `make validate`, as in CI.
+Because each check depends only on its own `node_modules`, a scoped run installs only those; `make validate` always installs all four.
+Deviation from the plan: no `GROUPS` variable in the Makefile, since the script prints the targets and the existing prerequisites do the pruning.
+
+Measured on a fresh worktree (nothing installed), wall time and `df` delta of the run from `npm ci` to the end, Node 22.23.4 through `mise exec`:
+
+| Synthetic diff | Runs | Wall | Installed (`df` delta, `node_modules` alone) |
+|---|---|---|---|
+| UI only | `ui-lint ui-test` | 15 s | 287 MB (132 MB) |
+| `docs-site/` only | `docs-check docs-test` | 19 s | 1083 MB (828 MB) |
+| Website only | `site-check site-test` | 25 s | 1034 MB (584 MB) |
+| Swift only | `make validate` | not measured | the four trees below, 1.58 GB |
+| Today, any diff | `make validate` | not measured | 1.58 GB: `lilo-ui` 132 MB, bridge 40 MB, `site` 584 MB, `docs-site` 828 MB |
+
+The bridge tests alone took 3 s and 92 MB (`df`).
+The JS groups of `make validate` run one after another cold would take about 62 s (15 + 19 + 25 + 3); that sum leaves out the Swift lint, the app build and the Swift tests, which could not run here (`xcodebuild` fails to load its CoreSimulator plug-in), so the full validate wall time and the speed-up of a scoped run over it are not measured.
+For a Swift-only diff the scope is `full` by design: no saving, and no risk.
+Dry runs (`make -n validate-scope BASE=<commit>` in a throwaway clone with a synthetic commit) show the install lines each diff triggers: UI only, `npm --prefix lilo-ui ci` and nothing else; `docs-site/` only, `npm --prefix docs-site ci --ignore-scripts` and nothing else; Swift only, all four trees and `xcodebuild`.
+Side finding: with the machine's default Node 26.13.1, `make ui-test` aborts (`Abort trap: 6`, no output) on an untouched tree; `mise exec -- make ...` uses the pinned 22.23.4 and passes (654/654).
