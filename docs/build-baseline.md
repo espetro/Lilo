@@ -44,3 +44,15 @@ Not measured: the two concurrent `swift-test` lanes with `lsof` on the database 
 `make swift-test` cannot run on this Mac (`xcodebuild` fails to load its CoreSimulator plug-in), so there was no test host to inspect.
 Checked instead: with a throwaway makefile that includes the real one, a recipe sees the variable set to the worktree's folder, and sees nothing with `CI=1`.
 `BuildIdentityTests` unsets and restores the override itself; its assertion on the default socket path is skipped when the process started with an override, because that URL is computed once per process.
+
+## 2026-11-18, Stage 2 PR 5: test slot locks
+
+What changed: the machine-global test lock is now `scripts/test_slot.sh`, which holds one of `TEST_SLOTS` locks (`lilo-swift-test.lock`, `lilo-swift-test-2.lock`, and so on).
+`TEST_SLOTS` defaults to 1, where the script runs exactly `lockf -k lilo-swift-test.lock <command>` as before: same lock file, same waiting, same 4 workers on this Mac.
+Only a `TEST_SLOTS := 2` in `Makefile.local` changes anything: two runs go at once, `TEST_WORKERS` halves, and `ext-smoke` and `ext-e2e-passwords` take every slot, so they still run alone.
+`make slot-test` (also in `make validate`) checks it with stub commands in about 3 s: the exit code comes through, the first slot is the old lock file, three runs overlap two at a time at most, a command exiting 75 (lockf's "slot taken") is not mistaken for a taken slot, and `--all` and a lane exclude each other.
+
+Not measured, and a prerequisite: the runningboardd A/B (`log stream --predicate 'sender == "runningboardd"'` during one solo run, then two slot-locked runs at `TEST_WORKERS=2`, plus the pre-retry failure rate staying flat).
+It needs a test host, and `make swift-test` cannot run on this Mac (`xcodebuild` fails to load its CoreSimulator plug-in; the Metal toolchain is missing too).
+The plan's expected throughput gain at two lanes (about 1.7x) is therefore unmeasured here and not promised: on 8 GB the lanes may be RAM-bound.
+Nobody should raise `TEST_SLOTS`, and the change should not go upstream, before that A/B has been run on a Mac that can run the tests and its result is appended here.
