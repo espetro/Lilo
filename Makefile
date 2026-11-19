@@ -127,10 +127,10 @@ TEST := $(TEST_LOCK) $(TEST_CONFIG) test-without-building $(TEST_TIMEOUTS)
 TEST_RETRY := $(if $(CI),-retry-tests-on-failure -test-iterations 2)
 TEST_WORKERS = $(shell cores=$$(sysctl -n hw.perflevel0.physicalcpu 2>/dev/null || sysctl -n hw.ncpu); echo $$((cores / $(TEST_SLOTS) > 0 ? cores / $(TEST_SLOTS) : 1)))
 
-.PHONY: help site-release-import validate validate-scope validate-ui linux-checks swiftlint project-sync ui-build ui-watch ui-dev ui-lint ui-test e2e e2e-energy \
+.PHONY: help site-release-import validate validate-scope validate-ui check check-staged ui-check swiftlint-changed sync-check linux-checks swiftlint project-sync ui-build ui-watch ui-dev ui-lint ui-test e2e e2e-energy \
 	swift-test swift-test-slow blocker-coverage blocker-bench script-bench speedometer-bench page-bench preload-bench terminal-bench ext-bridge-build ext-bridge-test ext-smoke ext-nightly ext-e2e-passwords ext-e2e-passwords-trust top-extensions top-manifests chrome-surface \
 	chrome-contracts chrome-smoke public-suffix-list app install install-debug xcode-build xcode-build-release \
-	run-ui-dev release release-notarize release-archive dmg dmg-background bridge-gen vt-build vt-build-source vt-zip webkit-fork bootstrap bootstrap-test ui-preview check-commits startup-bench ext-bench energy-sample energy-compare energy-browsers perf-summary perf-compare perf-summary-test retried-tests-test lockf-test slot-test scope-test metrics metrics-on metrics-off metrics-test ci-metrics ci-metrics-test check-summary-test agent-app agent-call agent-eval agent-eval-test \
+	run-ui-dev release release-notarize release-archive dmg dmg-background bridge-gen vt-build vt-build-source vt-zip webkit-fork bootstrap bootstrap-test ui-preview check-commits startup-bench ext-bench energy-sample energy-compare energy-browsers perf-summary perf-compare perf-summary-test retried-tests-test lockf-test slot-test scope-test tier-test metrics metrics-on metrics-off metrics-test ci-metrics ci-metrics-test check-summary-test agent-app agent-call agent-eval agent-eval-test \
 	logs logs-stream site-dev site-dev-stop site-preview site-native-preview site-generate site-check site-fix site-test site-e2e site-release-capture site-capture-server site-capture-deps site-lock site-audit site-add-svelte site-playground-deps site-demo-icons site-deploy site-deploy-check emoji-data password-manager-icons \
 	docs-dev docs-build docs-check docs-test docs-preview docs-deploy-check docs-deploy docs-translate docs-eval docs-lock \
 	hooks-install hooks-test lint-commit-message lint-commits \
@@ -178,7 +178,7 @@ bootstrap-test:
 ## Run UI, website and docs checks, Swift lint/tests, the app build, bridge and hook checks and release version checks
 validate: $(UI_DEPS) $(BRIDGE_DEPS) $(SITE_DEPS) $(DOCS_DEPS) $(SWIFTLINT) $(CHANGIE)
 	@export LILO_CHECK_SCOPE=$${LILO_CHECK_SCOPE:-full}; logs=$$(mktemp -d); names=; pids=; \
-	for group in ui-lint ui-test "site-check site-test" "docs-check docs-test" "hooks-test bootstrap-test perf-summary-test retried-tests-test lockf-test slot-test scope-test metrics-test ci-metrics-test check-summary-test agent-eval-test ext-bridge-test swiftlint release-status"; do \
+	for group in ui-lint ui-test "site-check site-test" "docs-check docs-test" "hooks-test bootstrap-test perf-summary-test retried-tests-test lockf-test slot-test scope-test tier-test metrics-test ci-metrics-test check-summary-test agent-eval-test ext-bridge-test swiftlint release-status"; do \
 		name=$${group%% *}; names="$$names $$name"; \
 		$(CHECK_SUMMARY) run $$name "$$logs" -- $(MAKE) -k --no-print-directory $$group & pids="$$pids $$!"; \
 	done; \
@@ -209,12 +209,35 @@ validate-scope:
 	$(CHECK_SUMMARY) report $(if $(JSON),--json) "$$logs" $$checks; status=$$?; \
 	/bin/rm -rf "$$logs"; exit $$status
 
+# The quick tiers (scripts/check_tier.sh): no builds, fail at the first check, the checks chosen from the changed files.
+## Run the quick checks the diff against origin/main needs, under 10 s, no builds (BASE=ref): lint and the tests beside the changed files
+check:
+	@scripts/check_tier.sh check $(BASE)
+
+## Run the pre-commit checks on the staged files: lint, generated files and Lilo.xcodeproj in sync (what the pre-commit hook runs)
+check-staged:
+	@scripts/check_tier.sh commit
+
+## eslint on the changed UI files and the tests beside them (LILO_CHECK_FILES, empty for all; LILO_CHECK_TESTS=0 skips the tests)
+ui-check: $(UI_DEPS)
+	@scripts/ui_check.sh
+
+## SwiftLint on the changed Swift files (LILO_CHECK_FILES, empty for all)
+swiftlint-changed: $(SWIFTLINT)
+	@files=$$(printf '%s\n' "$$LILO_CHECK_FILES" | grep -E '^Lilo/.*\.swift$$' || :); \
+	if [ -z "$$LILO_CHECK_FILES" ]; then '$(SWIFTLINT)' lint --config .swiftlint.yml --strict; \
+	elif [ -n "$$files" ]; then '$(SWIFTLINT)' lint --config .swiftlint.yml --strict --force-exclude $$files; fi
+
+## Check the staged bridge outputs and Lilo.xcodeproj are in sync with their sources
+sync-check:
+	@scripts/sync_check.sh
+
 ## Run the CI UI validation sequence (lint + test + build)
 validate-ui: ui-lint ui-test ui-build
 
 # `validate` without the Xcode build and Swift tests: every other group, in order. Runs on macOS too.
 ## Run every check that needs no Xcode: UI, website, docs, bridge, hooks, release and Swift lint (what Linux can run)
-linux-checks: ui-lint ui-test site-check site-test docs-check docs-test hooks-test perf-summary-test retried-tests-test metrics-test ci-metrics-test check-summary-test lockf-test ext-bridge-test swiftlint release-status
+linux-checks: ui-lint ui-test site-check site-test docs-check docs-test hooks-test perf-summary-test retried-tests-test scope-test tier-test metrics-test ci-metrics-test check-summary-test lockf-test ext-bridge-test swiftlint release-status
 
 ## Run Swift lint only
 swiftlint: $(SWIFTLINT)
@@ -760,6 +783,10 @@ ci-metrics:
 ## Test the CI timing summary
 ci-metrics-test:
 	@python3 scripts/ci_metrics_test.py -q
+
+## Test the quick tiers and their Git hooks
+tier-test:
+	@scripts/check_tier.test.sh
 
 ## Test the quiet check summary behind validate and validate-scope
 check-summary-test:
