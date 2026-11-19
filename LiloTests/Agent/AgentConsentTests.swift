@@ -171,4 +171,15 @@ final class AgentConsentTests: AgentToolTestCase {
         XCTAssertEqual(control.allowedClients.keys.sorted(), ["Codex", "claude-code"])
         XCTAssertEqual(context.settingsStore!.get("agentProfileGrants"), #"["Codex|codex|\#(profileId)"]"#, "its profiles are asked again too")
     }
+
+    func testAnUnattendedDebugRunAllowsAClickWithoutAsking() async {
+        let click = ["kind": "click", "label": "Buy", "site": "example.com", "tab": "Shop"]
+        setenv("LILO_AGENT_ALLOW_ALL", "1", 1)
+        defer { unsetenv("LILO_AGENT_ALLOW_ALL") }
+
+        let allowed = await control.askConsent("Test Agent", action: click, timeout: 1)
+
+        XCTAssertEqual(allowed, true)
+        XCTAssertTrue(control.pendingConsentAnswers.isEmpty, "nothing is shown to a user who is not there")
+    }
 }
