@@ -130,3 +130,11 @@ Work that outgrows the panel promotes explicitly to a conversation tab: its own 
 |----------------------+---------------+-------------------------+
 ```
 
+## Open questions for the maintainer
+
+- Should the agent panel share `SidePanelController`'s one-panel slot with extension panels (an extension panel and an agent panel can never be docked together), or get a second docked column?
+- Is the binding one conversation per tab, or can a tab hold several agent threads the panel switches between?
+- Should `⇧⌘A` keep opening the floating Ask bar, or open the docked panel for the active tab once tier 2 lands?
+- Does the per-tab hover action earn a permanent badge on the tab (like the close button's reveal), or stay hover- and context-menu-only to keep the strip quiet?
+
+
