@@ -1,0 +1,137 @@
+# Fork-only rolling beta (espetro/Lilo, never sent upstream): every push to develop builds the Release configuration,
+# ad-hoc signed and not notarized, and republishes it as the GitHub prerelease tagged `beta`. See docs/FORK-BETA.md.
+#
+# It needs no secret: the build has its own identity (LILO_BETA=1, see BuildIdentity.swift) and never updates itself.
+# The tag is `beta`, never `v*`, so release.yml (also gated to Alexays/Lilo) can not fire on it.
+
+name: Beta
+
+on:
+  push:
+    branches: [develop]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}
+  # A run that is replacing the release is never cut off halfway.
+  cancel-in-progress: false
+
+jobs:
+  beta:
+    if: github.repository == 'espetro/Lilo'
+    runs-on: xcode-27
+    timeout-minutes: 60
+    permissions:
+      contents: write
+
+    steps:
+      # No token left in .git/config for the build's tools and dependencies to read; the publish step gets its own.
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Show selected Xcode
+        run: xcodebuild -version
+
+      - name: Install Metal Toolchain
+        run: xcodebuild -downloadComponent MetalToolchain
+
+      # The generated UI sources, also saved by build.yml's release-build job and read by release.yml: same key.
+      - name: Restore the UI build
+        id: ui-cache
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: |
+            Lilo/Generated/ChromeUIAssets.swift
+            Lilo/Generated/NativeStrings.swift
+          key: ui-${{ hashFiles('pnpm-lock.yaml', 'lilo-ui/package.json', 'lilo-ui/src/**', 'lilo-ui/public/**', 'lilo-ui/index.html', 'lilo-ui/releaseNotesPlugin.ts', 'lilo-ui/svelte.config.js', 'lilo-ui/tsconfig.json', 'lilo-ui/vite.config.ts', 'release-media/catalog.ts', '.changes/v*.md', 'scripts/embed_chrome_ui.py', 'scripts/generate_native_strings.py') }}
+      - uses: ./.github/actions/setup-pnpm
+      - name: Build the UI
+        if: steps.ui-cache.outputs.cache-hit != 'true'
+        run: make ui-build
+
+      # A checkout dates every file now, which would make Xcode rebuild all of the cached build: files, the generated
+      # UI sources included, keep the date of their content, and XCBuild ignores the new inodes.
+      - name: Date files by their content
+        run: |
+          { git ls-files -s -z
+            for f in Lilo/Generated/ChromeUIAssets.swift Lilo/Generated/NativeStrings.swift; do
+              printf '100644 %s 0\t%s\0' "$(git hash-object "$f")" "$f"
+            done; } | python3 scripts/pin_mtimes.py
+          defaults write com.apple.dt.XCBuild IgnoreFileSystemDeviceInodeChanges -bool YES
+      # The Release build of build.yml's release-build job on the last main push: only what changed since compiles.
+      # The beta's own settings recompile the app target, but its packages (GRDB, Sparkle) stay cached.
+      - name: Restore the last main release build
+        uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: |
+            .derived.noindex/build-app
+            !.derived.noindex/build-app/Logs
+          key: deriveddata-release-${{ hashFiles('Lilo.xcodeproj/project.xcworkspace/xcshareddata/swiftpm/Package.resolved') }}-${{ github.sha }}
+          restore-keys: deriveddata-release-${{ hashFiles('Lilo.xcodeproj/project.xcworkspace/xcshareddata/swiftpm/Package.resolved') }}-
+
+      # The prebuilt published by ghostty-vt.yml, checked against VT_SHA256.
+      - name: Download libghostty-vt
+        run: make vt-build
+
+      # Ad-hoc signed, as no LILO_TEAM_ID is set: no Developer ID, no hardened runtime, no notarization.
+      - name: Build
+        env:
+          LILO_BETA: '1'
+        run: make release-archive
+
+      # What keeps the beta from ever touching the installed Lilo: a build that lost one of these must not be published.
+      - name: Check the beta identity
+        run: |
+          app=build/release/export/Lilo.app
+          plist="$app/Contents/Info.plist"
+          check() { [ "$2" = "$3" ] || { echo "::error::$1 is '$2', not '$3'."; exit 1; }; }
+          check CFBundleIdentifier "$(/usr/libexec/PlistBuddy -c 'Print :CFBundleIdentifier' "$plist")" fr.arouillard.lilo.beta
+          check CFBundleName "$(/usr/libexec/PlistBuddy -c 'Print :CFBundleName' "$plist")" 'Lilo Beta'
+          check SUPublicEDKey "$(/usr/libexec/PlistBuddy -c 'Print :SUPublicEDKey' "$plist")" ''
+          check LaunchDaemons "$(ls "$app/Contents/Library/LaunchDaemons")" fr.arouillard.lilo.beta.power.plist
+          codesign --verify --deep --strict "$app"
+          codesign -dv "$app" 2>&1 | grep -q 'flags=.*runtime' \
+            && { echo "::error::The hardened runtime is on: it rejects the ad-hoc signed Sparkle.framework."; exit 1; }
+          echo "Beta identity OK"
+
+      # Named apart from Lilo.app, so a drag to /Applications never replaces the installed Lilo. The DMG needs no
+      # signature; the app stays a plain zip when dmgbuild can not make it.
+      - name: Package
+        run: |
+          rm -rf build/beta && mkdir -p build/beta
+          ditto build/release/export/Lilo.app "build/beta/Lilo Beta.app"
+          if make dmg APP="build/beta/Lilo Beta.app"; then
+            mv build/Lilo.dmg build/beta/Lilo-Beta.dmg
+          else
+            echo "::warning::make dmg failed: the beta is published as a zip."
+            ditto -c -k --sequesterRsrc --keepParent "build/beta/Lilo Beta.app" build/beta/Lilo-Beta.zip
+          fi
+          cp build/release/dist/Lilo-dSYMs.zip build/beta/Lilo-Beta-dSYMs.zip
+          ls -l build/beta
+
+      # The release is deleted with its tag and created again at this commit, so `beta` always points at what it holds.
+      - name: Publish the beta prerelease
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          version=$(/usr/libexec/PlistBuddy -c 'Print :CFBundleShortVersionString' build/release/export/Lilo.app/Contents/Info.plist)
+          {
+            echo "Rolling beta of the espetro/Lilo fork, rebuilt on every push to develop. Unsigned: see docs/FORK-BETA.md."
+            echo
+            echo "- Commit: $GITHUB_SHA"
+            echo "- Built: $(date -u '+%Y-%m-%d %H:%M UTC')"
+            echo "- Version: $version (beta)"
+            echo "- Run: $GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID"
+          } > "$RUNNER_TEMP/notes.md"
+          gh release delete beta --repo "$GITHUB_REPOSITORY" --cleanup-tag --yes || true
+          gh release create beta build/beta/Lilo-Beta.* build/beta/Lilo-Beta-dSYMs.zip \
+            --repo "$GITHUB_REPOSITORY" \
+            --target "$GITHUB_SHA" \
+            --prerelease \
+            --title "Lilo Beta" \
+            --notes-file "$RUNNER_TEMP/notes.md"

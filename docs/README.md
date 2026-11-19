@@ -27,6 +27,7 @@ to build it and send a change.
 | [PRELOAD-TOP-HIT.md](PRELOAD-TOP-HIT.md) | Loading the command bar's top hit before Return: the confidence rule, what history and extensions see, the cost and the benchmark |
 | [WEBKIT-GAPS.md](WEBKIT-GAPS.md) | WebKit extension bugs and gaps Lilo works around, with their reproductions |
 | [WEBKIT_FORK.md](WEBKIT_FORK.md) | Lilo's WebKit build: its patches, the security rule that turns it off, how it is built and published |
+| [FORK-BETA.md](FORK-BETA.md) | The espetro/Lilo fork's unsigned rolling beta: how it is built, its own identity and data folder (never sent upstream) |
 | [RELEASING.md](RELEASING.md) | Version bump, signing, notarization, Sparkle and the publish checklist (maintainers) |
 
 ## Project
