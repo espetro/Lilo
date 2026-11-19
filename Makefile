@@ -129,10 +129,12 @@ TEST_RETRY := $(if $(CI),-retry-tests-on-failure -test-iterations 2)
 TEST_WORKERS = $(shell cores=$$(sysctl -n hw.perflevel0.physicalcpu 2>/dev/null || sysctl -n hw.ncpu); echo $$((cores / $(TEST_SLOTS) > 0 ? cores / $(TEST_SLOTS) : 1)))
 
 .PHONY: help site-release-import validate validate-ui linux-checks swiftlint project-sync ui-build ui-watch ui-dev ui-lint ui-test e2e e2e-energy \
+.PHONY: help site-release-import validate validate-scope validate-ui swiftlint project-sync ui-build ui-watch ui-dev ui-lint ui-test e2e e2e-energy \
 	swift-test swift-test-slow blocker-coverage blocker-bench script-bench speedometer-bench page-bench preload-bench terminal-bench ext-bridge-build ext-bridge-test ext-smoke ext-nightly ext-e2e-passwords ext-e2e-passwords-trust top-extensions top-manifests chrome-surface \
 	chrome-contracts chrome-smoke public-suffix-list app install install-debug xcode-build xcode-build-release \
 	run-ui-dev release release-notarize release-archive dmg dmg-background bridge-gen vt-build vt-build-source vt-zip webkit-fork bootstrap bootstrap-test ui-preview check-commits startup-bench ext-bench energy-sample energy-compare energy-browsers perf-summary perf-compare perf-summary-test check-summary-test agent-app agent-app-stop agent-app-restart agent-call agent-eval agent-eval-test \
 	run-ui-dev release release-notarize release-archive dmg dmg-background bridge-gen vt-build vt-build-source vt-zip webkit-fork bootstrap ui-preview check-commits startup-bench ext-bench energy-sample energy-compare energy-browsers perf-summary perf-compare perf-summary-test lockf-test slot-test agent-call \
+	run-ui-dev release release-notarize release-archive dmg dmg-background bridge-gen vt-build vt-build-source vt-zip webkit-fork bootstrap ui-preview check-commits startup-bench ext-bench energy-sample energy-compare energy-browsers perf-summary perf-compare perf-summary-test lockf-test slot-test scope-test agent-call \
 	logs logs-stream site-dev site-dev-stop site-preview site-native-preview site-generate site-check site-fix site-test site-e2e site-release-capture site-capture-server site-capture-deps site-lock site-audit site-add-svelte site-playground-deps site-demo-icons site-deploy site-deploy-check emoji-data password-manager-icons \
 	docs-dev docs-build docs-check docs-test docs-preview docs-deploy-check docs-deploy docs-translate docs-eval docs-lock \
 	hooks-install hooks-test lint-commit-message lint-commits \
@@ -184,7 +186,7 @@ validate: $(UI_DEPS) $(BRIDGE_DEPS) $(SITE_DEPS) $(DOCS_DEPS) $(SWIFTLINT) $(CHA
 		name=$${group%% *}; names="$$names $$name"; \
 		$(CHECK_SUMMARY) run $$name "$$logs" -- $(MAKE) -k --no-print-directory $$group & pids="$$pids $$!"; \
 	@logs=$$(mktemp -d); checks=; \
-	for group in ui-lint ui-test "site-check site-test" "docs-check docs-test" "hooks-test perf-summary-test lockf-test slot-test ext-bridge-test swiftlint release-status"; do \
+	for group in ui-lint ui-test "site-check site-test" "docs-check docs-test" "hooks-test perf-summary-test lockf-test slot-test scope-test ext-bridge-test swiftlint release-status"; do \
 		name=$${group%% *}; $(MAKE) -k --no-print-directory $$group > "$$logs/$$name.log" 2>&1 & checks="$$checks $$!:$$name"; \
 	done; \
 	$(CHECK_SUMMARY) run bridge-build "$$logs" -- $(MAKE) --no-print-directory $(BRIDGE_STAMP) & bridge=$$!; \
@@ -204,6 +206,11 @@ $(UI_STAMP): $(UI_DEPS) $(UI_SOURCES)
 $(BRIDGE_STAMP): $(BRIDGE_DEPS) $(BRIDGE_SOURCES)
 	@$(MAKE) --no-print-directory ext-bridge-build
 	@mkdir -p $(@D) && touch $@
+
+## Run only the checks the diff against origin/main needs (BASE=ref): a UI, website or docs change skips the Swift build and the installs it does not use
+validate-scope:
+	@checks=$$(scripts/scope_checks.sh $(BASE)); echo "validate-scope: $$checks" >&2; \
+	if [ "$$checks" = full ]; then $(MAKE) --no-print-directory validate; else $(MAKE) -k --no-print-directory $$checks; fi
 
 ## Run the CI UI validation sequence (lint + test + build)
 validate-ui: ui-lint ui-test ui-build
@@ -734,6 +741,10 @@ check-summary-test:
 ## Test the slot locks that keep test runs to TEST_SLOTS at a time (stub commands, no xcodebuild)
 slot-test:
 	@scripts/test_slot.test.sh
+
+## Test the diff scoping behind validate-scope
+scope-test:
+	@scripts/scope_checks.test.sh
 
 # --info --debug are required: os_log info/debug messages are memory-only and absent from `log show` without them.
 ## Dump the app log to lilo-log.txt (SINCE=15m OUT=path)
