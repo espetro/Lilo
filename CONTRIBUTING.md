@@ -180,6 +180,8 @@ only makes the French reference tables stale, which warns.
 | `make ext-bridge-test` | extension bridge TypeScript tests |
 | `make hooks-test` | commit-message validation and real Git hook/range checks in temporary repositories |
 | `make perf-summary-test` | tests of the performance recording summary and comparison script |
+| `make metrics-test` | tests of the opt-in recipe timing recorder (`make metrics-on`, `make metrics`) |
+| `make ci-metrics-test` | tests of the CI timing summary (`make ci-metrics`) |
 | `make lint-commit-message` | checks a commit header or PR title read from stdin |
 | `make lint-commits` | checks non-merge commit headers in `BASE..COMMIT_HEAD` (default `origin/main..HEAD`) |
 | `make release-status` | pending release notes, changelog and app version consistency |
