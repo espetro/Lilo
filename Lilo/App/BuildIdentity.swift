@@ -6,6 +6,11 @@ enum BuildIdentity {
     #if DEBUG
     static let appIdentifier = "fr.arouillard.lilo.debug"
     static let dataFolderName = "Lilo-Debug"
+    #elseif BETA
+    // Fork-only (espetro/Lilo, never sent upstream): the rolling beta of beta.yml, built with BETA by LILO_BETA=1.
+    // It keeps clear of the installed release as Debug does; its bundle id is LILO_BUNDLE_ID_SUFFIX=.beta.
+    static let appIdentifier = "fr.arouillard.lilo.beta"
+    static let dataFolderName = "Lilo-Beta"
     #else
     static let appIdentifier = "fr.arouillard.lilo"
     static let dataFolderName = "Lilo"

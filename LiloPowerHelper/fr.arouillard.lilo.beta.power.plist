@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<!-- Fork-only: the rolling beta's own daemon, so it never replaces the installed app's (fr.arouillard.lilo.power.plist). -->
+	<key>Label</key>
+	<string>fr.arouillard.lilo.beta.power</string>
+	<key>BundleProgram</key>
+	<string>Contents/MacOS/LiloPowerHelper</string>
+	<key>MachServices</key>
+	<dict>
+		<key>fr.arouillard.lilo.beta.power</key>
+		<true/>
+	</dict>
+	<key>RunAtLoad</key>
+	<true/>
+	<key>AssociatedBundleIdentifiers</key>
+	<array>
+		<string>fr.arouillard.lilo.beta</string>
+	</array>
+</dict>
+</plist>
