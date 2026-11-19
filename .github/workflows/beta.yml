@@ -1,8 +1,8 @@
 # Fork-only rolling beta (espetro/Lilo, never sent upstream): every push to develop builds the Release configuration,
-# ad-hoc signed and not notarized, and republishes it as the GitHub prerelease tagged `beta`. See docs/FORK-BETA.md.
+# ad-hoc signed and not notarized, and publishes it as its own GitHub prerelease tagged `beta-<run number>`. See docs/FORK-BETA.md.
 #
 # It needs no secret: the build has its own identity (LILO_BETA=1, see BuildIdentity.swift) and never updates itself.
-# The tag is `beta`, never `v*`, so release.yml (also gated to Alexays/Lilo) can not fire on it.
+# The tag is `beta-N`, never `v*`, so release.yml (also gated to Alexays/Lilo) can not fire on it.
 
 name: Beta
 
@@ -114,24 +114,31 @@ jobs:
           cp build/release/dist/Lilo-dSYMs.zip build/beta/Lilo-Beta-dSYMs.zip
           ls -l build/beta
 
-      # The release is deleted with its tag and created again at this commit, so `beta` always points at what it holds.
+      # One prerelease per run, tagged beta-N with N the workflow run number (it only grows), so a build is never overwritten
+      # and a tester can name the one that broke. Only the newest KEEP stay; the old rolling `beta` release is removed too.
       - name: Publish the beta prerelease
         env:
           GH_TOKEN: ${{ github.token }}
+          KEEP: 10
         run: |
           version=$(/usr/libexec/PlistBuddy -c 'Print :CFBundleShortVersionString' build/release/export/Lilo.app/Contents/Info.plist)
+          tag="beta-$GITHUB_RUN_NUMBER"
           {
-            echo "Rolling beta of the espetro/Lilo fork, rebuilt on every push to develop. Unsigned: see docs/FORK-BETA.md."
+            echo "Beta $GITHUB_RUN_NUMBER of the espetro/Lilo fork, built from develop. Unsigned: see docs/FORK-BETA.md."
             echo
             echo "- Commit: $GITHUB_SHA"
             echo "- Built: $(date -u '+%Y-%m-%d %H:%M UTC')"
-            echo "- Version: $version (beta)"
+            echo "- Version: $version (beta $GITHUB_RUN_NUMBER)"
             echo "- Run: $GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID"
           } > "$RUNNER_TEMP/notes.md"
-          gh release delete beta --repo "$GITHUB_REPOSITORY" --cleanup-tag --yes || true
-          gh release create beta build/beta/Lilo-Beta.* build/beta/Lilo-Beta-dSYMs.zip \
+          gh release create "$tag" build/beta/Lilo-Beta.* build/beta/Lilo-Beta-dSYMs.zip \
             --repo "$GITHUB_REPOSITORY" \
             --target "$GITHUB_SHA" \
             --prerelease \
-            --title "Lilo Beta" \
+            --latest=false \
+            --title "Lilo Beta $GITHUB_RUN_NUMBER" \
             --notes-file "$RUNNER_TEMP/notes.md"
+          gh release delete beta --repo "$GITHUB_REPOSITORY" --cleanup-tag --yes || true
+          gh api --paginate "repos/$GITHUB_REPOSITORY/releases?per_page=100" --jq '.[] | select(.tag_name | test("^beta-[0-9]+$")) | .tag_name' \
+            | sort -t- -k2 -n -r | tail -n +$((KEEP + 1)) \
+            | while read -r old; do gh release delete "$old" --repo "$GITHUB_REPOSITORY" --cleanup-tag --yes; done
