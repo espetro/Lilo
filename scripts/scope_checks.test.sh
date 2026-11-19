@@ -16,6 +16,12 @@ expect() {
     [ "$got" = "$want" ] || fail "for '$*' expected '$want', got '$got'"
 }
 
+tier() {
+    tier=$1 want=$2; shift 2
+    got=$(printf '%s\n' "$@" | "$SCOPE" --tier "$tier" --files)
+    [ "$got" = "$want" ] || fail "tier $tier for '$*' expected '$want', got '$got'"
+}
+
 expect "ui-lint ui-test release-status" lilo-ui/src/lib/foo.ts lilo-ui/src/app.css
 expect "site-check site-test release-status" site/src/pages/index.astro
 expect "docs-check docs-test release-status" docs-site/content/index.md
@@ -27,7 +33,21 @@ expect full lilo-ui/src/lib/foo.ts Makefile
 expect full COMPATIBILITY.md docs/ARCHITECTURE.md
 expect full lilo-ui/src/lib/foo.ts Lilo/Extensions/bridge-src/src/a.ts
 expect full scripts/scope_checks.sh
-[ "$(printf '' | "$SCOPE" --files)" = full ] || fail "an empty diff is not full"
+# The quick tiers: a Swift-only change is swiftlint alone, nothing builds, and what has no quick check is none.
+tier check swiftlint-changed Lilo/App/Foo.swift Lilo/Agent/Bar.swift
+tier check "ui-check release-status" lilo-ui/src/lib/foo.ts docs/ARCHITECTURE.md
+tier check "ui-check swiftlint-changed" lilo-ui/src/lib/foo.ts Lilo/App/Foo.swift
+tier check "ui-check docs-check" lilo-ui/src/lib/i18n/locales/fr.json
+tier check docs-check docs-site/content/index.md
+tier check release-status .changes/unreleased/Fixed-1.yaml
+tier check none site/src/pages/index.astro
+tier check none Makefile scripts/x.sh LiloTests/FooTests.swift
+tier commit "swiftlint-changed sync-check" Lilo/App/Foo.swift
+tier commit "ui-check sync-check" lilo-ui/src/lib/tabProtocol.gen.ts
+tier commit sync-check project.yml
+tier commit none Makefile
+[ "$(printf '' | "$SCOPE" --tier check --files)" = none ] || fail "an empty diff is not none for the quick tiers"
+[ "$(printf '' | "$SCOPE" --files)" = full ]  || fail "an empty diff is not full"
 
 # The code split must say what CI's changes job says. The regex and the test are read from build.yml itself.
 workflow="$ROOT/.github/workflows/build.yml"
@@ -61,5 +81,15 @@ echo c > docs/new.md
 echo d > Foo.swift
 [ "$("$SCOPE" base)" = full ] || fail "new Swift file"
 [ "$("$SCOPE" no-such-ref 2> /dev/null)" = full ] || fail "unknown base is not full"
+[ "$("$SCOPE" --tier check no-such-ref 2> /dev/null)" = full ] || fail "unknown base is not full for the quick tiers"
+[ -z "$("$SCOPE" --list no-such-ref 2> /dev/null)" ] || fail "unknown base lists files"
+# Under CI a missing base is an error, never a silent full or skip.
+for args in "no-such-ref" "--tier check no-such-ref" "--list no-such-ref"; do
+    status=0; out=$(GITHUB_ACTIONS=true "$SCOPE" $args 2> /dev/null) || status=$?
+    [ "$status" -ne 0 ] && [ -z "$out" ] || fail "GITHUB_ACTIONS with a missing base ($args): status $status, output '$out'"
+done
+[ "$("$SCOPE" --list base)" = "$(printf 'Foo.swift\ndocs/new.md\nlilo-ui/src/a.ts')" ] || fail "--list: $("$SCOPE" --list base)"
+git add -A
+[ "$("$SCOPE" --tier commit --staged)" = "ui-check release-status sync-check" ] || fail "--staged: $("$SCOPE" --tier commit --staged)"
 
 echo "scope_checks.test.sh: ok"
