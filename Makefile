@@ -111,6 +111,7 @@ energy-browsers:
 TEST_SLOTS ?= 1
 TEST_LOCK := scripts/test_slot.sh $(TEST_SLOTS)
 TEST_LOCK_ALL := scripts/test_slot.sh --all $(TEST_SLOTS)
+CHECK_SUMMARY := python3 scripts/check_summary.py
 # A test that never ends would hold the lock for good: past its allowance, rounded up to the minute, xcodebuild
 # samples it, ends it as failed and goes on. A test that needs longer sets its own executionTimeAllowance.
 TEST_TIMEOUTS := -test-timeouts-enabled YES -default-test-execution-time-allowance 120 -maximum-test-execution-time-allowance 600
@@ -129,7 +130,7 @@ TEST_WORKERS = $(shell cores=$$(sysctl -n hw.perflevel0.physicalcpu 2>/dev/null 
 .PHONY: help site-release-import validate validate-scope validate-ui linux-checks swiftlint project-sync ui-build ui-watch ui-dev ui-lint ui-test e2e e2e-energy \
 	swift-test swift-test-slow blocker-coverage blocker-bench script-bench speedometer-bench page-bench preload-bench terminal-bench ext-bridge-build ext-bridge-test ext-smoke ext-nightly ext-e2e-passwords ext-e2e-passwords-trust top-extensions top-manifests chrome-surface \
 	chrome-contracts chrome-smoke public-suffix-list app install install-debug xcode-build xcode-build-release \
-	run-ui-dev release release-notarize release-archive dmg dmg-background bridge-gen vt-build vt-build-source vt-zip webkit-fork bootstrap bootstrap-test ui-preview check-commits startup-bench ext-bench energy-sample energy-compare energy-browsers perf-summary perf-compare perf-summary-test retried-tests-test lockf-test slot-test scope-test metrics metrics-on metrics-off metrics-test ci-metrics ci-metrics-test agent-app agent-call \
+	run-ui-dev release release-notarize release-archive dmg dmg-background bridge-gen vt-build vt-build-source vt-zip webkit-fork bootstrap bootstrap-test ui-preview check-commits startup-bench ext-bench energy-sample energy-compare energy-browsers perf-summary perf-compare perf-summary-test retried-tests-test lockf-test slot-test scope-test metrics metrics-on metrics-off metrics-test ci-metrics ci-metrics-test check-summary-test agent-app agent-call \
 	logs logs-stream site-dev site-dev-stop site-preview site-native-preview site-generate site-check site-fix site-test site-e2e site-release-capture site-capture-server site-capture-deps site-lock site-audit site-add-svelte site-playground-deps site-demo-icons site-deploy site-deploy-check emoji-data password-manager-icons \
 	docs-dev docs-build docs-check docs-test docs-preview docs-deploy-check docs-deploy docs-translate docs-eval docs-lock \
 	hooks-install hooks-test lint-commit-message lint-commits \
@@ -172,18 +173,24 @@ bootstrap-test:
 	@scripts/bootstrap.test.sh
 
 # The app embeds the UI and bridge builds, rebuilt only when their sources changed; swift-test builds the app.
-# The lint and the JS tests run beside the other steps, their output shown on failure.
+# The lint and the JS tests run beside the other steps. scripts/check_summary.py keeps every check's output in a log
+# and prints one line per check, then the logs of the failed ones only (JSON=1: one JSON object per check).
 ## Run UI, website and docs checks, Swift lint/tests, the app build, bridge and hook checks and release version checks
 validate: $(UI_DEPS) $(BRIDGE_DEPS) $(SITE_DEPS) $(DOCS_DEPS) $(SWIFTLINT) $(CHANGIE)
-	@logs=$$(mktemp -d); checks=; \
-	for group in ui-lint ui-test "site-check site-test" "docs-check docs-test" "hooks-test bootstrap-test perf-summary-test retried-tests-test lockf-test slot-test scope-test metrics-test ci-metrics-test ext-bridge-test swiftlint release-status"; do \
-		name=$${group%% *}; $(MAKE) -k --no-print-directory $$group > "$$logs/$$name.log" 2>&1 & checks="$$checks $$!:$$name"; \
+	@export LILO_CHECK_SCOPE=$${LILO_CHECK_SCOPE:-full}; logs=$$(mktemp -d); names=; pids=; \
+	for group in ui-lint ui-test "site-check site-test" "docs-check docs-test" "hooks-test bootstrap-test perf-summary-test retried-tests-test lockf-test slot-test scope-test metrics-test ci-metrics-test check-summary-test ext-bridge-test swiftlint release-status"; do \
+		name=$${group%% *}; names="$$names $$name"; \
+		$(CHECK_SUMMARY) run $$name "$$logs" -- $(MAKE) -k --no-print-directory $$group & pids="$$pids $$!"; \
 	done; \
-	$(MAKE) --no-print-directory $(BRIDGE_STAMP) & bridge=$$!; \
-	$(MAKE) --no-print-directory $(UI_STAMP); ui=$$?; wait $$bridge; bridge=$$?; \
-	[ $$ui -eq 0 ] && [ $$bridge -eq 0 ] && $(MAKE) --no-print-directory swift-test; swift=$$?; \
-	failed=0; for check in $$checks; do wait $${check%%:*} || { failed=1; cat "$$logs/$${check#*:}.log"; }; done; \
-	/bin/rm -rf "$$logs"; [ $$swift -eq 0 ] && [ $$failed -eq 0 ]
+	$(CHECK_SUMMARY) run bridge-build "$$logs" -- $(MAKE) --no-print-directory $(BRIDGE_STAMP) & bridge=$$!; \
+	$(CHECK_SUMMARY) run ui-build "$$logs" -- $(MAKE) --no-print-directory $(UI_STAMP); ui=$$?; wait $$bridge; bridge=$$?; \
+	names="ui-build bridge-build$$names"; \
+	if [ $$ui -eq 0 ] && [ $$bridge -eq 0 ]; then \
+		$(CHECK_SUMMARY) run swift-test "$$logs" -- $(MAKE) --no-print-directory swift-test; names="$$names swift-test"; \
+	fi; \
+	wait $$pids; \
+	$(CHECK_SUMMARY) report $(if $(JSON),--json) "$$logs" $$names; status=$$?; \
+	/bin/rm -rf "$$logs"; exit $$status
 
 $(UI_STAMP): $(UI_DEPS) $(UI_SOURCES)
 	@$(MAKE) --no-print-directory ui-build
@@ -195,15 +202,19 @@ $(BRIDGE_STAMP): $(BRIDGE_DEPS) $(BRIDGE_SOURCES)
 
 ## Run only the checks the diff against origin/main needs (BASE=ref): a UI, website or docs change skips the Swift build and the installs it does not use
 validate-scope:
-	@checks=$$(scripts/scope_checks.sh $(BASE)); echo "validate-scope: $$checks" >&2; \
-	if [ "$$checks" = full ]; then $(MAKE) --no-print-directory validate; else $(MAKE) -k --no-print-directory $$checks; fi
+	@checks=$$(scripts/scope_checks.sh $(BASE)); echo "validate-scope: $$checks" >&2; export LILO_CHECK_SCOPE="$$checks"; \
+	if [ "$$checks" = full ]; then $(MAKE) --no-print-directory validate; exit $$?; fi; \
+	logs=$$(mktemp -d); \
+	for check in $$checks; do $(CHECK_SUMMARY) run $$check "$$logs" -- $(MAKE) --no-print-directory $$check || :; done; \
+	$(CHECK_SUMMARY) report $(if $(JSON),--json) "$$logs" $$checks; status=$$?; \
+	/bin/rm -rf "$$logs"; exit $$status
 
 ## Run the CI UI validation sequence (lint + test + build)
 validate-ui: ui-lint ui-test ui-build
 
 # `validate` without the Xcode build and Swift tests: every other group, in order. Runs on macOS too.
 ## Run every check that needs no Xcode: UI, website, docs, bridge, hooks, release and Swift lint (what Linux can run)
-linux-checks: ui-lint ui-test site-check site-test docs-check docs-test hooks-test perf-summary-test retried-tests-test metrics-test ci-metrics-test lockf-test ext-bridge-test swiftlint release-status
+linux-checks: ui-lint ui-test site-check site-test docs-check docs-test hooks-test perf-summary-test retried-tests-test metrics-test ci-metrics-test check-summary-test lockf-test ext-bridge-test swiftlint release-status
 
 ## Run Swift lint only
 swiftlint: $(SWIFTLINT)
@@ -718,6 +729,10 @@ ci-metrics:
 ## Test the CI timing summary
 ci-metrics-test:
 	@python3 scripts/ci_metrics_test.py -q
+
+## Test the quiet check summary behind validate and validate-scope
+check-summary-test:
+	@python3 scripts/check_summary_test.py -q
 
 ## Test the slot locks that keep test runs to TEST_SLOTS at a time (stub commands, no xcodebuild)
 slot-test:
