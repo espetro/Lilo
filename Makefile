@@ -305,6 +305,7 @@ validate-ui: ui-lint ui-test ui-build
 linux-checks: ui-lint ui-test site-check site-test docs-check docs-test hooks-test perf-summary-test lockf-test ext-bridge-test swiftlint release-status
 linux-checks: ui-lint ui-test site-check site-test docs-check docs-test hooks-test perf-summary-test retried-tests-test scope-test tier-test metrics-test ci-metrics-test check-summary-test lockf-test ext-bridge-test swiftlint release-status
 linux-checks: ui-lint ui-test site-check site-test docs-check docs-test hooks-test perf-summary-test retried-tests-test scope-test tier-test metrics-test ci-metrics-test check-summary-test lockf-test ext-bridge-test swiftlint release-status worktree-gc-test
+linux-checks: ui-lint ui-test site-check site-test docs-check docs-test hooks-test perf-summary-test retried-tests-test metrics-test ci-metrics-test lockf-test ext-bridge-test swiftlint release-status
 
 ## Run Swift lint only
 swiftlint: $(SWIFTLINT)

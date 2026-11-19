@@ -20,7 +20,7 @@ CI runs the same targets on `ubuntu-latest` already (the `release-tooling`, `ui`
 | `ext-bridge-test` | the extension bridge unit tests | 587 of 587 |
 | `site-check`, `site-test` | getlilo.app type check and tests | 0 errors, 86 of 86 |
 | `docs-check`, `docs-test` | docs.getlilo.app build, link and audit checks | no broken links, 4,503 audits |
-| `hooks-test`, `perf-summary-test`, `lockf-test` | the commit hooks, the perf summary and the lock wrapper | pass |
+| `hooks-test`, `perf-summary-test`, `retried-tests-test`, `metrics-test`, `ci-metrics-test`, `lockf-test` | the commit hooks, the perf summary, the failed test report, the timing recorders and the lock wrapper | pass (the three added after the measurement are Python only and were not timed on Debian) |
 | `release-status` | pending release notes and the version files agree | pass |
 | `swiftlint` | Swift lint, no Xcode needed | 0 violations in 321 files |
 | Target | Makefile | Checks | Result on Debian 13 |
