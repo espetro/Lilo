@@ -369,6 +369,10 @@ final class AgentControl {
     func askConsent(
         _ name: String, executable: String = "", profileName: String? = nil, action: [String: String]? = nil, timeout: TimeInterval = 120
     ) async -> Bool? {
+        #if DEBUG
+        // Unattended harness runs: nobody is there to answer a click's question either.
+        if action != nil, ProcessInfo.processInfo.environment["LILO_AGENT_ALLOW_ALL"] == "1" { return true }
+        #endif
         guard let windows = context?.windows.windows, !windows.isEmpty else { return nil }
         let requestId = UUID().uuidString
         let request: [String: Any] = [
