@@ -44,10 +44,10 @@ targets:
           # Named apart in Privacy & Security and the Dock, where it would sit beside the installed Lilo.
           LILO_APP_NAME: Lilo Debug
           # Each build ships only the launch daemon its PowerHelperIdentity registers.
-          EXCLUDED_SOURCE_FILE_NAMES: fr.arouillard.lilo.power.plist
+          EXCLUDED_SOURCE_FILE_NAMES: fr.arouillard.lilo.power.plist fr.arouillard.lilo.beta.power.plist
         Release:
           CODE_SIGN_ENTITLEMENTS: Lilo/Lilo.entitlements
-          EXCLUDED_SOURCE_FILE_NAMES: fr.arouillard.lilo.debug.power.plist
+          EXCLUDED_SOURCE_FILE_NAMES: fr.arouillard.lilo.debug.power.plist fr.arouillard.lilo.beta.power.plist
     dependencies:
       - package: GRDB
         product: GRDB
@@ -85,6 +85,12 @@ targets:
             destination: wrapper
             subpath: Contents/Library/LaunchDaemons
       - path: LiloPowerHelper/fr.arouillard.lilo.debug.power.plist
+        buildPhase:
+          copyFiles:
+            destination: wrapper
+            subpath: Contents/Library/LaunchDaemons
+      # Fork-only: the rolling beta's daemon, shipped only when LILO_BETA=1 (scripts/build-app.sh).
+      - path: LiloPowerHelper/fr.arouillard.lilo.beta.power.plist
         buildPhase:
           copyFiles:
             destination: wrapper

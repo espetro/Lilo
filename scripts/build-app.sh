@@ -31,6 +31,9 @@ Notarization (a keychain profile, or an Apple ID and app-specific password):
 Architecture:
   LILO_NATIVE_ARCH=1          Build this Mac's architecture only, as install does.
 
+Fork-only:
+  LILO_BETA=1                 Build the espetro/Lilo rolling beta (docs/FORK-BETA.md): own identity, no updates.
+
 Artifacts:
   build/<config>/archive/Lilo.xcarchive   (Developer ID signing only)
   build/<config>/export/Lilo.app
@@ -88,8 +91,23 @@ else
     SIGNING_LABEL="ad-hoc"
 fi
 
+# Fork-only (espetro/Lilo, never sent upstream): LILO_BETA=1 builds the rolling beta of .github/workflows/beta.yml.
+# It has an identity of its own (BuildIdentity's BETA branch), no Sparkle key so it never updates itself, and no
+# hardened runtime, whose library validation rejects the ad-hoc signed Sparkle.framework.
+BETA_SETTINGS=()
+if [ "${LILO_BETA:-}" = 1 ]; then
+    BETA_SETTINGS=(
+        LILO_BUNDLE_ID_SUFFIX=.beta
+        "LILO_APP_NAME=Lilo Beta"
+        SPARKLE_PUBLIC_ED_KEY=
+        SWIFT_ACTIVE_COMPILATION_CONDITIONS=BETA
+        ENABLE_HARDENED_RUNTIME=NO
+        "EXCLUDED_SOURCE_FILE_NAMES=fr.arouillard.lilo.power.plist fr.arouillard.lilo.debug.power.plist"
+    )
+fi
+
 # A distributed release without the Sparkle public key could never update itself.
-if [ "$CONFIG" = "release" ] && [ "$INSTALL" != true ] \
+if [ "$CONFIG" = "release" ] && [ "$INSTALL" != true ] && [ "${LILO_BETA:-}" != 1 ] \
     && ! grep -Eq '^SPARKLE_PUBLIC_ED_KEY = [A-Za-z0-9+/=]{40,}$' "$ROOT/Xcode/Configs/Base.xcconfig"; then
     echo "SPARKLE_PUBLIC_ED_KEY is empty in Xcode/Configs/Base.xcconfig: see docs/RELEASING.md (Sparkle key)." >&2
     exit 1
@@ -140,6 +158,7 @@ xcodebuild \
     AD_HOC_CODE_SIGNING_ALLOWED=YES \
     DEPLOYMENT_POSTPROCESSING=YES \
     "${SIGNING_SETTINGS[@]}" \
+    ${BETA_SETTINGS[@]+"${BETA_SETTINGS[@]}"} \
     build
 BUILT_APP="$DERIVED_DATA_DIR/Build/Products/$XCODE_CONFIGURATION/Lilo.app"
 # Xcode registers each app it builds with LaunchServices: the build folder's copy must never open links.
