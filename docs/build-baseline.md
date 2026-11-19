@@ -164,7 +164,7 @@ Nothing leaves the machine.
 |---|---|
 | `ts`, `dur_s` | start (epoch seconds) and wall duration of the recipe line |
 | `target`, `level` | the make target, and how many `$(MAKE)` levels deep (a level-0 target contains the ones it runs through `$(MAKE)`) |
-| `phase` | `recipe`, `orphaned` (killed outright, recorded by the next run) or `calibration` |
+| `phase` | `recipe`, `orphaned` (killed outright, recorded by the next run), `check` (one per check group of `make validate`, `target` is its name and `exit` its status; `make metrics` leaves them out) or `calibration` |
 | `exit` | the exit status; 128 plus the signal for an interrupt (130, 143); `null` for an orphan |
 | `worktree`, `branch`, `sha`, `dirty` | where it ran; `dirty` is whether tracked files differed from HEAD when the make run began |
 | `cpus_perf`, `ram_gb` | performance cores and memory, read once per machine |
@@ -172,6 +172,7 @@ Nothing leaves the machine.
 | `concurrent` | recipes running in other worktrees when it ended |
 | `agent`, `pid` | `LILO_AGENT`, or `claude-code` when `CLAUDECODE` is set; the wrapper's pid |
 | `overhead_ms` | what building and writing this record cost |
+| `tier`, `trigger`, `scope`, `rerun_of` | on `phase` `check` records only, each present only when known: `LILO_CHECK_TIER` and `LILO_CHECK_TRIGGER` as the caller set them, the scope (`full`, or the checks `make validate-scope` ran), and the `ts` of the check's previous run in the same worktree and branch when that run failed |
 
 Overhead: `python3 scripts/metrics.py calibrate` builds and writes 20 records and fails above 30 ms; here the median is 0.1 ms and the worst, the first record of a run, 13.7 ms.
 Over the 66 records of one `make validate` run the median `overhead_ms` was 1.3 ms and the largest 14.6 ms.
