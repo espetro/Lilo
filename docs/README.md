@@ -9,6 +9,7 @@ to build it and send a change.
 |----------|--------|
 | [AI-AGENTS.md](AI-AGENTS.md) | Letting local agents (Claude Code, Codex, Cursor, any MCP client) drive Lilo, and what Lilo asks you first |
 | [AGENT-HARNESS-PLAN.md](AGENT-HARNESS-PLAN.md) | Where the browser harness for agents goes next: measurement, tool surface, approval gate, replay, CDP, ACP and skills |
+| [AGENT-CONSENT-MODEL.md](AGENT-CONSENT-MODEL.md) | Every state of the agent approval gate (allowed, denied, expired, unavailable), who decides each, what the agent is told, which fixture proves it, and why the Debug harness answers clicks the way it does |
 | [ENERGY.md](ENERGY.md) | What Lilo, Safari, Chrome and Firefox draw on the same tabs, and how it is measured |
 | [COMPATIBILITY.md](../COMPATIBILITY.md) | What still differs from Chrome: extension APIs, tested store extensions, web APIs, known limitations |
 | [PRIVACY.md](../PRIVACY.md) | What stays on your Mac, and every request Lilo makes on its own |
@@ -29,7 +30,7 @@ to build it and send a change.
 | [PRELOAD-TOP-HIT.md](PRELOAD-TOP-HIT.md) | Loading the command bar's top hit before Return: the confidence rule, what history and extensions see, the cost and the benchmark |
 | [WEBKIT-GAPS.md](WEBKIT-GAPS.md) | WebKit extension bugs and gaps Lilo works around, with their reproductions |
 | [WEBKIT_FORK.md](WEBKIT_FORK.md) | Lilo's WebKit build: its patches, the security rule that turns it off, how it is built and published |
-| [FORK-BETA.md](FORK-BETA.md) | The espetro/Lilo fork's unsigned rolling beta: how it is built, its own identity and data folder (never sent upstream) |
+| [FORK-BETA.md](FORK-BETA.md) | The espetro/Lilo fork's unsigned beta (one numbered prerelease per build): how it is built, its own identity and data folder (never sent upstream) |
 | [RELEASING.md](RELEASING.md) | Version bump, signing, notarization, Sparkle and the publish checklist (maintainers) |
 
 ## Project
