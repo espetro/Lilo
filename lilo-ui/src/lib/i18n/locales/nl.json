@@ -211,6 +211,17 @@
 			"more": "Nog {count}. Zoek om de lijst te verkleinen."
 		},
 		"items": {
+			"customAgent": {
+				"title": "Eigen agent",
+				"description": "Start een eigen programma als agent, naast die van het register.",
+				"keywords": "eigen agent opdracht acp lokaal script omgeving variabelen argumenten",
+				"name": "Naam",
+				"namePlaceholder": "Mijn agent",
+				"executable": "Opdracht",
+				"arguments": "Argumenten, één per regel",
+				"environment": "Omgeving, NAAM=waarde per regel",
+				"note": "De opdracht is het volledige pad van een uitvoerbaar bestand dat het Agent Client Protocol spreekt via standaardinvoer en -uitvoer. Het komt in de agentenlijst zodra het is bewaard; leegmaken haalt het weg."
+			},
 			"appIcon": {
 				"title": "Appsymbool",
 				"description": "Alleen Klassiek volgt de donkere, getinte en doorzichtige symboolstijlen van macOS."
@@ -613,17 +624,6 @@
 			"summary": {
 				"one": "{count} lijst",
 				"other": "{count} lijsten"
-			},
-			"customAgent": {
-				"title": "Eigen agent",
-				"description": "Start een eigen programma als agent, naast die van het register.",
-				"keywords": "eigen agent opdracht acp lokaal script omgeving variabelen argumenten",
-				"name": "Naam",
-				"namePlaceholder": "Mijn agent",
-				"executable": "Opdracht",
-				"arguments": "Argumenten, één per regel",
-				"environment": "Omgeving, NAAM=waarde per regel",
-				"note": "De opdracht is het volledige pad van een uitvoerbaar bestand dat het Agent Client Protocol spreekt via standaardinvoer en -uitvoer. Het komt in de agentenlijst zodra het is bewaard; leegmaken haalt het weg."
 			},
 			"updated": "bijgewerkt {time}"
 		},

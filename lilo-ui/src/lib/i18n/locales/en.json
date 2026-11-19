@@ -211,6 +211,17 @@
 			"more": "{count} more. Search to narrow the list."
 		},
 		"items": {
+			"customAgent": {
+				"title": "Custom agent",
+				"description": "Start a program of your own as an agent, next to the registry's.",
+				"keywords": "custom agent command acp local script harness environment variables arguments",
+				"name": "Name",
+				"namePlaceholder": "My agent",
+				"executable": "Command",
+				"arguments": "Arguments, one per line",
+				"environment": "Environment, NAME=value per line",
+				"note": "The command is the full path of an executable file that speaks the Agent Client Protocol over standard input and output. It joins the agent list once saved; clearing the command removes it."
+			},
 			"appIcon": {
 				"title": "App icon",
 				"description": "Only Classic follows the macOS dark, tinted and clear icon styles."
@@ -613,17 +624,6 @@
 			"summary": {
 				"one": "{count} list",
 				"other": "{count} lists"
-			},
-			"customAgent": {
-				"title": "Custom agent",
-				"description": "Start a program of your own as an agent, next to the registry's.",
-				"keywords": "custom agent command acp local script harness environment variables arguments",
-				"name": "Name",
-				"namePlaceholder": "My agent",
-				"executable": "Command",
-				"arguments": "Arguments, one per line",
-				"environment": "Environment, NAME=value per line",
-				"note": "The command is the full path of an executable file that speaks the Agent Client Protocol over standard input and output. It joins the agent list once saved; clearing the command removes it."
 			},
 			"updated": "updated {time}"
 		},

@@ -211,6 +211,17 @@
 			"more": "{count} weitere. Grenze die Liste mit der Suche ein."
 		},
 		"items": {
+			"customAgent": {
+				"title": "Eigener Agent",
+				"description": "Starte ein eigenes Programm als Agent, neben denen der Registry.",
+				"keywords": "eigener agent befehl acp lokal skript umgebung variablen argumente",
+				"name": "Name",
+				"namePlaceholder": "Mein Agent",
+				"executable": "Befehl",
+				"arguments": "Argumente, eines pro Zeile",
+				"environment": "Umgebung, NAME=Wert pro Zeile",
+				"note": "Der Befehl ist der vollständige Pfad einer ausführbaren Datei, die das Agent Client Protocol über Standardeingabe und -ausgabe spricht. Nach dem Sichern erscheint er in der Agentenliste; ein leerer Befehl entfernt ihn."
+			},
 			"appIcon": {
 				"title": "App-Symbol",
 				"description": "Nur „Klassisch“ unterstützt die macOS-Symbolstile „Dunkel“, „Eingefärbt“ und „Transparent“."
@@ -613,17 +624,6 @@
 			"summary": {
 				"one": "{count} Liste",
 				"other": "{count} Listen"
-			},
-			"customAgent": {
-				"title": "Eigener Agent",
-				"description": "Starte ein eigenes Programm als Agent, neben denen der Registry.",
-				"keywords": "eigener agent befehl acp lokal skript umgebung variablen argumente",
-				"name": "Name",
-				"namePlaceholder": "Mein Agent",
-				"executable": "Befehl",
-				"arguments": "Argumente, eines pro Zeile",
-				"environment": "Umgebung, NAME=Wert pro Zeile",
-				"note": "Der Befehl ist der vollständige Pfad einer ausführbaren Datei, die das Agent Client Protocol über Standardeingabe und -ausgabe spricht. Nach dem Sichern erscheint er in der Agentenliste; ein leerer Befehl entfernt ihn."
 			},
 			"updated": "aktualisiert {time}"
 		},
