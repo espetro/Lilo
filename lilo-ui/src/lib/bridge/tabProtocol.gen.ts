@@ -26,6 +26,7 @@ export interface BridgeTabSnapshot {
 	isCameraActive: boolean;
 	isScreenSharing: boolean;
 	hasPopup?: boolean;
+	isSleeping?: boolean;
 	spaceId?: string;
 	groupId?: string;
 	faviconDataURL?: string;
@@ -84,6 +85,7 @@ export function coerceTabSnapshot(data: TabLike): BridgeTabSnapshot {
 		isCameraActive: data.isCameraActive ?? false,
 		isScreenSharing: data.isScreenSharing ?? false,
 		hasPopup: data.hasPopup ?? false,
+		isSleeping: data.isSleeping ?? false,
 		spaceId: data.spaceId,
 		groupId: data.groupId,
 		faviconDataURL,
@@ -143,6 +145,7 @@ export function coerceTabPatch(data: TabLike): Partial<BridgeTabSnapshot> {
 	if (data.isCameraActive !== undefined) out.isCameraActive = data.isCameraActive;
 	if (data.isScreenSharing !== undefined) out.isScreenSharing = data.isScreenSharing;
 	if (data.hasPopup !== undefined) out.hasPopup = data.hasPopup;
+	if (data.isSleeping !== undefined) out.isSleeping = data.isSleeping;
 	if (data.groupId !== undefined) out.groupId = data.groupId;
 	if (data.faviconDataURL !== undefined) out.faviconDataURL = coerceTrimmedOptional(data.faviconDataURL);
 	if (data.faviconDominantColor !== undefined) out.faviconDominantColor = coerceHexColor(data.faviconDominantColor);
