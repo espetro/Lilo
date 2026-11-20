@@ -1,4 +1,5 @@
 """Record, summarize and calibrate recipe timings."""
+import io
 import json
 import os
 import signal
@@ -8,7 +9,7 @@ import tempfile
 import time
 import unittest
 
-from metrics import BEGIN, END, git_head, summarize, toggle
+from metrics import BEGIN, END, git_head, print_summary, summarize, toggle
 
 SCRIPT = os.path.join(os.path.dirname(os.path.abspath(__file__)), "metrics.py")
 
@@ -84,6 +85,11 @@ class MetricsTests(unittest.TestCase):
             "target": "swift-test", "runs": 5, "ok": 2, "failed": 1, "interrupted": 1, "orphaned": 1,
             "median_s": 20.0, "p95_s": 30, "max_concurrent": 1, "max_overhead_ms": 5,
         }])
+
+    def test_summary_points_to_the_per_tier_reading(self):
+        out = io.StringIO()
+        print_summary(summarize([{"target": "swift-test", "phase": "recipe", "exit": 0, "dur_s": 1}]), out)
+        self.assertIn("docs/build-baseline.md", out.getvalue())
 
     def test_summary_ignores_the_per_check_records_of_make_validate(self):
         check = {"target": "ui-lint", "phase": "check", "exit": 1, "dur_s": 9, "tier": "pre-push", "scope": "full", "rerun_of": 1.5}
