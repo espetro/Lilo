@@ -100,6 +100,8 @@ if [ "${LILO_BETA:-}" = 1 ]; then
         LILO_BUNDLE_ID_SUFFIX=.beta
         "LILO_APP_NAME=Lilo Beta"
         SPARKLE_PUBLIC_ED_KEY=
+        "LILO_BETA_UPDATE_FEED_URL=${LILO_BETA_UPDATE_FEED_URL:-https://api.github.com/repos/espetro/Lilo/releases?per_page=30}"
+        "LILO_BETA_TAG=${LILO_BETA_TAG:-}"
         SWIFT_ACTIVE_COMPILATION_CONDITIONS=BETA
         ENABLE_HARDENED_RUNTIME=NO
         "EXCLUDED_SOURCE_FILE_NAMES=fr.arouillard.lilo.power.plist fr.arouillard.lilo.debug.power.plist"

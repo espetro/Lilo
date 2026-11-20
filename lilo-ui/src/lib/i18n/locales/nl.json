@@ -168,7 +168,8 @@
 			"profiles": "Profielen",
 			"otherAppLinks": "Links uit andere apps",
 			"blockerExceptions": "Lijsten en uitzonderingen",
-			"agentConversations": "Gesprekken"
+			"agentConversations": "Gesprekken",
+			"beta": "Bètamodus"
 		},
 		"searchPlaceholder": "Zoek in instellingen",
 		"searchResultsTitle": "Zoekresultaten",
@@ -609,6 +610,19 @@
 				"reset": "Herstel standaard",
 				"resetTitle": "Prompt van Lilo herstellen?",
 				"resetMessage": "Je wijzigingen worden vervangen door de standaardprompt."
+			},
+			"betaUpdateCheck": {
+				"title": "Bèta-updates",
+				"description": "Deze bèta vergelijkt zijn build bij het starten één keer met de nieuwste release van de fork.",
+				"keywords": "Bèta-updates",
+				"check": "Zoek naar bèta's",
+				"lastChecked": "Gecontroleerd {time}",
+				"absent": "Deze build heeft geen bètafeed."
+			},
+			"betaUpdateRelease": {
+				"title": "Bèta {tag} is uit",
+				"description": "Handmatig gedownload van de releasepagina en geïnstalleerd; Lilo vervangt nooit zichzelf.",
+				"open": "Release openen"
 			}
 		},
 		"devices": {

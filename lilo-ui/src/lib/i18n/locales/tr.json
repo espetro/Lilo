@@ -168,7 +168,8 @@
 			"profiles": "Profiller",
 			"otherAppLinks": "Diğer uygulamalardan gelen bağlantılar",
 			"blockerExceptions": "Listeler ve istisnalar",
-			"agentConversations": "Sohbetler"
+			"agentConversations": "Sohbetler",
+			"beta": "Beta modu"
 		},
 		"searchPlaceholder": "Ayarlarda ara",
 		"searchResultsTitle": "Arama sonuçları",
@@ -609,6 +610,19 @@
 				"reset": "Varsayılana dön",
 				"resetTitle": "Lilo istemi geri yüklensin mi?",
 				"resetMessage": "Değişiklikleriniz varsayılan istemle değiştirilecek."
+			},
+			"betaUpdateCheck": {
+				"title": "Beta güncellemeleri",
+				"description": "Bu beta, başlangıçta bir kez kendi yapısını fork'un en yeni sürümüyle karşılaştırır.",
+				"keywords": "Beta güncellemeleri",
+				"check": "Beta sürümlerini denetle",
+				"lastChecked": "Denetlendi: {time}",
+				"absent": "Bu yapının beta akışı yok."
+			},
+			"betaUpdateRelease": {
+				"title": "{tag} betası çıktı",
+				"description": "Sürüm sayfasından elle indirilir ve kurulur; Lilo kendini asla değiştirmez.",
+				"open": "Sürümü aç"
 			}
 		},
 		"devices": {

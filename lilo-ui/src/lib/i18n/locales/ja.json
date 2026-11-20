@@ -168,7 +168,8 @@
 			"profiles": "プロファイル",
 			"otherAppLinks": "ほかのアプリからのリンク",
 			"blockerExceptions": "リストと例外",
-			"agentConversations": "会話"
+			"agentConversations": "会話",
+			"beta": "ベータモード"
 		},
 		"searchPlaceholder": "設定を検索",
 		"searchResultsTitle": "検索結果",
@@ -609,6 +610,19 @@
 				"reset": "デフォルトに戻す",
 				"resetTitle": "Lilo のプロンプトを戻しますか？",
 				"resetMessage": "変更内容はデフォルトのプロンプトに置き換えられます。"
+			},
+			"betaUpdateCheck": {
+				"title": "ベータの更新",
+				"description": "このベータは起動時に一度だけ、自分のビルドをフォークの最新リリースと比べます。",
+				"keywords": "ベータの更新",
+				"check": "ベータを確認",
+				"lastChecked": "{time} に確認",
+				"absent": "このビルドにはベータフィードがありません。"
+			},
+			"betaUpdateRelease": {
+				"title": "ベータ {tag} が公開されました",
+				"description": "リリースページから手動でダウンロードしてインストールします。Lilo が自分を置き換えることはありません。",
+				"open": "リリースを開く"
 			}
 		},
 		"devices": {

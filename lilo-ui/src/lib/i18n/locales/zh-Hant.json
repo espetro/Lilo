@@ -168,7 +168,8 @@
 			"profiles": "個人檔案",
 			"otherAppLinks": "來自其他 App 的連結",
 			"blockerExceptions": "清單與例外",
-			"agentConversations": "對話"
+			"agentConversations": "對話",
+			"beta": "Beta 模式"
 		},
 		"searchPlaceholder": "搜尋設定",
 		"searchResultsTitle": "搜尋結果",
@@ -609,6 +610,19 @@
 				"reset": "回復預設值",
 				"resetTitle": "要回復 Lilo 提示詞嗎？",
 				"resetMessage": "你的變更將被預設提示詞取代。"
+			},
+			"betaUpdateCheck": {
+				"title": "Beta 更新",
+				"description": "此 Beta 於啟動時自動將自身建置與分支的最新發布比較一次。",
+				"keywords": "Beta 更新",
+				"check": "檢查 Beta",
+				"lastChecked": "已於 {time} 檢查",
+				"absent": "此建置沒有 Beta 更新來源。"
+			},
+			"betaUpdateRelease": {
+				"title": "Beta {tag} 已發布",
+				"description": "從發布頁面手動下載並安裝；Lilo 從不自行替換。",
+				"open": "開啟發布頁"
 			}
 		},
 		"devices": {

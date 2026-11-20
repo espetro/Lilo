@@ -168,7 +168,8 @@
 			"profiles": "Profili",
 			"otherAppLinks": "Link da altre app",
 			"blockerExceptions": "Elenchi ed eccezioni",
-			"agentConversations": "Conversazioni"
+			"agentConversations": "Conversazioni",
+			"beta": "Modalità beta"
 		},
 		"searchPlaceholder": "Cerca nelle impostazioni",
 		"searchResultsTitle": "Risultati di ricerca",
@@ -609,6 +610,19 @@
 				"reset": "Ripristina",
 				"resetTitle": "Ripristinare il prompt di Lilo?",
 				"resetMessage": "Le tue modifiche saranno sostituite dal prompt predefinito."
+			},
+			"betaUpdateCheck": {
+				"title": "Aggiornamenti beta",
+				"description": "Questa beta confronta la sua build con la versione più recente del fork una volta, all'avvio.",
+				"keywords": "Aggiornamenti beta",
+				"check": "Cerca beta",
+				"lastChecked": "Verificato {time}",
+				"absent": "Questa build non ha un feed beta."
+			},
+			"betaUpdateRelease": {
+				"title": "È uscita la beta {tag}",
+				"description": "Si scarica dalla pagina della versione e si installa a mano; Lilo non sostituisce mai se stesso.",
+				"open": "Apri versione"
 			}
 		},
 		"devices": {
