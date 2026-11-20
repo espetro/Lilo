@@ -180,6 +180,7 @@
 		43EB24B0700E187809FC9CD5 /* ChromeHoverStateMachineTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5F35E8CA20BCB8F7985F7944 /* ChromeHoverStateMachineTests.swift */; };
 		445805C243121CE3AE409BDF /* PageTranslatorTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = F8BCFD2826741F47BAAF2B31 /* PageTranslatorTests.swift */; };
 		4508412DCF105C84E2C694CB /* HistoryBridgeHandler.swift in Sources */ = {isa = PBXBuildFile; fileRef = C68DA653CAE7D50B16736228 /* HistoryBridgeHandler.swift */; };
+		45390FB29E151719A540E869 /* LiloSiblingLocator.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6E6EAD98BEB242D8CB24CA54 /* LiloSiblingLocator.swift */; };
 		45A5F818227AC065097C7256 /* AgentProfiles.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3C70E431D718485B81E57D06 /* AgentProfiles.swift */; };
 		4634C9C3F1B87AA9D7376C41 /* ChromiumSessionTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 588DBF129A3AEF2628F2FA6C /* ChromiumSessionTests.swift */; };
 		468791E265F6262978E3127A /* TabShareBridgeHandlerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4C35045AF7887F095CC9BBAF /* TabShareBridgeHandlerTests.swift */; };
@@ -188,6 +189,7 @@
 		4914B8F46DE28B83AC7723F0 /* SearchBridgeHandlerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = F14320C179015732A2B1775D /* SearchBridgeHandlerTests.swift */; };
 		49394FED0A83BF9BC70F9FA7 /* SpaceManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = DA0B491588CDFD138D534C43 /* SpaceManager.swift */; };
 		49522518C2DD3AD730F46358 /* arc-storable-sidebar.json in Resources */ = {isa = PBXBuildFile; fileRef = BFFE0215E62DF39CA5A5BA91 /* arc-storable-sidebar.json */; };
+		4965C2263B9BF2173E3297FE /* LiloSiblingLocatorTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 076154BFF376194064FDD5A3 /* LiloSiblingLocatorTests.swift */; };
 		49F6074A63CE8742F624B993 /* WKWebViewTabNavigationPolicyTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2B88189CA5154455C4382892 /* WKWebViewTabNavigationPolicyTests.swift */; };
 		4A08ED5B538ADC22BEDF783F /* ConversationCheckpoints.swift in Sources */ = {isa = PBXBuildFile; fileRef = CE82CB8210066CE791C3A7D9 /* ConversationCheckpoints.swift */; };
 		4A32E59C78B5B6C9B091D071 /* Scriptlets.js in Resources */ = {isa = PBXBuildFile; fileRef = E45027F84778FF66E330D01E /* Scriptlets.js */; };
@@ -809,6 +811,7 @@
 		051A95A4390A8B95F0E0D669 /* TabFoldersTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TabFoldersTests.swift; sourceTree = "<group>"; };
 		061803DBB71433F23DA0BC77 /* InfoPlist.strings */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = InfoPlist.strings; path = nl.lproj/InfoPlist.strings; sourceTree = "<group>"; };
 		06769E44A8EE48C5694C00EC /* Database.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Database.swift; sourceTree = "<group>"; };
+		076154BFF376194064FDD5A3 /* LiloSiblingLocatorTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LiloSiblingLocatorTests.swift; sourceTree = "<group>"; };
 		07942EA808D0887C4DDE2BDD /* InfoPlist.strings */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = InfoPlist.strings; path = de.lproj/InfoPlist.strings; sourceTree = "<group>"; };
 		080B76BDA6EADAA8BCAC2981 /* FolderAutoLock.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FolderAutoLock.swift; sourceTree = "<group>"; };
 		08C3E625BBD1D105CB1EC87B /* CookiesBridgeHandler.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CookiesBridgeHandler.swift; sourceTree = "<group>"; };
@@ -1096,6 +1099,7 @@
 		6C23C8FDE215A5571A66EBA4 /* Lilo.Debug.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = Lilo.Debug.entitlements; sourceTree = "<group>"; };
 		6D37ACD420B28B6E9F861196 /* Readability.js */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.javascript; path = Readability.js; sourceTree = "<group>"; };
 		6D3A233DC95A12F65152F801 /* Localizable.strings */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = Localizable.strings; path = "zh-Hans.lproj/Localizable.strings"; sourceTree = "<group>"; };
+		6E6EAD98BEB242D8CB24CA54 /* LiloSiblingLocator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LiloSiblingLocator.swift; sourceTree = "<group>"; };
 		6F6ED6D5C416BB6186B04F06 /* MainWindowController+TabDock.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "MainWindowController+TabDock.swift"; sourceTree = "<group>"; };
 		6FA5C09EA60F8F9CBD6797AB /* MetricKitArchive.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MetricKitArchive.swift; sourceTree = "<group>"; };
 		6FC4131C839D5564A7F9EEAA /* GapEvents.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GapEvents.swift; sourceTree = "<group>"; };
@@ -1632,6 +1636,7 @@
 				BD4066E4F3CD717A035E1262 /* FullDiskAccessPanel.swift */,
 				611AB17EA0AC8C0041A9D5A9 /* ImportBridgeHandler.swift */,
 				204901723B65B91075146379 /* ImportModels.swift */,
+				6E6EAD98BEB242D8CB24CA54 /* LiloSiblingLocator.swift */,
 				4C2C7FB29ECFFC8B0C74DFED /* SafariReader.swift */,
 			);
 			path = Import;
@@ -2460,6 +2465,7 @@
 				9AB8B9618FE85A3078DF27CE /* HistoryImportTests.swift */,
 				B146BDF4B774CAD8C63F07C0 /* ImportBridgeHandlerTests.swift */,
 				4DADCFC04A3D6F96E7BE1D91 /* ImportScaleTests.swift */,
+				076154BFF376194064FDD5A3 /* LiloSiblingLocatorTests.swift */,
 				6BB0CE0D07F4ED20DE6B468F /* SafariReaderTests.swift */,
 			);
 			path = Import;
@@ -3264,6 +3270,7 @@
 				25C0A8DA80D86D9CD9758253 /* LifecyclePolicy.swift in Sources */,
 				F74D503D437E73FA67D69B66 /* LiloApplication.swift in Sources */,
 				8854035A1251D7D7CF6BE4B8 /* LiloIntents.swift in Sources */,
+				45390FB29E151719A540E869 /* LiloSiblingLocator.swift in Sources */,
 				8687188245C6EAAF9E92830A /* LittleWindowController.swift in Sources */,
 				9D52B0C2856412798E1E5B9E /* LittleWindowHotKey.swift in Sources */,
 				9E6F28A95B02C36E69D3918F /* LocalNetworkBridgeHandler.swift in Sources */,
@@ -3600,6 +3607,7 @@
 				283C4D59D32A135F5C205AA4 /* KoreanLocalizationTests.swift in Sources */,
 				20FB5D75995D13EBD415D4E1 /* LifecyclePolicyTests.swift in Sources */,
 				2FB28F4CC7639348C050AC78 /* LiloMCPTests.swift in Sources */,
+				4965C2263B9BF2173E3297FE /* LiloSiblingLocatorTests.swift in Sources */,
 				634843DA8378B4A62D64FE75 /* LinkTabPlacementTests.swift in Sources */,
 				E231D95F444D622E807ACE2F /* LittleWindowTests.swift in Sources */,
 				2F6C5584D488CE6CE8BB8675 /* LocalPortTests.swift in Sources */,
