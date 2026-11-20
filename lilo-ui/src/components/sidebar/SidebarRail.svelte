@@ -95,13 +95,14 @@
     if (!(event.target as HTMLElement).closest("button, a, input, select, textarea")) chromeActions.maximizeWindow();
   }
 
-  // Docked, the rail slides with the sidebar's fold: WindowFrameView.toggleDuration on --motion-ease-standard.
-  // The slide is the rail's whole width (--sidebar-rail-width + --content-inset), off its window edge.
+  // Docked and floating alike, the peek slides with the sidebar's toggle: WindowFrameView.toggleDuration
+  // on --motion-ease-standard. The slide is the rail's whole width (--sidebar-rail-width + --content-inset),
+  // off its window edge.
   const railFly = $derived({
     x: getTabPosition() === "right" ? 48 : -48,
     opacity: 1,
-    duration: prefersReducedMotion() ? 0 : floating ? 240 : 280,
-    easing: floating ? undefined : easeStandard,
+    duration: prefersReducedMotion() ? 0 : 280,
+    easing: easeStandard,
   });
 </script>
 
