@@ -803,6 +803,7 @@ extension MainWindowController {
             "sidebarWidth": sidebarExpandedWidth,
             "sidebarVisible": sidebarVisible,
             "sidebarRail": sidebarRail,
+            "narrowSidebarWidth": Self.narrowSidebarWidth,
             "toolbarVisible": toolbarVisible,
             "trafficLightsVisible": areTrafficLightsVisible(),
             "tabPosition": tabLayout.position.rawValue,
@@ -895,13 +896,7 @@ extension MainWindowController {
     var hasCompactPageToolbar: Bool { tabLayout.position == .bottom && shownTabLayout.address != .page }
 
     /// Right and bottom always keep a toolbar over the page: the traffic lights stay top-left.
-    var hasPageToolbar: Bool {
-        switch tabLayout.position {
-        case .left: shownTabLayout.address == .page
-        case .right, .bottom: true
-        case .top: false
-        }
-    }
+    var hasPageToolbar: Bool { tabLayout.showsPageToolbar(toolbarVisible: toolbarVisible) }
 
     /// Where the page sits, side panel excluded. Hidden tabs leave the page every edge but the address's own
     /// toolbar, which hides on its own; an overlay floats over it.
