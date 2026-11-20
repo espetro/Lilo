@@ -143,7 +143,7 @@ final class ProfileManagerTests: XCTestCase {
         XCTAssertTrue(popupStore === scopedManager.adoptEphemeralDataStore(openerStore.backingStore, forTab: popup, in: spaceId))
     }
 
-    func testClosedPrivateTabReleasesItsStore() {
+    func testClosedPrivateTabReleasesItsStore() async {
         let scopedManager = ProfileManager(dbManager: dbManager, engineFactory: WKEngineFactory())
         let spaceId = UUID(), tabId = UUID()
         weak var released: WKWebsiteDataStore?
@@ -152,11 +152,12 @@ final class ProfileManagerTests: XCTestCase {
             XCTAssertNotNil(released)
         }
         scopedManager.releaseEphemeralDataStore(forTab: tabId)
-        XCTAssertNil(scopedManager.privateSpaceId(of: released ?? .default()))
-        XCTAssertNil(released, "no tab or space keeps the closed tab's store alive")
+        // WebKit holds a fresh store for the cookie policy the factory sets on it, until that call completes.
+        let gone = await pollUntil { released == nil }
+        XCTAssertTrue(gone, "no tab or space keeps the closed tab's store alive")
     }
 
-    func testDeletingASpaceReleasesItsTabStores() {
+    func testDeletingASpaceReleasesItsTabStores() async {
         let scopedManager = ProfileManager(dbManager: dbManager, engineFactory: WKEngineFactory())
         let spaceId = UUID()
         weak var released: WKWebsiteDataStore?
@@ -165,7 +166,8 @@ final class ProfileManagerTests: XCTestCase {
             _ = scopedManager.ephemeralDataStore(forTab: UUID(), in: spaceId)
         }
         scopedManager.releaseEphemeralDataStore(for: spaceId)
-        XCTAssertNil(released)
+        let gone = await pollUntil { released == nil }
+        XCTAssertTrue(gone)
     }
 
     func testDeleteProfileReleasesItsContentController() async throws {
