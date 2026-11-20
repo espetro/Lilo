@@ -75,7 +75,11 @@ enum AgentMCP {
         case "ping":
             return result(id: id, [:])
         case "tools/list":
+            #if DEBUG
+            return result(id: id, ["tools": AgentTools.definitions + [AgentWindowCapture.definition]])
+            #else
             return result(id: id, ["tools": AgentTools.definitions])
+            #endif
         case "tools/call":
             // Queued behind a freeze, a request whose client cancelled it or left does nothing.
             guard !Task.isCancelled else { return nil }
