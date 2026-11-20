@@ -265,6 +265,44 @@ final class MenuValidationTests: XCTestCase {
         XCTAssertNil(try store.load(spaceId: unreadable.id))
     }
 
+    /// The menu bar builds the split items with their actions and titles; a menu that left them
+    /// out, or built them with the wrong action, would leave split views unreachable everywhere
+    /// the chrome cannot offer them. The keys themselves are covered by KeyboardShortcutsTests:
+    /// AppKit may localize an item's shown key equivalent to the current keyboard layout.
+    func testTheTabMenuCarriesTheSplitViewItemsWithTheirActions() throws {
+        let saved = NSApp.mainMenu
+        defer { NSApp.mainMenu = saved }
+        AppDelegate().setupMainMenu()
+        let tabMenu = try XCTUnwrap(NSApp.mainMenu?.items.first { $0.title == "Tab".localized }?.submenu)
+
+        let newSplit = try XCTUnwrap(tabMenu.items.first { $0.action == #selector(MainWindowController.newSplitView(_:)) }, "no New Split View item")
+        let closeSplit = try XCTUnwrap(tabMenu.items.first { $0.action == #selector(MainWindowController.closeSplitView(_:)) }, "no Separate Split View item")
+        XCTAssertNil(newSplit.target, "the item resolves through the responder chain, to the focused window")
+        XCTAssertNil(closeSplit.target)
+        XCTAssertEqual(newSplit.title, "New Split View".localized)
+        XCTAssertEqual(closeSplit.title, "Separate Split View".localized)
+        XCTAssertEqual(KeyboardShortcuts.bindings("split.new"), ["⌃⇧="])
+        XCTAssertEqual(KeyboardShortcuts.bindings("split.close"), ["⌃⇧-"])
+    }
+
+    /// A page splits beside the active tab from the menu bar: the split is created, shown and undoable.
+    func testNewSplitViewSplitsTheActiveTabAndCloseSplitViewSeparatesIt() throws {
+        let first = try XCTUnwrap(window.createTabStateFirst(url: URL(string: "https://example.com/a")))
+        _ = try XCTUnwrap(window.createTabStateFirst(url: URL(string: "https://example.com/b")))
+        window.activateTabStateFirst(id: first.id)
+
+        window.newSplitView(nil)
+
+        let split = try XCTUnwrap(window.tabManager.activeSplit, "the split never appeared")
+        XCTAssertEqual(split.layout.paneIds, [first.id, window.tabManager.activeOpenTabId!])
+        XCTAssertTrue(isEnabled(#selector(MainWindowController.closeSplitView(_:))))
+
+        window.closeSplitView(nil)
+
+        XCTAssertNil(window.tabManager.activeSplit)
+        XCTAssertFalse(isEnabled(#selector(MainWindowController.closeSplitView(_:))))
+    }
+
     func testDuplicateTabOpensTheCopyRightBelowTheOriginal() throws {
         let original = try XCTUnwrap(window.createTabStateFirst(url: URL(string: "https://example.com/a")))
         _ = try XCTUnwrap(window.createTabStateFirst(url: URL(string: "https://example.com/b")))
