@@ -327,6 +327,12 @@
 				"description": "Cuánto tardan las pestañas inactivas en pausarse y descargarse de la memoria.",
 				"keywords": "memoria rendimiento batería pausar liberar reposo"
 			},
+			"tabSleepAllowlist": {
+				"title": "Sitios que se mantienen cargados",
+				"description": "Las pestañas de estos sitios, subdominios incluidos, nunca se congelan ni se descargan, así que siguen gastando memoria y batería. Separados por comas.",
+				"keywords": "mantener cargada excepción lista permitida nunca suspender congelar descargar",
+				"placeholder": "mail.example.com, example.org"
+			},
 			"singleWindow": {
 				"title": "Mantener todo en una ventana",
 				"description": "Las ventanas nuevas y emergentes se abren aquí como pestañas.",
@@ -864,6 +870,7 @@
 		"sleeping": "En reposo",
 		"dozing": "Dormida",
 		"dozingHint": "Dormida para ahorrar memoria. Se reactiva al abrirla.",
+		"keepLoaded": "Se mantiene cargada",
 		"pinned": "Fijada",
 		"loading": "Cargando",
 		"muted": "Silenciada",
@@ -2199,6 +2206,7 @@
 		"Download Complete": "Descarga finalizada",
 		"Download Failed": "Error de descarga",
 		"Keep Awake Until Done": "Mantener activo hasta terminar",
+		"Keep Loaded": "Mantener cargada",
 		"Sleep is back on": "El reposo vuelve a estar permitido",
 		"The battery is below %d%%.": "La batería está por debajo del %d%%.",
 		"The Mac is too hot.": "El Mac está demasiado caliente.",

@@ -327,6 +327,12 @@
 				"description": "Em quanto tempo as abas inativas são pausadas e descarregadas.",
 				"keywords": "memória desempenho bateria pausar descarregar repouso"
 			},
+			"tabSleepAllowlist": {
+				"title": "Sites mantidos carregados",
+				"description": "As abas desses sites, subdomínios incluídos, nunca são congeladas nem descarregadas e continuam usando memória e bateria. Separados por vírgulas.",
+				"keywords": "manter carregada exceção lista permitida nunca suspender congelar descarregar",
+				"placeholder": "mail.example.com, example.org"
+			},
 			"singleWindow": {
 				"title": "Manter tudo em uma janela",
 				"description": "Novas janelas e pop-ups de páginas abrem como abas aqui.",
@@ -864,6 +870,7 @@
 		"sleeping": "Em repouso",
 		"dozing": "Dormindo",
 		"dozingHint": "Dormindo para economizar memória. Acorda ao abrir.",
+		"keepLoaded": "Mantida carregada",
 		"pinned": "Fixada",
 		"loading": "Carregando",
 		"muted": "Sem som",
@@ -2199,6 +2206,7 @@
 		"Download Complete": "Download concluído",
 		"Download Failed": "Falha no download",
 		"Keep Awake Until Done": "Manter ativo até terminar",
+		"Keep Loaded": "Manter carregada",
 		"Sleep is back on": "O repouso foi reativado",
 		"The battery is below %d%%.": "A bateria está abaixo de %d%%.",
 		"The Mac is too hot.": "O Mac está quente demais.",
