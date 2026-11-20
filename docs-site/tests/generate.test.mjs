@@ -56,7 +56,7 @@ test("every setting is listed once, in both locales", async () => {
     const settingRows = rows(markdown).filter((row) => !/^\| (Setting|Réglage) \|/u.test(row));
     assert.equal(settingRows.length, model.SETTINGS.length, locale);
     for (const setting of model.SETTINGS) {
-      const title = catalogs[locale].settings.items[setting.id].title.replace("{version}", "{{version}}");
+      const title = catalogs[locale].settings.items[setting.id].title.replace("{version}", "{{version}}").replace("{tag}", "`{tag}`");
       assert.ok(settingRows.some((row) => row.startsWith(`| ${title} |`)), `${locale}: ${setting.id}`);
     }
   }
