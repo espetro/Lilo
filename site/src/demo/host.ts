@@ -1376,6 +1376,9 @@ export const createDemoHost = (
       emit("updaterStatus", {
         automatic: settings.automaticUpdates !== "false",
         available: false,
+        betaAvailable: null,
+        betaFeed: false,
+        betaLastCheck: null,
         lastCheck: null,
         version,
         webKitFork: false,

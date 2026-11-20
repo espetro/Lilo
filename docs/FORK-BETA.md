@@ -39,8 +39,10 @@ The agent socket, the keychain items and the preferences follow the same identit
 Both can run side by side, and `Lilo Beta.app` can sit next to `Lilo.app` in `/Applications`.
 Both still offer to be the default browser: pick one.
 
-It never updates itself: the build has no Sparkle public key, so no update check starts and the upstream appcast is never read.
-Update by downloading the newest `beta-N` release; to find which build has a bug, try the previous N.
+It cannot update itself through Sparkle: the build has no Sparkle public key, so no update check starts and no appcast is read.
+Instead, `BetaUpdateChecker` reads the fork's GitHub releases list once on launch (the URL lives in `LILOBetaUpdateFeedURL`, set by `scripts/build-app.sh` only when `LILO_BETA=1`) and compares the newest `beta-N` tag with the one the workflow stamped into this build (`LILOBetaTag`; an unstamped local build keeps the tag its first check saw).
+When a newer one exists, Settings > Advanced shows a row that opens its release page; the download and install stay manual.
+To find which build has a bug, try the previous N.
 
 ## How it is built
 

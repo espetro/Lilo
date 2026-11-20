@@ -168,7 +168,8 @@
 			"profiles": "个人资料",
 			"otherAppLinks": "其他 App 中的链接",
 			"blockerExceptions": "列表与例外",
-			"agentConversations": "对话"
+			"agentConversations": "对话",
+			"beta": "Beta 模式"
 		},
 		"searchPlaceholder": "搜索设置",
 		"searchResultsTitle": "搜索结果",
@@ -609,6 +610,19 @@
 				"reset": "恢复默认",
 				"resetTitle": "要恢复 Lilo 提示词吗？",
 				"resetMessage": "你的更改将被默认提示词替换。"
+			},
+			"betaUpdateCheck": {
+				"title": "Beta 更新",
+				"description": "此 Beta 在启动时自动将自身构建与分支的最新发布比较一次。",
+				"keywords": "Beta 更新",
+				"check": "检查 Beta",
+				"lastChecked": "已于 {time} 检查",
+				"absent": "此构建没有 Beta 更新源。"
+			},
+			"betaUpdateRelease": {
+				"title": "Beta {tag} 已发布",
+				"description": "从发布页面手动下载并安装；Lilo 从不自行替换。",
+				"open": "打开发布页"
 			}
 		},
 		"devices": {

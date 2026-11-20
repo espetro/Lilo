@@ -82,6 +82,8 @@ jobs:
       - name: Build
         env:
           LILO_BETA: '1'
+          # The tag the publish step gives this run, stamped in the app so its update check compares against it.
+          LILO_BETA_TAG: beta-${{ github.run_number }}
         run: make release-archive
 
       # What keeps the beta from ever touching the installed Lilo: a build that lost one of these must not be published.
@@ -93,6 +95,8 @@ jobs:
           check CFBundleIdentifier "$(/usr/libexec/PlistBuddy -c 'Print :CFBundleIdentifier' "$plist")" fr.arouillard.lilo.beta
           check CFBundleName "$(/usr/libexec/PlistBuddy -c 'Print :CFBundleName' "$plist")" 'Lilo Beta'
           check SUPublicEDKey "$(/usr/libexec/PlistBuddy -c 'Print :SUPublicEDKey' "$plist")" ''
+          check LILOBetaUpdateFeedURL "$(/usr/libexec/PlistBuddy -c 'Print :LILOBetaUpdateFeedURL' "$plist")" 'https://api.github.com/repos/espetro/Lilo/releases?per_page=30'
+          check LILOBetaTag "$(/usr/libexec/PlistBuddy -c 'Print :LILOBetaTag' "$plist")" "beta-$GITHUB_RUN_NUMBER"
           check LaunchDaemons "$(ls "$app/Contents/Library/LaunchDaemons")" fr.arouillard.lilo.beta.power.plist
           codesign --verify --deep --strict "$app"
           codesign -dv "$app" 2>&1 | grep -q 'flags=.*runtime' \

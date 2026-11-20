@@ -168,7 +168,8 @@
 			"profiles": "Profile",
 			"otherAppLinks": "Łącza z innych aplikacji",
 			"blockerExceptions": "Listy i wyjątki",
-			"agentConversations": "Rozmowy"
+			"agentConversations": "Rozmowy",
+			"beta": "Tryb beta"
 		},
 		"searchPlaceholder": "Szukaj w ustawieniach",
 		"searchResultsTitle": "Wyniki wyszukiwania",
@@ -609,6 +610,19 @@
 				"reset": "Przywróć domyślny",
 				"resetTitle": "Przywrócić prompt Lilo?",
 				"resetMessage": "Twoje zmiany zostaną zastąpione domyślnym promptem."
+			},
+			"betaUpdateCheck": {
+				"title": "Aktualizacje beta",
+				"description": "To beta przy starcie raz porównuje swoją kompilację z najnowszym wydaniem forka.",
+				"keywords": "Aktualizacje beta",
+				"check": "Sprawdź bety",
+				"lastChecked": "Sprawdzono {time}",
+				"absent": "Ta kompilacja nie ma źródła beta."
+			},
+			"betaUpdateRelease": {
+				"title": "Beta {tag} jest dostępna",
+				"description": "Pobierana ręcznie ze strony wydania i instalowana ręcznie; Lilo nigdy nie zastępuje samej siebie.",
+				"open": "Otwórz wydanie"
 			}
 		},
 		"devices": {
