@@ -675,6 +675,36 @@ final class SplitPanesController {
         return hit.view
     }
 
+    /// The pane whose conversation surface claims `point` as a chrome zone, or nil. A conversation
+    /// draws in the chrome web view and registers its whole pane as a `conversation-<tabId>` zone, so
+    /// presses on the pane classify chrome and pane interactions recover the tab through the zone id.
+    private func conversationPaneTabId(atWindowPoint point: NSPoint) -> UUID? {
+        guard let split,
+              let zone = controller.chromeInteractiveZones.zoneId(
+                  at: controller.chromeWebView.convert(point, from: nil),
+                  in: controller.chromeWebView.bounds, isFlipped: controller.chromeWebView.isFlipped),
+              zone.hasPrefix("conversation-"),
+              let tabId = UUID(uuidString: String(zone.dropFirst("conversation-".count))),
+              split.layout.paneIds.contains(tabId) else { return nil }
+        return tabId
+    }
+
+    /// Click-to-focus for a conversation pane: its zone swallows the press before `view(for:)` can run.
+    func activatePaneForChromePress(atWindowPoint point: NSPoint) {
+        guard let tabId = conversationPaneTabId(atWindowPoint: point),
+              tabId != controller.tabManager.activeOpenTabId else { return }
+        controller.activateTabStateFirst(id: tabId)
+    }
+
+    /// The hovered pane pill's button under `event`, when the pane's own conversation zone claimed
+    /// the point. The pill is native and sits under the chrome web view, so without this it shows on
+    /// hover but can never take a click; other chrome surfaces over a pane keep their presses.
+    func handleButtonForChromePress(_ event: NSEvent) -> NSView? {
+        guard let tabId = conversationPaneTabId(atWindowPoint: event.locationInWindow),
+              let handle = handles[tabId] else { return nil }
+        return handle.hitTest(controller.contentContainerView.convert(event.locationInWindow, from: nil))
+    }
+
     /// The pointer monitor's every-move feed: reveals the hovered pane's handle and the divider
     /// under the pointer, and hides the handles anywhere else. Nil hides them all (pointer left).
     func updateHover(atWindowPoint point: NSPoint?) {
