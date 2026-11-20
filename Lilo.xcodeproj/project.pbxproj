@@ -602,6 +602,7 @@
 		CFA61DFF3EA0EFB4B920F10C /* SitePermissionStoreTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7E458A8C4075DA751CB1D872 /* SitePermissionStoreTests.swift */; };
 		CFAB0EF281F26A8CB865F66F /* PageFindController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 15E352D8AF7C9DBB3E4F57EB /* PageFindController.swift */; };
 		D0816FE4D1EFA8FB76928DBD /* DatabaseManagerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5B44038CADFE5A0A3F880B83 /* DatabaseManagerTests.swift */; };
+		D0B58097315C2D9CD813E701 /* TabSleepStateTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 02847E9E83FFABF7628F3A95 /* TabSleepStateTests.swift */; };
 		D0FCF6B686E2B71840C7C207 /* RecentlyClosedStack.swift in Sources */ = {isa = PBXBuildFile; fileRef = EE7166AA46F363A6A230BD96 /* RecentlyClosedStack.swift */; };
 		D12538EE0E87B395D7CCBFDF /* SpaceBridgeHandlerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 44786C1BB32D8EB3B1C40945 /* SpaceBridgeHandlerTests.swift */; };
 		D1C0E92DC53047A13F1A1D84 /* DownloadStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0FD2CCE891FAD6B6EE01D505 /* DownloadStore.swift */; };
@@ -804,6 +805,7 @@
 		01838BCE08BCAEA786362E06 /* ExtensionRegistryFixture.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ExtensionRegistryFixture.swift; sourceTree = "<group>"; };
 		01B05D7907D42D09882C56B7 /* TabShareBridgeTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TabShareBridgeTests.swift; sourceTree = "<group>"; };
 		01D45E0B4C896809F3CA2B68 /* SpaceTabStateTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SpaceTabStateTests.swift; sourceTree = "<group>"; };
+		02847E9E83FFABF7628F3A95 /* TabSleepStateTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TabSleepStateTests.swift; sourceTree = "<group>"; };
 		02EB8238FA150BE9D1A44A15 /* AgentDevTools.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AgentDevTools.swift; sourceTree = "<group>"; };
 		030767E1CC448A4ABC7A3EB4 /* ElementPicker.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ElementPicker.swift; sourceTree = "<group>"; };
 		03896996B8F742A26C2FFDCC /* WKWebViewTab+Configuration.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "WKWebViewTab+Configuration.swift"; sourceTree = "<group>"; };
@@ -1629,6 +1631,7 @@
 				45CA6916762B455944115350 /* TabLifecycleCoordinatorTests.swift */,
 				A3E4311F0D20240330B8214D /* TabLifecycleIdleTests.swift */,
 				3B4D0EE5722E43A281A69A3A /* TabRenameTests.swift */,
+				02847E9E83FFABF7628F3A95 /* TabSleepStateTests.swift */,
 				BF1360B23CFB74B9AB68AB26 /* TabsQueryTests.swift */,
 				0F4E893A28E577ABED8A0602 /* TopHitPreloadBenchmarkTests.swift */,
 				5B6F150DD168680406DBA9AE /* TopHitPreloadTests.swift */,
@@ -3738,6 +3741,7 @@
 				CEE94D0A85A5AAE532FBC5AB /* TabRenameTests.swift in Sources */,
 				468791E265F6262978E3127A /* TabShareBridgeHandlerTests.swift in Sources */,
 				804E9C82447BC693721CE7F1 /* TabShareBridgeTests.swift in Sources */,
+				D0B58097315C2D9CD813E701 /* TabSleepStateTests.swift in Sources */,
 				748664BCBB6F2004A21D1A75 /* TabsQueryTests.swift in Sources */,
 				121B95F8323320F06E381214 /* TemporaryBrowserContext.swift in Sources */,
 				E160267D387E4C481F6DBFF6 /* TemporaryProfileDatabase.swift in Sources */,
