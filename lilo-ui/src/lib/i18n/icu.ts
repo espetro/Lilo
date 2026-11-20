@@ -27,7 +27,9 @@ function space(src: string, i: number): number {
 }
 
 // Parse elements from `start` until the matching `}` or end of string; returns [parts, next].
-function parseParts(src: string, start: number, inPlural: boolean): [Part[], number] {
+// `inElement` distinguishes an option body (where `}` terminates) from the top level
+// (where a stray `}` is literal text).
+function parseParts(src: string, start: number, inPlural: boolean, inElement = false): [Part[], number] {
 	const parts: Part[] = [];
 	let text = "";
 	let i = start;
@@ -37,7 +39,7 @@ function parseParts(src: string, start: number, inPlural: boolean): [Part[], num
 	};
 	while (i < src.length) {
 		const ch = src[i];
-		if (ch === "}") {
+		if (ch === "}" && inElement) {
 			flush();
 			return [parts, i + 1];
 		}
@@ -71,11 +73,14 @@ function parseParts(src: string, start: number, inPlural: boolean): [Part[], num
 		const [type, typeEnd] = word(src, j, " \t\n,{}");
 		j = space(src, typeEnd);
 		if (!KINDS.has(type)) {
-			// {n, number} and friends render like a plain argument; skip to the element's end.
+			// {n, number} and friends render like a plain argument; skip to the element's
+			// end. A `{` inside means it was an unknown complex type, not a typed
+			// argument - leave the element literal instead of swallowing its options.
 			if (src[j] === "}" || src[j] === ",") {
 				let depth = 0;
-				while (j < src.length && (src[j] !== "}" || depth-- > 0)) j += src[j] === "{" ? (depth++, 1) : 1;
-				if (j < src.length) {
+				let nested = false;
+				while (j < src.length && (src[j] !== "}" || depth-- > 0)) j += src[j] === "{" ? (depth++, nested = true, 1) : 1;
+				if (j < src.length && !nested) {
 					flush();
 					parts.push({ arg: name });
 					i = j + 1;
@@ -104,12 +109,16 @@ function parseParts(src: string, start: number, inPlural: boolean): [Part[], num
 					ok = false;
 					break options;
 				}
-				const [body, next] = parseParts(src, j + 1, type !== "select");
+				// `#` binds to the nearest enclosing plural, so a plural context
+				// propagates into nested select/selectordinal option bodies too.
+				const [body, next] = parseParts(src, j + 1, inPlural || type !== "select", true);
 				options.push([sel, body]);
 				j = next;
 			}
 			j = space(src, j);
-			ok = ok && src[j] === "}";
+			// ICU requires `other` on every plural/selectordinal/select; without it a
+			// message could render nothing, so the element falls back to literal text.
+			ok = ok && src[j] === "}" && options.some(([sel]) => sel === "other");
 		}
 		if (!ok) {
 			text += ch;
@@ -151,7 +160,9 @@ function render(parts: Part[], params: Record<string, string | number>, ctx: Mes
 				: ctx.pluralRules.select(count - part.offset);
 			const pick = part.options.find(([sel]) => sel === key)?.[1]
 				?? part.options.find(([sel]) => sel === "other")?.[1];
-			if (pick) out += render(pick, params, ctx, count - part.offset);
+			// A select has no number of its own: `#` inside its options stays the
+			// enclosing plural's pound.
+			if (pick) out += render(pick, params, ctx, part.kind === "select" ? pound : count - part.offset);
 		}
 	}
 	return out;

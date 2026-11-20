@@ -53,6 +53,46 @@ test("translate picks a count's plural form and groups its digits", () => {
 	catalogs.fr = fr;
 });
 
+test("translate renders nested select inside a plural option", () => {
+	const en = catalogs.en;
+	catalogs.en = {
+		...en,
+		__test: { items: "{count, plural, one{{kind, select, tab{# tab} other{# item}}} other{# items}}" },
+	};
+	assert.equal(translate("en", "__test.items", { count: 1, kind: "tab" }), "1 tab");
+	assert.equal(translate("en", "__test.items", { count: 1, kind: "window" }), "1 item");
+	assert.equal(translate("en", "__test.items", { count: 3, kind: "tab" }), "3 items");
+	catalogs.en = en;
+});
+
+test("malformed ICU patterns fall back to the literal message, never blank or wrong output", () => {
+	const en = catalogs.en;
+	catalogs.en = {
+		...en,
+		__test: {
+			unbalanced: "Open {count, plural, one{# tab",
+			unknownTag: "Done {count, sparkle, one{#}}",
+			noOther: "{count, plural, one{# tab}}",
+			badSelector: "{count, plural, bogus{# tab} other{# tabs}}",
+		},
+	};
+	assert.equal(translate("en", "__test.unbalanced", { count: 1 }), "Open {count, plural, one{# tab");
+	assert.equal(translate("en", "__test.unknownTag", { count: 1 }), "Done {count, sparkle, one{#}}");
+	assert.equal(translate("en", "__test.noOther", { count: 2 }), "{count, plural, one{# tab}}");
+	// An unknown selector is a valid option ICU-wise (ignored at render); a count that
+	// misses it still lands on `other`.
+	assert.equal(translate("en", "__test.badSelector", { count: 4 }), "4 tabs");
+	catalogs.en = en;
+});
+
+test("non-numeric and missing plural arguments select the other form", () => {
+	const en = catalogs.en;
+	catalogs.en = { ...en, __test: { tabs: "{count, plural, one{# tab} other{# tabs}}" } };
+	assert.equal(translate("en", "__test.tabs", { count: "2" as unknown as number }), "NaN tabs");
+	assert.equal(translate("en", "__test.tabs"), "NaN tabs");
+	catalogs.en = en;
+});
+
 test("resolveLocale maps BCP-47 tags to a supported locale, defaulting to English", () => {
 	const cases: Array<[string | null | undefined, Locale]> = [
 		["fr-FR", "fr"],
