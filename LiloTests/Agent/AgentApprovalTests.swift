@@ -132,18 +132,23 @@ final class AgentApprovalTests: AgentToolTestCase {
         XCTAssertEqual(result.meta["lilo/consent"] as? String, "denied")
     }
 
-    /// With no window to ask in, the agent is told so instead of that the user said no.
+    /// With no window to ask in, the agent is told so instead of that the user said no. No tool call gets this
+    /// far without a window (agentSpace refuses first), so the gate itself is asked directly.
     func testAnOrderWithNoWindowSaysSo() async throws {
         let tab = try await shopTab()
+        let engine = try engine(forTab: tab)
+        let session = try XCTUnwrap(control.sessions.first)
         context.windows.remove(window)
         defer { context.windows.add(window) }
 
-        let reply = try await click("Place order", tab: tab)
-
-        XCTAssertTrue(reply.isError)
-        XCTAssertTrue(reply.text.hasPrefix("[needs_user]"), reply.text)
-        XCTAssertTrue(reply.text.contains("no window"), reply.text)
-        XCTAssertEqual(reply.meta["lilo/consent"] as? String, "unavailable")
+        do {
+            _ = try await control.approveConsequentialAction("click", label: "Place order", frame: nil, engine: engine, session: session)
+            XCTFail("the order needs the user")
+        } catch let error as AgentToolError {
+            XCTAssertEqual(error.code, "needs_user")
+            XCTAssertEqual(error.consent, .unavailable)
+            XCTAssertTrue(error.message.contains("no window"), error.message)
+        }
         XCTAssertTrue(control.pendingConsentAnswers.isEmpty, "nothing was shown")
     }
 
