@@ -180,6 +180,7 @@
 		43EB24B0700E187809FC9CD5 /* ChromeHoverStateMachineTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5F35E8CA20BCB8F7985F7944 /* ChromeHoverStateMachineTests.swift */; };
 		445805C243121CE3AE409BDF /* PageTranslatorTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = F8BCFD2826741F47BAAF2B31 /* PageTranslatorTests.swift */; };
 		4508412DCF105C84E2C694CB /* HistoryBridgeHandler.swift in Sources */ = {isa = PBXBuildFile; fileRef = C68DA653CAE7D50B16736228 /* HistoryBridgeHandler.swift */; };
+		45390FB29E151719A540E869 /* LiloSiblingLocator.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6E6EAD98BEB242D8CB24CA54 /* LiloSiblingLocator.swift */; };
 		45A5F818227AC065097C7256 /* AgentProfiles.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3C70E431D718485B81E57D06 /* AgentProfiles.swift */; };
 		4634C9C3F1B87AA9D7376C41 /* ChromiumSessionTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 588DBF129A3AEF2628F2FA6C /* ChromiumSessionTests.swift */; };
 		468791E265F6262978E3127A /* TabShareBridgeHandlerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4C35045AF7887F095CC9BBAF /* TabShareBridgeHandlerTests.swift */; };
@@ -188,6 +189,7 @@
 		4914B8F46DE28B83AC7723F0 /* SearchBridgeHandlerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = F14320C179015732A2B1775D /* SearchBridgeHandlerTests.swift */; };
 		49394FED0A83BF9BC70F9FA7 /* SpaceManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = DA0B491588CDFD138D534C43 /* SpaceManager.swift */; };
 		49522518C2DD3AD730F46358 /* arc-storable-sidebar.json in Resources */ = {isa = PBXBuildFile; fileRef = BFFE0215E62DF39CA5A5BA91 /* arc-storable-sidebar.json */; };
+		4965C2263B9BF2173E3297FE /* LiloSiblingLocatorTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 076154BFF376194064FDD5A3 /* LiloSiblingLocatorTests.swift */; };
 		49F6074A63CE8742F624B993 /* WKWebViewTabNavigationPolicyTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2B88189CA5154455C4382892 /* WKWebViewTabNavigationPolicyTests.swift */; };
 		4A08ED5B538ADC22BEDF783F /* ConversationCheckpoints.swift in Sources */ = {isa = PBXBuildFile; fileRef = CE82CB8210066CE791C3A7D9 /* ConversationCheckpoints.swift */; };
 		4A32E59C78B5B6C9B091D071 /* Scriptlets.js in Resources */ = {isa = PBXBuildFile; fileRef = E45027F84778FF66E330D01E /* Scriptlets.js */; };
@@ -355,6 +357,7 @@
 		8457D87DA4E92905A7F734C7 /* TerminalRenderer.swift in Sources */ = {isa = PBXBuildFile; fileRef = DDC19D307E03C78C963C299A /* TerminalRenderer.swift */; };
 		855F92363FA1402A0DF10D88 /* MainWindowController+LittleWindow.swift in Sources */ = {isa = PBXBuildFile; fileRef = 87DEB18A42DAB7A65A0229C8 /* MainWindowController+LittleWindow.swift */; };
 		8562F03E55327B6A1B1415E5 /* MainWindowController+DisplayedTabs.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3D371E1B3A193ADCC3D25DA6 /* MainWindowController+DisplayedTabs.swift */; };
+		857B6BE69587E95DBF709C8C /* AgentActionLogTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = EF85FC163B7F84E0D9BA9C8D /* AgentActionLogTests.swift */; };
 		8616135050C91BC991D47C19 /* MeetingBridgeHandler.swift in Sources */ = {isa = PBXBuildFile; fileRef = CE0702AD85CA546A7F2F8A43 /* MeetingBridgeHandler.swift */; };
 		8687188245C6EAAF9E92830A /* LittleWindowController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 220FD9F59B1775527D3AEB15 /* LittleWindowController.swift */; };
 		8741E81CCCB438EE0C52ECF6 /* PageZoomTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1440ACDBF23EE0F24A55B00D /* PageZoomTests.swift */; };
@@ -536,6 +539,7 @@
 		BB46F90F8F880376E09F13D2 /* HitboxDebugOverlayTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8EB06D0954FAE8692A6F6686 /* HitboxDebugOverlayTests.swift */; };
 		BBF9B8A805B80DBB61A3E17B /* ChromeDragRoutingTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 80EED497CE2A72BE4910CD9A /* ChromeDragRoutingTests.swift */; };
 		BC3850C5D9FC0550E544E347 /* Localizable.strings in Resources */ = {isa = PBXBuildFile; fileRef = 6D3A233DC95A12F65152F801 /* Localizable.strings */; };
+		BC9E621E943975CA1A14A423 /* AgentActionLog.swift in Sources */ = {isa = PBXBuildFile; fileRef = 357D35CADAD798B60683A2E9 /* AgentActionLog.swift */; };
 		BCF3D934FEC15EE3702404FD /* Readability.js in Resources */ = {isa = PBXBuildFile; fileRef = 6D37ACD420B28B6E9F861196 /* Readability.js */; };
 		BE24E2F6FE9345B4B119A202 /* MainWindowController+SplitView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 292A55E3946115C3552E1B11 /* MainWindowController+SplitView.swift */; };
 		BE52C56886B07B2CFB430778 /* TabExtensionAdapterTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = FA1702BA302E414AE132A83C /* TabExtensionAdapterTests.swift */; };
@@ -807,6 +811,7 @@
 		051A95A4390A8B95F0E0D669 /* TabFoldersTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TabFoldersTests.swift; sourceTree = "<group>"; };
 		061803DBB71433F23DA0BC77 /* InfoPlist.strings */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = InfoPlist.strings; path = nl.lproj/InfoPlist.strings; sourceTree = "<group>"; };
 		06769E44A8EE48C5694C00EC /* Database.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Database.swift; sourceTree = "<group>"; };
+		076154BFF376194064FDD5A3 /* LiloSiblingLocatorTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LiloSiblingLocatorTests.swift; sourceTree = "<group>"; };
 		07942EA808D0887C4DDE2BDD /* InfoPlist.strings */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = InfoPlist.strings; path = de.lproj/InfoPlist.strings; sourceTree = "<group>"; };
 		080B76BDA6EADAA8BCAC2981 /* FolderAutoLock.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FolderAutoLock.swift; sourceTree = "<group>"; };
 		08C3E625BBD1D105CB1EC87B /* CookiesBridgeHandler.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CookiesBridgeHandler.swift; sourceTree = "<group>"; };
@@ -938,6 +943,7 @@
 		34C98C02AE45BCCC353A4BE4 /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppDelegate.swift; sourceTree = "<group>"; };
 		34EF66358C163103565EB5C8 /* PageSnapshotServiceRegionSelectionTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PageSnapshotServiceRegionSelectionTests.swift; sourceTree = "<group>"; };
 		3568E9E8C952657276BD58F3 /* ProfileBridgeHandler.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProfileBridgeHandler.swift; sourceTree = "<group>"; };
+		357D35CADAD798B60683A2E9 /* AgentActionLog.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AgentActionLog.swift; sourceTree = "<group>"; };
 		35C70B5C0116D385738F1BB1 /* FolderAutoLockTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FolderAutoLockTests.swift; sourceTree = "<group>"; };
 		35DB3552045162A7C7483438 /* MainWindowController+HideElement.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "MainWindowController+HideElement.swift"; sourceTree = "<group>"; };
 		35EC083831FA1D9DD747B556 /* ScreenCaptureStream.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScreenCaptureStream.swift; sourceTree = "<group>"; };
@@ -1093,6 +1099,7 @@
 		6C23C8FDE215A5571A66EBA4 /* Lilo.Debug.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = Lilo.Debug.entitlements; sourceTree = "<group>"; };
 		6D37ACD420B28B6E9F861196 /* Readability.js */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.javascript; path = Readability.js; sourceTree = "<group>"; };
 		6D3A233DC95A12F65152F801 /* Localizable.strings */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = Localizable.strings; path = "zh-Hans.lproj/Localizable.strings"; sourceTree = "<group>"; };
+		6E6EAD98BEB242D8CB24CA54 /* LiloSiblingLocator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LiloSiblingLocator.swift; sourceTree = "<group>"; };
 		6F6ED6D5C416BB6186B04F06 /* MainWindowController+TabDock.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "MainWindowController+TabDock.swift"; sourceTree = "<group>"; };
 		6FA5C09EA60F8F9CBD6797AB /* MetricKitArchive.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MetricKitArchive.swift; sourceTree = "<group>"; };
 		6FC4131C839D5564A7F9EEAA /* GapEvents.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GapEvents.swift; sourceTree = "<group>"; };
@@ -1473,6 +1480,7 @@
 		EE8DD9368BC12CAC7A5B7099 /* ReaderMode.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReaderMode.swift; sourceTree = "<group>"; };
 		EF4C14BD276448B7DB404808 /* GermanLocalizationTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GermanLocalizationTests.swift; sourceTree = "<group>"; };
 		EF4E8A8698086ADA28DE3B64 /* ProfileExtensionRegistryTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProfileExtensionRegistryTests.swift; sourceTree = "<group>"; };
+		EF85FC163B7F84E0D9BA9C8D /* AgentActionLogTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AgentActionLogTests.swift; sourceTree = "<group>"; };
 		F0D2FAD7B4EEA4D41DE59E0D /* SplitLayoutTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SplitLayoutTests.swift; sourceTree = "<group>"; };
 		F13600639DAEB0FA8ED0BE36 /* SplitPanesControllerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SplitPanesControllerTests.swift; sourceTree = "<group>"; };
 		F13AD66F688CF5229E923F2B /* ManagementBridgeHandler.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ManagementBridgeHandler.swift; sourceTree = "<group>"; };
@@ -1628,6 +1636,7 @@
 				BD4066E4F3CD717A035E1262 /* FullDiskAccessPanel.swift */,
 				611AB17EA0AC8C0041A9D5A9 /* ImportBridgeHandler.swift */,
 				204901723B65B91075146379 /* ImportModels.swift */,
+				6E6EAD98BEB242D8CB24CA54 /* LiloSiblingLocator.swift */,
 				4C2C7FB29ECFFC8B0C74DFED /* SafariReader.swift */,
 			);
 			path = Import;
@@ -2079,6 +2088,7 @@
 		74367AE2288F7E4CD1E8FFBA /* Agent */ = {
 			isa = PBXGroup;
 			children = (
+				357D35CADAD798B60683A2E9 /* AgentActionLog.swift */,
 				ACE35B10767659425C93E8C4 /* AgentCapture.swift */,
 				98C343DF6BF6796711B5F5EA /* AgentClientConfig.swift */,
 				F45EC459535117517B583FDE /* AgentControl.swift */,
@@ -2302,6 +2312,7 @@
 		92C6DD1635608A072BB37426 /* Agent */ = {
 			isa = PBXGroup;
 			children = (
+				EF85FC163B7F84E0D9BA9C8D /* AgentActionLogTests.swift */,
 				B54915CFF5E01DAEA0834D28 /* AgentApprovalTests.swift */,
 				ADA7210C9C9A59FD53B2EC5C /* AgentCaptureTests.swift */,
 				49DC7A82002222474EC0B589 /* AgentClientConfigTests.swift */,
@@ -2454,6 +2465,7 @@
 				9AB8B9618FE85A3078DF27CE /* HistoryImportTests.swift */,
 				B146BDF4B774CAD8C63F07C0 /* ImportBridgeHandlerTests.swift */,
 				4DADCFC04A3D6F96E7BE1D91 /* ImportScaleTests.swift */,
+				076154BFF376194064FDD5A3 /* LiloSiblingLocatorTests.swift */,
 				6BB0CE0D07F4ED20DE6B468F /* SafariReaderTests.swift */,
 			);
 			path = Import;
@@ -3114,6 +3126,7 @@
 				B4481A3BCDEAACCE28E3BDAD /* ACPAgentCatalog.swift in Sources */,
 				2411A4E1BCA83C7F9D685BE8 /* ACPConnection.swift in Sources */,
 				3B30B2CB3238951D8C998938 /* ActionColorBridgeHandler.swift in Sources */,
+				BC9E621E943975CA1A14A423 /* AgentActionLog.swift in Sources */,
 				6AA37CB9BD59DFDB2E8DFD28 /* AgentCapture.swift in Sources */,
 				F374AFB1ACDA5776FEC46C10 /* AgentClientConfig.swift in Sources */,
 				CD791D22DFB974BA1EAC96C9 /* AgentControl.swift in Sources */,
@@ -3257,6 +3270,7 @@
 				25C0A8DA80D86D9CD9758253 /* LifecyclePolicy.swift in Sources */,
 				F74D503D437E73FA67D69B66 /* LiloApplication.swift in Sources */,
 				8854035A1251D7D7CF6BE4B8 /* LiloIntents.swift in Sources */,
+				45390FB29E151719A540E869 /* LiloSiblingLocator.swift in Sources */,
 				8687188245C6EAAF9E92830A /* LittleWindowController.swift in Sources */,
 				9D52B0C2856412798E1E5B9E /* LittleWindowHotKey.swift in Sources */,
 				9E6F28A95B02C36E69D3918F /* LocalNetworkBridgeHandler.swift in Sources */,
@@ -3453,6 +3467,7 @@
 			files = (
 				D59F8B14915851CFC9A74907 /* ACPAgentCatalogTests.swift in Sources */,
 				3D919F5C44D94CC41F91662F /* ACPConnectionTests.swift in Sources */,
+				857B6BE69587E95DBF709C8C /* AgentActionLogTests.swift in Sources */,
 				C270763C21E4A7E4C96B6697 /* AgentApprovalTests.swift in Sources */,
 				17A66E132E78A25103A03593 /* AgentCaptureTests.swift in Sources */,
 				F12FB6207C0FDEE7F670F1A6 /* AgentClientConfigTests.swift in Sources */,
@@ -3592,6 +3607,7 @@
 				283C4D59D32A135F5C205AA4 /* KoreanLocalizationTests.swift in Sources */,
 				20FB5D75995D13EBD415D4E1 /* LifecyclePolicyTests.swift in Sources */,
 				2FB28F4CC7639348C050AC78 /* LiloMCPTests.swift in Sources */,
+				4965C2263B9BF2173E3297FE /* LiloSiblingLocatorTests.swift in Sources */,
 				634843DA8378B4A62D64FE75 /* LinkTabPlacementTests.swift in Sources */,
 				E231D95F444D622E807ACE2F /* LittleWindowTests.swift in Sources */,
 				2F6C5584D488CE6CE8BB8675 /* LocalPortTests.swift in Sources */,

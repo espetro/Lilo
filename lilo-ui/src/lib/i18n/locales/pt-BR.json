@@ -79,11 +79,6 @@
 		"passwordManagerAction": "Escolher",
 		"passwordManagerChange": "Alterar",
 		"replayOnboardingAction": "Rever",
-		"defaultBrowserSet": "Definir como padrão",
-		"defaultBrowserLater": "Mais tarde",
-		"defaultBrowserBannerText": "Tornar o Lilo seu navegador padrão?",
-		"defaultBrowserSetSuccess": "O Lilo agora é seu navegador padrão.",
-		"defaultBrowserSetFailed": "O Lilo não foi definido como navegador padrão. Você pode alterar isso nos Ajustes do Sistema.",
 		"engineName": "Nome",
 		"engineUrlTemplate": "URL de busca (%s = consulta)",
 		"engineKeyword": "Palavra-chave",
@@ -507,6 +502,11 @@
 				"title": "Perguntar antes de enviar, pagar, apagar ou publicar",
 				"description": "O agente aguarda sua resposta.",
 				"keywords": "agente aprovação confirmar pagamento compra pedido apagar enviar publicar"
+			},
+			"agentActionLog": {
+				"title": "Manter um registro das ações do agente",
+				"description": "Um arquivo local lista cada chamada, nunca o texto digitado nem o conteúdo das páginas.",
+				"keywords": "agente registro histórico auditoria ações reproduzir"
 			},
 			"agentAlwaysAllowed": {
 				"title": "Sempre permitido",
@@ -1600,6 +1600,11 @@
 		"placeholder": "Buscar ou digitar URL...",
 		"addressBar": "Barra de endereço: {url}",
 		"noProject": "Sem projeto",
+		"defaultBrowserSet": "Definir como padrão",
+		"defaultBrowserLater": "Mais tarde",
+		"defaultBrowserBannerText": "Tornar o Lilo seu navegador padrão?",
+		"defaultBrowserSetSuccess": "O Lilo agora é seu navegador padrão.",
+		"defaultBrowserSetFailed": "O Lilo não foi definido como navegador padrão. Você pode alterar isso nos Ajustes do Sistema.",
 		"details": {
 			"branch": "Branch",
 			"command": "Comando",
@@ -1657,6 +1662,7 @@
 		"allow": "Permitir",
 		"allowOnce": "Permitir uma vez",
 		"alwaysAllowOnSite": "Sempre permitir neste site",
+		"agentWaitsForAnswer": "O agente aguarda sua resposta.",
 		"popup": {
 			"blocked": "Pop-up bloqueado",
 			"tried": "tentou abrir uma janela pop-up",

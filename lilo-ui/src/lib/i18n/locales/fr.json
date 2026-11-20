@@ -79,11 +79,6 @@
 		"passwordManagerAction": "Choisir",
 		"passwordManagerChange": "Changer",
 		"replayOnboardingAction": "Revoir",
-		"defaultBrowserSet": "Définir par défaut",
-		"defaultBrowserLater": "Plus tard",
-		"defaultBrowserSetSuccess": "Lilo est maintenant votre navigateur par défaut.",
-		"defaultBrowserSetFailed": "Lilo n'a pas été défini comme navigateur par défaut. Vous pouvez le modifier dans Réglages Système.",
-		"defaultBrowserBannerText": "Définir Lilo comme navigateur par défaut ?",
 		"engineName": "Nom",
 		"engineUrlTemplate": "URL de recherche (%s = requête)",
 		"engineKeyword": "Mot-clé",
@@ -507,6 +502,11 @@
 				"title": "Demander avant d'envoyer, payer, supprimer ou publier",
 				"description": "L'agent attend votre réponse.",
 				"keywords": "agent approbation confirmer paiement achat commande supprimer envoyer publier"
+			},
+			"agentActionLog": {
+				"title": "Garder un journal des actions de l'agent",
+				"description": "Un fichier local liste chaque appel, jamais le texte saisi ni le contenu des pages.",
+				"keywords": "agent journal historique audit actions rejouer"
 			},
 			"agentAlwaysAllowed": {
 				"title": "Toujours autorisés",
@@ -1600,6 +1600,11 @@
 		"placeholder": "Rechercher ou saisir une URL...",
 		"addressBar": "Barre d'adresse : {url}",
 		"noProject": "Sans projet",
+		"defaultBrowserSet": "Définir par défaut",
+		"defaultBrowserLater": "Plus tard",
+		"defaultBrowserSetSuccess": "Lilo est maintenant votre navigateur par défaut.",
+		"defaultBrowserSetFailed": "Lilo n'a pas été défini comme navigateur par défaut. Vous pouvez le modifier dans Réglages Système.",
+		"defaultBrowserBannerText": "Définir Lilo comme navigateur par défaut ?",
 		"details": {
 			"branch": "Branche",
 			"command": "Commande",
@@ -1657,6 +1662,7 @@
 		"allow": "Autoriser",
 		"allowOnce": "Autoriser une fois",
 		"alwaysAllowOnSite": "Toujours autoriser sur ce site",
+		"agentWaitsForAnswer": "L'agent attend votre réponse.",
 		"popup": {
 			"blocked": "Pop-up bloquée",
 			"tried": "a tenté d'ouvrir une fenêtre pop-up",

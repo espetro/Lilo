@@ -79,11 +79,6 @@
 		"passwordManagerAction": "Auswählen",
 		"passwordManagerChange": "Ändern",
 		"replayOnboardingAction": "Wiederholen",
-		"defaultBrowserSet": "Als Standard festlegen",
-		"defaultBrowserLater": "Später",
-		"defaultBrowserBannerText": "Lilo als Standardbrowser festlegen?",
-		"defaultBrowserSetSuccess": "Lilo ist jetzt dein Standardbrowser.",
-		"defaultBrowserSetFailed": "Lilo wurde nicht als Standardbrowser festgelegt. Du kannst dies in den Systemeinstellungen ändern.",
 		"engineName": "Name",
 		"engineUrlTemplate": "Such-URL (%s = Suchanfrage)",
 		"engineKeyword": "Schlüsselwort",
@@ -507,6 +502,11 @@
 				"title": "Vor Senden, Bezahlen, Löschen oder Veröffentlichen fragen",
 				"description": "Der Agent wartet auf deine Antwort.",
 				"keywords": "agent erlaubnis bestätigen zahlung kauf bestellung löschen senden veröffentlichen"
+			},
+			"agentActionLog": {
+				"title": "Protokoll der Agentenaktionen führen",
+				"description": "Eine lokale Datei listet jeden Aufruf, nie eingegebenen Text oder Seiteninhalt.",
+				"keywords": "agent protokoll verlauf audit aktionen wiedergabe"
 			},
 			"agentAlwaysAllowed": {
 				"title": "Immer erlaubt",
@@ -1600,6 +1600,11 @@
 		"placeholder": "Suchen oder URL eingeben...",
 		"addressBar": "Adressleiste: {url}",
 		"noProject": "Kein Projekt",
+		"defaultBrowserSet": "Als Standard festlegen",
+		"defaultBrowserLater": "Später",
+		"defaultBrowserBannerText": "Lilo als Standardbrowser festlegen?",
+		"defaultBrowserSetSuccess": "Lilo ist jetzt dein Standardbrowser.",
+		"defaultBrowserSetFailed": "Lilo wurde nicht als Standardbrowser festgelegt. Du kannst dies in den Systemeinstellungen ändern.",
 		"details": {
 			"branch": "Branch",
 			"command": "Befehl",
@@ -1657,6 +1662,7 @@
 		"allow": "Erlauben",
 		"allowOnce": "Einmal erlauben",
 		"alwaysAllowOnSite": "Auf dieser Website immer erlauben",
+		"agentWaitsForAnswer": "Der Agent wartet auf deine Antwort.",
 		"popup": {
 			"blocked": "Pop-up blockiert",
 			"tried": "wollte ein Pop-up-Fenster öffnen",

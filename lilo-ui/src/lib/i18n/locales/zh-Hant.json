@@ -79,11 +79,6 @@
 		"passwordManagerAction": "選擇",
 		"passwordManagerChange": "更改",
 		"replayOnboardingAction": "重播",
-		"defaultBrowserSet": "設為預設",
-		"defaultBrowserLater": "稍後",
-		"defaultBrowserBannerText": "要將 Lilo 設為預設瀏覽器嗎？",
-		"defaultBrowserSetSuccess": "Lilo 現已設為預設瀏覽器。",
-		"defaultBrowserSetFailed": "未能將 Lilo 設為預設瀏覽器。你可以在「系統設定」中更改。",
 		"engineName": "名稱",
 		"engineUrlTemplate": "搜尋 URL（%s = 搜尋內容）",
 		"engineKeyword": "關鍵字",
@@ -507,6 +502,11 @@
 				"title": "傳送、付款、刪除或發佈前先詢問",
 				"description": "代理程式會等待你的回應。",
 				"keywords": "代理程式 核准 確認 付款 購買 訂單 刪除 傳送 發佈"
+			},
+			"agentActionLog": {
+				"title": "記錄代理程式的操作",
+				"description": "本機檔案逐條列出每次呼叫,絕不包含輸入的文字或頁面內容。",
+				"keywords": "代理程式 日誌 歷史 稽核 操作 重播"
 			},
 			"agentAlwaysAllowed": {
 				"title": "一律允許",
@@ -1600,6 +1600,11 @@
 		"placeholder": "搜尋或輸入 URL...",
 		"addressBar": "網址列：{url}",
 		"noProject": "無專案",
+		"defaultBrowserSet": "設為預設",
+		"defaultBrowserLater": "稍後",
+		"defaultBrowserBannerText": "要將 Lilo 設為預設瀏覽器嗎？",
+		"defaultBrowserSetSuccess": "Lilo 現已設為預設瀏覽器。",
+		"defaultBrowserSetFailed": "未能將 Lilo 設為預設瀏覽器。你可以在「系統設定」中更改。",
 		"details": {
 			"branch": "分支",
 			"command": "指令",
@@ -1657,6 +1662,7 @@
 		"allow": "允許",
 		"allowOnce": "允許一次",
 		"alwaysAllowOnSite": "一律允許此網站",
+		"agentWaitsForAnswer": "代理程式會等待你的回應。",
 		"popup": {
 			"blocked": "已阻擋彈出式視窗",
 			"tried": "嘗試打開彈出式視窗",

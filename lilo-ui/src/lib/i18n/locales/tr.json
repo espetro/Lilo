@@ -79,11 +79,6 @@
 		"passwordManagerAction": "Seç",
 		"passwordManagerChange": "Değiştir",
 		"replayOnboardingAction": "Yeniden Göster",
-		"defaultBrowserSet": "Saptanmış yap",
-		"defaultBrowserLater": "Daha Sonra",
-		"defaultBrowserBannerText": "Lilo saptanmış tarayıcınız olsun mu?",
-		"defaultBrowserSetSuccess": "Lilo artık saptanmış tarayıcınız.",
-		"defaultBrowserSetFailed": "Lilo saptanmış tarayıcı yapılamadı. Bunu Sistem Ayarları'ndan değiştirebilirsiniz.",
 		"engineName": "Ad",
 		"engineUrlTemplate": "Arama URL'si (%s = sorgu)",
 		"engineKeyword": "Anahtar sözcük",
@@ -507,6 +502,11 @@
 				"title": "Göndermeden, ödemeden, silmeden veya yayımlamadan önce sor",
 				"description": "Ajan yanıtınızı bekler.",
 				"keywords": "ajan onay doğrula ödeme satın al sipariş sil gönder yayımla"
+			},
+			"agentActionLog": {
+				"title": "Ajan eylemlerinin günlüğünü tut",
+				"description": "Yerel bir dosya her çağrıyı listeler; yazılan metni ya da sayfa içeriğini asla içermez.",
+				"keywords": "ajan günlük geçmiş denetim eylemler yeniden oynatma"
 			},
 			"agentAlwaysAllowed": {
 				"title": "Her zaman izin verilenler",
@@ -1600,6 +1600,11 @@
 		"placeholder": "Arayın veya URL girin...",
 		"addressBar": "Adres çubuğu: {url}",
 		"noProject": "Proje yok",
+		"defaultBrowserSet": "Saptanmış yap",
+		"defaultBrowserLater": "Daha Sonra",
+		"defaultBrowserBannerText": "Lilo saptanmış tarayıcınız olsun mu?",
+		"defaultBrowserSetSuccess": "Lilo artık saptanmış tarayıcınız.",
+		"defaultBrowserSetFailed": "Lilo saptanmış tarayıcı yapılamadı. Bunu Sistem Ayarları'ndan değiştirebilirsiniz.",
 		"details": {
 			"branch": "Dal",
 			"command": "Komut",
@@ -1657,6 +1662,7 @@
 		"allow": "İzin Ver",
 		"allowOnce": "Bir Kez İzin Ver",
 		"alwaysAllowOnSite": "Bu Sitede Her Zaman İzin Ver",
+		"agentWaitsForAnswer": "Ajan yanıtınızı bekler.",
 		"popup": {
 			"blocked": "Açılır pencere engellendi",
 			"tried": "bir açılır pencere açmaya çalıştı",

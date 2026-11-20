@@ -17,7 +17,11 @@ Agents work in their own Agents Space, in a throwaway profile wiped after each s
 take your keyboard or your tabs. They can borrow one of your profiles for a task after you allow it.
 
 - Open, navigate and close tabs in their own folder; click, type, fill forms, take screenshots.
-- Read pages (accessibility tree with element refs, page text), the console and the network.
+- Read pages (accessibility tree with element refs, page text; `read_page` with `viewport` returns only
+  the elements on or near the screen, each with its box), the console and the network.
+- Actions that can change the page (clicks, keys, typing, scrolls, `form_input`, file uploads) end their
+  reply with what changed: the page's new URL, or a compact diff of the elements it added, removed and
+  changed, so a full re-read is only needed for detail.
 - `form_input`: set a field and get back what it holds once the page handled the change, with a
   warning when the page reformatted, cut or rejected the value. For a password, card or one-time
   code field the reply only says whether it holds the value given.
@@ -32,6 +36,10 @@ take your keyboard or your tabs. They can borrow one of your profiles for a task
 - `run`: execute a JavaScript program that calls the other tools in a loop, in one call
   (at most 200 tool calls and 60 s by default).
 
+Lilo is the one browser, so it lists no browser to choose. A client written for Claude in Chrome that
+still calls `list_connected_browsers`, `select_browser` or `switch_browser` gets an answer instead
+of an error, and no schema of them is sent on each turn.
+
 ## What Lilo asks you first
 
 Unless you turn it off in Settings, Lilo asks before an agent:
@@ -45,6 +53,8 @@ Unless you turn it off in Settings, Lilo asks before an agent:
   translations) is the fallback for buttons outside a form; a bare "order" is not on it, so "Save
   order" goes through;
 - sends a request other than GET or HEAD with the cookies of one of your profiles.
+
+The question opens in the window that holds the agent's page, and the agent's conversation row turns amber meanwhile; your other windows, and the site and extension prompts there, are not held up by it. It counts as a refusal when you decline; one nobody answers in 45 seconds is withdrawn, and the agent may ask once more; with no window open the agent is told to ask you to open one first.
 
 Sites you always allow are listed in Settings, where you can remove them. Whatever the setting,
 Lilo always asks before an agent hands a page one of your files (`file_upload`, `upload_image`).
@@ -85,16 +95,37 @@ Settings > Agents > "Custom agent" starts a program of your own as an agent, nex
 
 There is one custom agent. Registry agents, sign-in and conversations work the same for it; Lilo does not give it a terminal.
 
+## The action log
+
+Lilo keeps one local line per tool call an agent makes, in `Agents/Actions/` of Lilo's support folder (`~/Library/Application Support/Lilo/Agents/Actions/`). A conversation has its own file (`conversation-<tab id>.jsonl`), and every other client its own (`client-<name>.jsonl`). Nothing leaves your Mac, nothing is written while no agent calls a tool, and no screenshot, page text or video is ever stored. It is the record a replay, a retry or a skill is built from later.
+
+Each line is a JSON object:
+
+```json
+{"args":{"ref":"ref_12","tabId":3,"value":{"chars":9}},"duration_ms":41,"host":"example.com","ok":true,"tabId":3,"tool":"form_input","ts":"2026-11-19T10:15:02.317Z"}
+```
+
+- `ts`, `tool`, `ok`, `duration_ms`, and `code` (the error code, such as `needs_user`) when the call failed.
+- `possibleCommit` when the call sent a write to a site: a retry could happen twice.
+- `tabId` and `host`: the tab the call named, and the host of its page, never a path or a query.
+- `args`: the arguments with their content removed. Ids, actions, numbers and coordinates stay. A URL keeps its host. Every other string (typed text, scripts, selectors, headers, bodies, cookie values) becomes its length, `{"chars": 9}`, and so does any `value`, even a number, because it can be a one-time code.
+
+What is never logged: what you or the agent typed, a password, a card or a one-time code, cookie values, request or response bodies, page text, screenshots, error messages and URLs past their host.
+
+Each file stops at 1 MB and rotates to a single `.1.jsonl` next to it, so a source never holds more than 2 MB. Closing a conversation deletes its log when Lilo quits. To delete the rest, quit Lilo and remove the `Agents/Actions` folder. To stop logging, turn off Settings > Agents > "Keep a log of agent actions"; lines already written stay until you delete them.
+
 ## Known limitations
 
 - An agent's `emulate` and an extension's `chrome.debugger` on the same tab share its Web Inspector, so each can overwrite the other's user agent, media and init script.
 
 ## Errors that need you
 
-An error only you can resolve (a denied prompt, agent access turned off, Lilo not running, no window
+An error only you can resolve (a declined prompt, agent access turned off, Lilo not running, no window
 open) carries the code `needs_user`: in `_meta["lilo/errorCode"]` on a tool result, in
-`error.data.code` on a JSON-RPC error, and as a `[needs_user]` prefix in the message. When Lilo
-can't take an agent at all, `lilo-mcp` still answers at once and says why.
+`error.data.code` on a JSON-RPC error, and as a `[needs_user]` prefix in the message. A prompt that ended
+without your answer also says how in `_meta["lilo/consent"]`: `denied`, `expired` (nobody answered in
+time) or `unavailable` (no window could ask). When Lilo can't take an agent at all, `lilo-mcp` still
+answers at once and says why.
 
 A tool call that fails after it sent something that can change the site (a click, Enter, a `fetch`
 other than GET, HEAD or OPTIONS, including inside `browser_batch` or `run`) carries

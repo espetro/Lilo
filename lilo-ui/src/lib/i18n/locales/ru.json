@@ -79,11 +79,6 @@
 		"passwordManagerAction": "Выбрать",
 		"passwordManagerChange": "Изменить",
 		"replayOnboardingAction": "Повторить",
-		"defaultBrowserSet": "По умолчанию",
-		"defaultBrowserLater": "Позже",
-		"defaultBrowserBannerText": "Сделать Lilo браузером по умолчанию?",
-		"defaultBrowserSetSuccess": "Теперь Lilo — браузер по умолчанию.",
-		"defaultBrowserSetFailed": "Не удалось сделать Lilo браузером по умолчанию. Это можно изменить в системных настройках.",
 		"engineName": "Название",
 		"engineUrlTemplate": "URL поиска (%s = запрос)",
 		"engineKeyword": "Ключевое слово",
@@ -507,6 +502,11 @@
 				"title": "Спрашивать перед отправкой, оплатой, удалением и публикацией",
 				"description": "Агент ждёт вашего ответа.",
 				"keywords": "агент разрешение подтверждение оплата покупка заказ удалить отправить опубликовать"
+			},
+			"agentActionLog": {
+				"title": "Вести журнал действий агента",
+				"description": "Локальный файл перечисляет каждый вызов, но не введённый текст и не содержимое страниц.",
+				"keywords": "агент журнал история аудит действия воспроизведение"
 			},
 			"agentAlwaysAllowed": {
 				"title": "Всегда разрешено",
@@ -1634,6 +1634,11 @@
 		"placeholder": "Поиск или ввод URL...",
 		"addressBar": "Адресная строка: {url}",
 		"noProject": "Без проекта",
+		"defaultBrowserSet": "По умолчанию",
+		"defaultBrowserLater": "Позже",
+		"defaultBrowserBannerText": "Сделать Lilo браузером по умолчанию?",
+		"defaultBrowserSetSuccess": "Теперь Lilo — браузер по умолчанию.",
+		"defaultBrowserSetFailed": "Не удалось сделать Lilo браузером по умолчанию. Это можно изменить в системных настройках.",
 		"details": {
 			"branch": "Ветка",
 			"command": "Команда",
@@ -1691,6 +1696,7 @@
 		"allow": "Разрешить",
 		"allowOnce": "Разрешить один раз",
 		"alwaysAllowOnSite": "Всегда разрешать на этом сайте",
+		"agentWaitsForAnswer": "Агент ждёт вашего ответа.",
 		"popup": {
 			"blocked": "Всплывающее окно заблокировано",
 			"tried": "пытается открыть всплывающее окно",

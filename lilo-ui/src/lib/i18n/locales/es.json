@@ -79,11 +79,6 @@
 		"passwordManagerAction": "Elegir",
 		"passwordManagerChange": "Cambiar",
 		"replayOnboardingAction": "Repetir",
-		"defaultBrowserSet": "Usar por omisión",
-		"defaultBrowserLater": "Más tarde",
-		"defaultBrowserBannerText": "¿Usar Lilo como navegador por omisión?",
-		"defaultBrowserSetSuccess": "Lilo es ahora tu navegador por omisión.",
-		"defaultBrowserSetFailed": "No se ha establecido Lilo como navegador por omisión. Puedes cambiarlo en Ajustes del Sistema.",
 		"engineName": "Nombre",
 		"engineUrlTemplate": "URL de búsqueda (%s = consulta)",
 		"engineKeyword": "Palabra clave",
@@ -507,6 +502,11 @@
 				"title": "Preguntar antes de enviar, pagar, eliminar o publicar",
 				"description": "El agente espera tu respuesta.",
 				"keywords": "agente aprobación confirmar pago compra pedido eliminar enviar publicar"
+			},
+			"agentActionLog": {
+				"title": "Guardar un registro de las acciones del agente",
+				"description": "Un archivo local enumera cada llamada, nunca el texto escrito ni el contenido de las páginas.",
+				"keywords": "agente registro historial auditoría acciones reproducir"
 			},
 			"agentAlwaysAllowed": {
 				"title": "Siempre permitido",
@@ -1600,6 +1600,11 @@
 		"placeholder": "Buscar o introducir URL...",
 		"addressBar": "Barra de direcciones: {url}",
 		"noProject": "Sin proyecto",
+		"defaultBrowserSet": "Usar por omisión",
+		"defaultBrowserLater": "Más tarde",
+		"defaultBrowserBannerText": "¿Usar Lilo como navegador por omisión?",
+		"defaultBrowserSetSuccess": "Lilo es ahora tu navegador por omisión.",
+		"defaultBrowserSetFailed": "No se ha establecido Lilo como navegador por omisión. Puedes cambiarlo en Ajustes del Sistema.",
 		"details": {
 			"branch": "Rama",
 			"command": "Comando",
@@ -1657,6 +1662,7 @@
 		"allow": "Permitir",
 		"allowOnce": "Permitir una vez",
 		"alwaysAllowOnSite": "Permitir siempre en este sitio",
+		"agentWaitsForAnswer": "El agente espera tu respuesta.",
 		"popup": {
 			"blocked": "Ventana emergente bloqueada",
 			"tried": "ha intentado abrir una ventana emergente",

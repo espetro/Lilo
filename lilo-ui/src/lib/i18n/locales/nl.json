@@ -79,11 +79,6 @@
 		"passwordManagerAction": "Kies",
 		"passwordManagerChange": "Wijzig",
 		"replayOnboardingAction": "Speel opnieuw af",
-		"defaultBrowserSet": "Stel in als standaard",
-		"defaultBrowserLater": "Later",
-		"defaultBrowserBannerText": "Lilo instellen als je standaardbrowser?",
-		"defaultBrowserSetSuccess": "Lilo is nu je standaardbrowser.",
-		"defaultBrowserSetFailed": "Lilo is niet ingesteld als standaardbrowser. Je kunt dit wijzigen in Systeeminstellingen.",
 		"engineName": "Naam",
 		"engineUrlTemplate": "Zoek-URL (%s = zoekopdracht)",
 		"engineKeyword": "Trefwoord",
@@ -507,6 +502,11 @@
 				"title": "Vraag vóór versturen, betalen, verwijderen of publiceren",
 				"description": "De agent wacht op je antwoord.",
 				"keywords": "agent toestemming bevestig betaling aankoop bestelling verwijder verstuur publiceer"
+			},
+			"agentActionLog": {
+				"title": "Een logboek van de acties van de agent bijhouden",
+				"description": "Een lokaal bestand somt elke aanroep op, nooit getypte tekst of pagina-inhoud.",
+				"keywords": "agent logboek geschiedenis audit acties herhalen"
 			},
 			"agentAlwaysAllowed": {
 				"title": "Altijd toegestaan",
@@ -1600,6 +1600,11 @@
 		"placeholder": "Zoek of voer URL in...",
 		"addressBar": "Adresbalk: {url}",
 		"noProject": "Geen project",
+		"defaultBrowserSet": "Stel in als standaard",
+		"defaultBrowserLater": "Later",
+		"defaultBrowserBannerText": "Lilo instellen als je standaardbrowser?",
+		"defaultBrowserSetSuccess": "Lilo is nu je standaardbrowser.",
+		"defaultBrowserSetFailed": "Lilo is niet ingesteld als standaardbrowser. Je kunt dit wijzigen in Systeeminstellingen.",
 		"details": {
 			"branch": "Branch",
 			"command": "Commando",
@@ -1657,6 +1662,7 @@
 		"allow": "Sta toe",
 		"allowOnce": "Sta één keer toe",
 		"alwaysAllowOnSite": "Sta altijd toe op deze website",
+		"agentWaitsForAnswer": "De agent wacht op je antwoord.",
 		"popup": {
 			"blocked": "Pop-up geblokkeerd",
 			"tried": "probeerde een pop-upvenster te openen",

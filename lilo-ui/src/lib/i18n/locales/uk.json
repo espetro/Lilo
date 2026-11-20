@@ -79,11 +79,6 @@
 		"passwordManagerAction": "Вибрати",
 		"passwordManagerChange": "Змінити",
 		"replayOnboardingAction": "Показати знову",
-		"defaultBrowserSet": "Зробити типовим",
-		"defaultBrowserLater": "Пізніше",
-		"defaultBrowserBannerText": "Зробити Lilo типовим браузером?",
-		"defaultBrowserSetSuccess": "Тепер Lilo — типовий браузер.",
-		"defaultBrowserSetFailed": "Не вдалося зробити Lilo типовим браузером. Це можна змінити в Системних параметрах.",
 		"engineName": "Назва",
 		"engineUrlTemplate": "URL пошуку (%s = запит)",
 		"engineKeyword": "Ключове слово",
@@ -507,6 +502,11 @@
 				"title": "Питати перед надсиланням, оплатою, видаленням або публікацією",
 				"description": "Агент чекає на вашу відповідь.",
 				"keywords": "агент дозвіл підтвердження оплата купівля замовлення видалення надсилання публікація"
+			},
+			"agentActionLog": {
+				"title": "Вести журнал дій агента",
+				"description": "Локальний файл перелічує кожен виклик, але не введений текст і не вміст сторінок.",
+				"keywords": "агент журнал історія аудит дії відтворення"
 			},
 			"agentAlwaysAllowed": {
 				"title": "Завжди дозволено",
@@ -1634,6 +1634,11 @@
 		"placeholder": "Пошук або введення URL...",
 		"addressBar": "Адресний рядок: {url}",
 		"noProject": "Без проєкту",
+		"defaultBrowserSet": "Зробити типовим",
+		"defaultBrowserLater": "Пізніше",
+		"defaultBrowserBannerText": "Зробити Lilo типовим браузером?",
+		"defaultBrowserSetSuccess": "Тепер Lilo — типовий браузер.",
+		"defaultBrowserSetFailed": "Не вдалося зробити Lilo типовим браузером. Це можна змінити в Системних параметрах.",
 		"details": {
 			"branch": "Гілка",
 			"command": "Команда",
@@ -1691,6 +1696,7 @@
 		"allow": "Дозволити",
 		"allowOnce": "Дозволити раз",
 		"alwaysAllowOnSite": "Завжди дозволяти на цьому сайті",
+		"agentWaitsForAnswer": "Агент чекає на вашу відповідь.",
 		"popup": {
 			"blocked": "Спливне вікно заблоковано",
 			"tried": "намагається відкрити спливне вікно",

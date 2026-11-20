@@ -20,7 +20,9 @@ enum AgentInteractionTools {
             A click or Enter on a control that sends, pays, buys, orders, deletes, transfers, publishes or signs up \
             first waits up to 45 s for the user's approval in Lilo; refused or unanswered, it fails with [needs_user]: \
             ask the user to do it or allow it. A click or key returns once the requests it started end, up to 10 s, and \
-            names those still running: leaving the page then may cancel them.
+            names those still running: leaving the page then may cancel them. An action that can change the page \
+            ends its reply with what changed: the page's new URL, or a diff of its elements added, removed and \
+            changed, so read_page is only needed for detail.
             """, [
                 "action": ["type": "string", "enum": ["left_click", "right_click", "double_click", "triple_click", "type", "insert_text", "key",
                                                       "screenshot", "wait", "scroll", "left_click_drag", "zoom", "scroll_to", "hover"]],
@@ -122,13 +124,8 @@ enum AgentInteractionTools {
             Start over signed in nowhere: wipes the ephemeral Agents profile (cookies, storage, cache, history) and reloads \
             your tabs. Only that profile, never one of the user's; refused while another agent has tabs in it, unless wait \
             lets it finish first.
-            """, ["wait": AgentTools.prop("number", "Seconds to wait for other agents to close their tabs, up to 600 (default 0).")]),
-        AgentTools.tool("list_connected_browsers", "Lists the browsers this server can drive: the running Lilo.", [:]),
-        AgentTools.tool("select_browser", "Select the browser to drive. Lilo is the only one.", ["deviceId": AgentTools.prop("string", "The browser id.")]),
-        AgentTools.tool("switch_browser", "Connect to a browser. Lilo is already connected.", [:])
+            """, ["wait": AgentTools.prop("number", "Seconds to wait for other agents to close their tabs, up to 600 (default 0).")])
     ]
-
-    static let browserPickers: Set = ["list_connected_browsers", "select_browser", "switch_browser"]
 
     static func call(
         _ name: String, arguments: [String: Any], session: AgentSession, control: AgentControl
@@ -177,6 +174,8 @@ enum AgentInteractionTools {
             }
             for index in urls.indices { urls[index] = try await control.approveUpload(urls[index], engine: engine, session: session) }
             engine.pendingAgentUploads = urls
+            await AgentTools.snapshot(engine)
+            let urlBefore = engine.currentURL
             // The input itself is clicked, not the point it sits at: sites hide it under their own button.
             if let ref = arguments["ref"] as? String {
                 _ = try await AgentTools.page(engine, "act", ["ref": ref, "action": "left_click"], in: try await AgentTools.frame(holding: ref, in: engine))
@@ -189,7 +188,7 @@ enum AgentInteractionTools {
                 engine.pendingAgentUploads = nil
                 throw AgentToolError("The element opened no file picker: pass the ref of an <input type=file>")
             }
-            return [.text("Uploaded \(urls.map(\.lastPathComponent).joined(separator: ", "))")]
+            return [.text("Uploaded \(urls.map(\.lastPathComponent).joined(separator: ", "))\n" + (await AgentTools.deltaReport(engine, urlBefore: urlBefore)))]
         case "upload_image":
             let (_, engine) = try control.agentTab(arguments["tabId"], session: session)
             let data: Data
@@ -215,7 +214,10 @@ enum AgentInteractionTools {
                 target["x"] = point.x / engine.pageZoom
                 target["y"] = point.y / engine.pageZoom
             }
-            return [.text(try await AgentTools.page(engine, "dropFile", target, in: frame) as? String ?? "")]
+            await AgentTools.snapshot(engine)
+            let urlBefore = engine.currentURL
+            let dropped = try await AgentTools.page(engine, "dropFile", target, in: frame) as? String ?? ""
+            return [.text(dropped + "\n" + (await AgentTools.deltaReport(engine, urlBefore: urlBefore)))]
         case "gif_creator":
             let (tab, engine) = try control.agentTab(arguments["tabId"], session: session)
             switch arguments["action"] as? String {
@@ -251,7 +253,7 @@ enum AgentInteractionTools {
                     content += try await AgentTools.call(tool, arguments: action["input"] as? [String: Any] ?? [:], session: session, control: control)
                 } catch {
                     let done = content.compactMap { if case .text(let text) = $0 { text } else { nil } }.joined(separator: "\n")
-                    throw AgentToolError("\(done)\nAction \(index + 1) (\(tool)) failed: \(error.localizedDescription)", code: (error as? AgentToolError)?.code)
+                    throw AgentToolError("\(done)\nAction \(index + 1) (\(tool)) failed: \(error.localizedDescription)", code: (error as? AgentToolError)?.code, consent: (error as? AgentToolError)?.consent)
                 }
             }
             return content
@@ -263,6 +265,7 @@ enum AgentInteractionTools {
             return [.text(try await control.resetProfile(for: session, wait: arguments["wait"]))]
         case "switch_profile":
             return [.text(try await control.switchProfile(arguments["profile"] as? String ?? "", for: session))]
+        // Claude in Chrome's browser pickers: not listed (Lilo is the one browser), answered for a client that calls them anyway.
         case "list_connected_browsers":
             return [.text(AgentTools.json([["deviceId": "lilo", "name": "Lilo", "isCurrent": true]]))]
         case "select_browser", "switch_browser":
@@ -274,6 +277,10 @@ enum AgentInteractionTools {
 
     /// How long a click or key waits for the requests it started to end.
     static var requestWait = Duration.seconds(10)
+
+    /// The computer actions that can change the page, whose replies carry the structure delta.
+    static let deltaActions: Set<String> = ["left_click", "right_click", "double_click", "triple_click", "hover",
+        "type", "insert_text", "key", "scroll", "left_click_drag", "scroll_to"]
 
     private static func computer(_ arguments: [String: Any], session: AgentSession, control: AgentControl) async throws -> [AgentContent] {
         let (tab, engine) = try control.agentTab(arguments["tabId"], session: session)
@@ -306,6 +313,9 @@ enum AgentInteractionTools {
         if action == "screenshot" || action == "zoom" { try await AgentDevTools.refuseTextLeaks(tabId: tab.id, control: control) }
         if pressesEnter { AgentCallSent.current?.write = true }
         let loadsBefore = control.captures[tab.id].map { Set($0.indexByLoad.keys) } ?? []
+        let reportsDelta = Self.deltaActions.contains(action)
+        let urlBefore = reportsDelta ? engine.currentURL : nil
+        if reportsDelta { await AgentTools.snapshot(engine) }
         switch action {
         case let refAction where frame != nil && ["left_click", "right_click", "double_click", "triple_click", "hover", "scroll_to"].contains(refAction):
             let parameters: [String: Any] = ["ref": arguments["ref"] ?? "", "action": action, "modifiers": arguments["modifiers"] ?? ""]
@@ -381,6 +391,7 @@ enum AgentInteractionTools {
                 }
             }
         }
+        if reportsDelta { reply += "\n" + (await AgentTools.deltaReport(engine, urlBefore: urlBefore)) }
         if allowed { reply += " (the user allowed it in Lilo)" }
         if control.recordingTabs.contains(tab.id) { await recordFrame(engine, tabId: tab.id, control: control) }
         return [.text(reply)]
@@ -435,7 +446,7 @@ enum AgentInteractionTools {
             return "\(value as? String ?? "undefined")\n(\(tools.calls) tool calls)"
         } catch {
             let message = (error as NSError).userInfo["WKJavaScriptExceptionMessage"] as? String ?? error.localizedDescription
-            throw AgentToolError("\(message)\n(\(tools.calls) tool calls)", code: tools.errorCode)
+            throw AgentToolError("\(message)\n(\(tools.calls) tool calls)", code: tools.errorCode, consent: tools.errorConsent)
         }
     }
 
@@ -451,6 +462,8 @@ enum AgentInteractionTools {
         var isStopped = false
         /// The code of the last tool error, kept for the run's own error when the program lets it through.
         var errorCode: String?
+        /// The consent answer of the last tool error, kept the same way.
+        var errorConsent: ConsentAnswer?
 
         init(session: AgentSession, control: AgentControl) {
             self.session = session
@@ -476,6 +489,7 @@ enum AgentInteractionTools {
                     replyHandler(content.compactMap { if case .text(let text) = $0 { text } else { nil } }.joined(separator: "\n"), nil)
                 } catch {
                     errorCode = (error as? AgentToolError)?.code ?? errorCode
+                    errorConsent = (error as? AgentToolError)?.consent ?? errorConsent
                     replyHandler(nil, error.localizedDescription)
                 }
             }

@@ -79,11 +79,6 @@
 		"passwordManagerAction": "Wybierz",
 		"passwordManagerChange": "Zmień",
 		"replayOnboardingAction": "Pokaż ponownie",
-		"defaultBrowserSet": "Ustaw jako domyślną",
-		"defaultBrowserLater": "Później",
-		"defaultBrowserBannerText": "Ustawić Lilo jako domyślną przeglądarkę?",
-		"defaultBrowserSetSuccess": "Lilo jest teraz domyślną przeglądarką.",
-		"defaultBrowserSetFailed": "Nie ustawiono Lilo jako domyślnej przeglądarki. Możesz to zmienić w Ustawieniach systemowych.",
 		"engineName": "Nazwa",
 		"engineUrlTemplate": "Adres URL wyszukiwania (%s = zapytanie)",
 		"engineKeyword": "Słowo kluczowe",
@@ -507,6 +502,11 @@
 				"title": "Pytaj przed wysłaniem, płatnością, usunięciem lub publikacją",
 				"description": "Agent czeka na Twoją odpowiedź.",
 				"keywords": "agent zgoda potwierdzenie płatność zakup zamówienie usuń wyślij publikuj"
+			},
+			"agentActionLog": {
+				"title": "Prowadź dziennik działań agenta",
+				"description": "Lokalny plik wymienia każde wywołanie, nigdy wpisanego tekstu ani treści stron.",
+				"keywords": "agent dziennik historia audyt działania odtwarzanie"
 			},
 			"agentAlwaysAllowed": {
 				"title": "Zawsze dozwolone",
@@ -1634,6 +1634,11 @@
 		"placeholder": "Szukaj lub wpisz URL...",
 		"addressBar": "Pasek adresu: {url}",
 		"noProject": "Bez projektu",
+		"defaultBrowserSet": "Ustaw jako domyślną",
+		"defaultBrowserLater": "Później",
+		"defaultBrowserBannerText": "Ustawić Lilo jako domyślną przeglądarkę?",
+		"defaultBrowserSetSuccess": "Lilo jest teraz domyślną przeglądarką.",
+		"defaultBrowserSetFailed": "Nie ustawiono Lilo jako domyślnej przeglądarki. Możesz to zmienić w Ustawieniach systemowych.",
 		"details": {
 			"branch": "Gałąź",
 			"command": "Polecenie",
@@ -1691,6 +1696,7 @@
 		"allow": "Zezwól",
 		"allowOnce": "Zezwól raz",
 		"alwaysAllowOnSite": "Zawsze zezwalaj na tej witrynie",
+		"agentWaitsForAnswer": "Agent czeka na Twoją odpowiedź.",
 		"popup": {
 			"blocked": "Zablokowano wyskakujące okno",
 			"tried": "chce otworzyć wyskakujące okno",

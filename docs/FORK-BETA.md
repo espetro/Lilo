@@ -1,16 +1,16 @@
 # Fork beta
 
-A rolling beta of the espetro/Lilo fork, built from its `develop` branch so that its changes can be used before upstream reviews them.
+A beta of the espetro/Lilo fork, built from its `develop` branch so that its changes can be used before upstream reviews them.
 It exists only on the fork and is never sent upstream: nothing in it, the `fork:` commits included, belongs in a pull request to Alexays/Lilo.
 
 ## What it is
 
 [`.github/workflows/beta.yml`](../.github/workflows/beta.yml) runs on every push to `develop`, and by hand from the Actions tab (workflow_dispatch), and only in espetro/Lilo.
-It builds the Release configuration with `LILO_BETA=1`, packages it with `make dmg` (a zip of the app if dmgbuild fails), and replaces the GitHub prerelease tagged `beta`.
+It builds the Release configuration with `LILO_BETA=1`, packages it with `make dmg` (a zip of the app if dmgbuild fails), and publishes a new GitHub prerelease tagged `beta-N`, where N is the workflow run number: it only grows, so every build stays addressable and none is overwritten. The newest 10 are kept.
 The release notes carry the commit SHA and the build date.
-The tag is `beta`, never `v*`, so the upstream release workflow, which also checks the repository, can never fire on it.
+The tag is `beta-N`, never `v*`, so the upstream release workflow, which also checks the repository, can never fire on it.
 
-Download `Lilo-Beta.dmg` (or `Lilo-Beta.zip`) from the [`beta` release](https://github.com/espetro/Lilo/releases/tag/beta).
+Download `Lilo-Beta.dmg` (or `Lilo-Beta.zip`) from the newest [`beta-N` release](https://github.com/espetro/Lilo/releases) (the list is ordered by date).
 
 ## Unsigned
 
@@ -40,7 +40,7 @@ Both can run side by side, and `Lilo Beta.app` can sit next to `Lilo.app` in `/A
 Both still offer to be the default browser: pick one.
 
 It never updates itself: the build has no Sparkle public key, so no update check starts and the upstream appcast is never read.
-Update by downloading the latest `beta` release.
+Update by downloading the newest `beta-N` release; to find which build has a bug, try the previous N.
 
 ## How it is built
 
