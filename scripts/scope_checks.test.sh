@@ -7,6 +7,8 @@ SCOPE="$ROOT/scripts/scope_checks.sh"
 WORK=$(mktemp -d "${TMPDIR:-/tmp}/lilo-scope-test.XXXXXX")
 trap 'rm -rf "$WORK"' EXIT
 export GIT_CONFIG_NOSYSTEM=1 GIT_CONFIG_GLOBAL=/dev/null
+# The missing-base assertions below exercise the non-CI path; CI behavior is set inline where tested.
+unset GITHUB_ACTIONS
 
 fail() { printf 'scope_checks.test.sh: %s\n' "$*" >&2; exit 1; }
 scope() { printf '%s\n' "$@" | "$SCOPE" --files; }

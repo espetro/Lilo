@@ -211,7 +211,7 @@ extension MainWindowController {
         currentFrameColor = frameColor
         syncPageBar()
         (contentContainerView as? ContentContainerView)?.stageColor = resolvedColor
-        for divider in splitPanes.dividers.values { divider.setFrameColor(frameColor, animated: true) }
+        splitPanes.setFrameColor(frameColor, animated: true)
         sidePanel.setFrameColor(resolvedColor, frameColor: frameColor)
         // A Changes view paints the frame color under its cards.
         for case let view as ChangesView in contentContainerView.subviews { view.needsDisplay = true }
@@ -240,7 +240,7 @@ extension MainWindowController {
         glassView?.tintColor = color.withAlphaComponent(0.2)
         let frameColor = glassView == nil ? color : color.withAlphaComponent(0.06)
         windowFrameView?.setFrameColor(frameColor, animated: false)
-        for divider in splitPanes.dividers.values { divider.setFrameColor(frameColor, animated: false) }
+        splitPanes.setFrameColor(frameColor, animated: false)
         sidePanel.setDividerFrameColor(frameColor, animated: false)
         currentFrameColor = frameColor
         lastAppliedWindowChromeColor = nil
@@ -803,6 +803,7 @@ extension MainWindowController {
             "sidebarWidth": sidebarExpandedWidth,
             "sidebarVisible": sidebarVisible,
             "sidebarRail": sidebarRail,
+            "narrowSidebarWidth": Self.narrowSidebarWidth,
             "toolbarVisible": toolbarVisible,
             "trafficLightsVisible": areTrafficLightsVisible(),
             "tabPosition": tabLayout.position.rawValue,
@@ -895,13 +896,7 @@ extension MainWindowController {
     var hasCompactPageToolbar: Bool { tabLayout.position == .bottom && shownTabLayout.address != .page }
 
     /// Right and bottom always keep a toolbar over the page: the traffic lights stay top-left.
-    var hasPageToolbar: Bool {
-        switch tabLayout.position {
-        case .left: shownTabLayout.address == .page
-        case .right, .bottom: true
-        case .top: false
-        }
-    }
+    var hasPageToolbar: Bool { tabLayout.showsPageToolbar(toolbarVisible: toolbarVisible) }
 
     /// Where the page sits, side panel excluded. Hidden tabs leave the page every edge but the address's own
     /// toolbar, which hides on its own; an overlay floats over it.
