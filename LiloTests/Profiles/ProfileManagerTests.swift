@@ -85,16 +85,13 @@ final class ProfileManagerTests: XCTestCase {
     /// Releasing a private space's ephemeral data store must also evict the engine factory's
     /// cached WKUserContentController for it, otherwise the controller (and every
     /// handler/user-script it owns) leaks for the life of the factory.
-    func testReleaseEphemeralDataStoreEvictsContentControllerCache() async {
+    func testReleaseEphemeralDataStoreEvictsContentControllerCache() {
         let engineFactory = WKEngineFactory()
         let scopedManager = ProfileManager(dbManager: dbManager, engineFactory: engineFactory)
         let spaceId = UUID()
 
         let store = scopedManager.ephemeralDataStore(for: spaceId)
         let controllerBeforeRelease = engineFactory.createTab(configuration: .init(dataStore: store)).wkWebView.configuration.userContentController
-        // A warm view carries the controller it was built with; release must drop it along with the cache.
-        engineFactory.rearmWarmPool(dataStore: store, profileId: nil)
-        _ = await pollUntil { engineFactory.test_warmPoolCount == 1 }
 
         scopedManager.releaseEphemeralDataStore(for: spaceId)
 
@@ -103,6 +100,72 @@ final class ProfileManagerTests: XCTestCase {
         let controllerAfterRelease = engineFactory.createTab(configuration: .init(dataStore: newStore)).wkWebView.configuration.userContentController
         XCTAssertFalse(controllerBeforeRelease === controllerAfterRelease,
                        "the cached content controller must be rebuilt, not reused, after the space's data store is released")
+    }
+
+    /// Safari-style isolation: each private tab has a store of its own, the tabs of a space share one controller,
+    /// and a closed tab's store is released.
+    func testPrivateTabsGetDistinctStoresThatShareTheSpaceController() {
+        let engineFactory = WKEngineFactory()
+        engineFactory.suppressWarmPool = true
+        let scopedManager = ProfileManager(dbManager: dbManager, engineFactory: engineFactory)
+        let spaceId = UUID(), tabA = UUID(), tabB = UUID()
+
+        let storeA = scopedManager.ephemeralDataStore(forTab: tabA, in: spaceId)
+        let storeB = scopedManager.ephemeralDataStore(forTab: tabB, in: spaceId)
+        XCTAssertFalse(storeA.backingStore === storeB.backingStore)
+        XCTAssertFalse(storeA.backingStore.isPersistent)
+        XCTAssertTrue(storeA === scopedManager.ephemeralDataStore(forTab: tabA, in: spaceId))
+        XCTAssertEqual(scopedManager.privateSpaceId(of: storeB.backingStore), spaceId)
+
+        let controllerA = engineFactory.createTab(configuration: .init(dataStore: storeA)).wkWebView.configuration.userContentController
+        let controllerB = engineFactory.createTab(configuration: .init(dataStore: storeB)).wkWebView.configuration.userContentController
+        XCTAssertTrue(controllerA === controllerB)
+
+        // Closing one tab leaves its siblings' controller alone.
+        scopedManager.releaseEphemeralDataStore(forTab: tabA)
+        let controllerC = engineFactory.createTab(configuration: .init(dataStore: storeB)).wkWebView.configuration.userContentController
+        XCTAssertTrue(controllerA === controllerC)
+
+        scopedManager.releaseEphemeralDataStore(for: spaceId)
+        let controllerD = engineFactory.createTab(configuration: .init(dataStore: storeB)).wkWebView.configuration.userContentController
+        XCTAssertFalse(controllerA === controllerD, "deleting the space evicts the shared controller")
+        XCTAssertNil(scopedManager.privateSpaceId(of: storeB.backingStore))
+    }
+
+    func testPopupAdoptsItsOpenersStore() {
+        let scopedManager = ProfileManager(dbManager: dbManager, engineFactory: WKEngineFactory())
+        let spaceId = UUID(), opener = UUID(), popup = UUID()
+        let openerStore = scopedManager.ephemeralDataStore(forTab: opener, in: spaceId)
+
+        let popupStore = scopedManager.adoptEphemeralDataStore(openerStore.backingStore, forTab: popup, in: spaceId)
+
+        XCTAssertTrue(popupStore.backingStore === openerStore.backingStore)
+        XCTAssertTrue(popupStore === scopedManager.adoptEphemeralDataStore(openerStore.backingStore, forTab: popup, in: spaceId))
+    }
+
+    func testClosedPrivateTabReleasesItsStore() {
+        let scopedManager = ProfileManager(dbManager: dbManager, engineFactory: WKEngineFactory())
+        let spaceId = UUID(), tabId = UUID()
+        weak var released: WKWebsiteDataStore?
+        autoreleasepool {
+            released = scopedManager.ephemeralDataStore(forTab: tabId, in: spaceId).backingStore
+            XCTAssertNotNil(released)
+        }
+        scopedManager.releaseEphemeralDataStore(forTab: tabId)
+        XCTAssertNil(scopedManager.privateSpaceId(of: released ?? .default()))
+        XCTAssertNil(released, "no tab or space keeps the closed tab's store alive")
+    }
+
+    func testDeletingASpaceReleasesItsTabStores() {
+        let scopedManager = ProfileManager(dbManager: dbManager, engineFactory: WKEngineFactory())
+        let spaceId = UUID()
+        weak var released: WKWebsiteDataStore?
+        autoreleasepool {
+            released = scopedManager.ephemeralDataStore(forTab: UUID(), in: spaceId).backingStore
+            _ = scopedManager.ephemeralDataStore(forTab: UUID(), in: spaceId)
+        }
+        scopedManager.releaseEphemeralDataStore(for: spaceId)
+        XCTAssertNil(released)
     }
 
     func testDeleteProfileReleasesItsContentController() async throws {

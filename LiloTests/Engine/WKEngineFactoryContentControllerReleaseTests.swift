@@ -27,13 +27,22 @@ final class WKEngineFactoryContentControllerReleaseTests: XCTestCase {
     /// WebContent process keeps the freed data store's controller alive by reference.
     func testReleaseContentControllerDropsWarmView() async {
         let factory = WKEngineFactory()
-        let ephemeral = factory.createDataStore(persistent: false, identifier: UUID().uuidString)
-        factory.rearmWarmPool(dataStore: ephemeral, profileId: nil)
+        let store = factory.createDataStore(persistent: true, identifier: UUID().uuidString)
+        factory.rearmWarmPool(dataStore: store, profileId: nil)
         _ = await pollUntil { factory.test_warmPoolCount == 1 }
         XCTAssertEqual(factory.test_warmPoolCount, 1)
 
-        factory.releaseContentController(for: ephemeral)
+        factory.releaseContentController(for: store)
 
         XCTAssertEqual(factory.test_warmPoolCount, 0, "the warm view keyed to the released data store must be dropped")
+    }
+
+    /// A warm view is bound to one store, and a private tab has a store of its own.
+    func testPrivateStoresKeepNoWarmView() async {
+        let factory = WKEngineFactory()
+        let ephemeral = factory.createDataStore(persistent: false, identifier: UUID().uuidString)
+        factory.rearmWarmPool(dataStore: ephemeral, profileId: nil)
+        try? await Task.sleep(for: .milliseconds(800))
+        XCTAssertEqual(factory.test_warmPoolCount, 0)
     }
 }
