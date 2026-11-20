@@ -39,6 +39,13 @@ export default tseslint.config(
 		},
 	},
 	{
+		// The capture harness's media script runs on Node, not in the browser.
+		files: ["captures/*.mjs"],
+		languageOptions: {
+			globals: globals.node,
+		},
+	},
+	{
 		// Store modules keep plain Maps and Sets on purpose: caches, and raw state replaced whole on each write.
 		files: ["**/*.svelte.ts"],
 		rules: {
