@@ -10,10 +10,12 @@ trap 'rm -rf "$T"' EXIT
 
 mkdir -p "$T/root/scripts" "$T/bin" "$T/root/lilo-ui" "$T/root/site" "$T/root/docs-site" "$T/root/release-media" "$T/root/Lilo/Extensions/bridge-src"
 cp "$ROOT/scripts/bootstrap.sh" "$T/root/scripts/"
-for pkg in lilo-ui:22.8 site:22.23.4 docs-site:22.23.4 Lilo/Extensions/bridge-src:22.6; do
+printf '{"packageManager": "pnpm@12.16.1"}\n' > "$T/root/package.json"
+for pkg in lilo-ui:22.8 site:22.23.4 docs-site:22.23.4; do
     printf '{"engines": {"node": ">=%s"}}\n' "${pkg#*:}" > "$T/root/${pkg%%:*}/package.json"
 done
-echo '{}' > "$T/root/release-media/package.json"
+printf '{"engines": {"node": ">=22.6"}, "packageManager": "npm@10.9.9"}\n' > "$T/root/Lilo/Extensions/bridge-src/package.json"
+printf '{"packageManager": "npm@10.9.9"}\n' > "$T/root/release-media/package.json"
 
 stub() { printf '#!/bin/sh\n%s\n' "$2" > "$T/bin/$1"; chmod +x "$T/bin/$1"; }
 stub sw_vers 'echo "${STUB_MACOS:-26.6}"'
@@ -24,6 +26,7 @@ stub DevToolsSecurity 'echo "Developer mode is currently ${STUB_DEV:-enabled}."'
 stub node 'echo "${STUB_NODE:-v24.0.0}"'
 stub curl '[ "${STUB_CURL:-1}" = 1 ]'
 stub pnpm 'echo "${STUB_PNPM:-12.16.1}"; [ "${STUB_PNPM:-1}" != none ]'
+stub npm 'echo "${STUB_NPM:-10.9.9}"; [ "${STUB_NPM:-1}" != none ]'
 stub zig 'echo 0.16.0'
 stub make 'echo "MAKE-NOISE"; echo "$*" >> "$STUB_LOG"'
 export STUB_LOG="$T/make.log"
@@ -77,15 +80,26 @@ run 2 STUB_PNPM=none -- "deps" "build" "sites"
 expect_makes 0
 contains "corepack enable"
 
+# A package manager that is not the pinned version fails with the pinned one named.
+run 2 STUB_PNPM=9.15.0 -- "deps" "build" "sites"
+expect_makes 0
+contains "pnpm 12.16.1, which package.json pins (found: 9.15.0)"
+run 2 STUB_NPM=11.9.0 -- "deps" "build" "sites"
+expect_makes 0
+contains "npm 10.9.9, which the packages pin (found: 11.9.0)"
+run 2 STUB_NPM=none -- "deps" "build" "sites"
+expect_makes 0
+contains "npm 10.9.9"
+
 run 2 STUB_NODE=v20.0.0 -- "deps" "build" "sites"
 expect_makes 0
 run 3 STUB_NODE=v20.0.0 STUB_METAL=0 -- "deps" "build" "sites"
 
 # The Node.js floor is the highest engines field of all the packages, the bridge included.
-printf '{"engines": {"node": ">=99.1"}}\n' > "$T/root/Lilo/Extensions/bridge-src/package.json"
+printf '{"engines": {"node": ">=99.1"}, "packageManager": "npm@10.9.9"}\n' > "$T/root/Lilo/Extensions/bridge-src/package.json"
 run 2 -- "deps" "build" "sites"
 contains "Node.js 99.1 or later"
-printf '{"engines": {"node": ">=22.6"}}\n' > "$T/root/Lilo/Extensions/bridge-src/package.json"
+printf '{"engines": {"node": ">=22.6"}, "packageManager": "npm@10.9.9"}\n' > "$T/root/Lilo/Extensions/bridge-src/package.json"
 
 # Zig is required only when libghostty-vt cannot be downloaded or VT_FROM_SOURCE asks for it.
 run 0 STUB_CURL=0 -- "deps" "build" "sites"
