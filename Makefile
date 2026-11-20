@@ -213,10 +213,28 @@ $(BRIDGE_STAMP): $(BRIDGE_DEPS) $(BRIDGE_SOURCES)
 	@$(MAKE) --no-print-directory ext-bridge-build
 	@mkdir -p $(@D) && touch $@
 
-## Run only the checks the diff against origin/main needs (BASE=ref): a UI, website or docs change skips the Swift build and the installs it does not use
+## Run only the checks the diff against origin/main needs (BASE=ref), in parallel as in validate: a UI, website or docs change skips the Swift build and the installs it does not use
 validate-scope:
 	@checks=$$(scripts/scope_checks.sh $(BASE)); echo "validate-scope: $$checks" >&2; \
 	if [ "$$checks" = full ]; then $(MAKE) --no-print-directory validate; else $(MAKE) -k --no-print-directory $$checks; fi
+	@checks=$$(scripts/scope_checks.sh $(BASE)); echo "validate-scope: $$checks" >&2; export LILO_CHECK_SCOPE="$$checks"; \
+	if [ "$$checks" = full ]; then $(MAKE) --no-print-directory validate; exit $$?; fi; \
+	deps=$(CHANGIE); \
+	case " $$checks " in *" ui-"*) deps="$$deps $(UI_DEPS)";; esac; \
+	case " $$checks " in *" site-"*) deps="$$deps $(SITE_DEPS)";; esac; \
+	case " $$checks " in *" docs-"*) deps="$$deps $(DOCS_DEPS)";; esac; \
+	$(MAKE) --no-print-directory $$deps || exit $$?; \
+	logs=$$(mktemp -d); names=; pids=; \
+	for group in ui-lint ui-test "site-check site-test" "docs-check docs-test" release-status; do \
+		name=$${group%% *}; \
+		case " $$checks " in *" $$name "*) \
+			names="$$names $$name"; \
+			$(CHECK_SUMMARY) run $$name "$$logs" -- $(MAKE) -k --no-print-directory $$group & pids="$$pids $$!";; \
+		esac; \
+	done; \
+	wait $$pids; \
+	$(CHECK_SUMMARY) report $(if $(JSON),--json) "$$logs" $$names; status=$$?; \
+	/bin/rm -rf "$$logs"; exit $$status
 
 # The quick tiers (scripts/check_tier.sh): no builds, fail at the first check, the checks chosen from the changed files.
 ## Run the quick checks the diff against origin/main needs, under 10 s, no builds (BASE=ref): lint and the tests beside the changed files
