@@ -130,7 +130,7 @@ TEST_WORKERS = $(shell cores=$$(sysctl -n hw.perflevel0.physicalcpu 2>/dev/null 
 .PHONY: help site-release-import validate validate-scope validate-ui check check-staged ui-check swiftlint-changed sync-check linux-checks swiftlint project-sync ui-build ui-watch ui-dev ui-lint ui-test e2e e2e-energy \
 	swift-test swift-test-slow blocker-coverage blocker-bench script-bench speedometer-bench page-bench preload-bench terminal-bench ext-bridge-build ext-bridge-test ext-smoke ext-nightly ext-e2e-passwords ext-e2e-passwords-trust top-extensions top-manifests chrome-surface \
 	chrome-contracts chrome-smoke public-suffix-list app install install-debug xcode-build xcode-build-release \
-	run-ui-dev release release-notarize release-archive dmg dmg-background bridge-gen vt-build vt-build-source vt-zip webkit-fork bootstrap bootstrap-test ui-preview check-commits startup-bench ext-bench energy-sample energy-compare energy-browsers perf-summary perf-compare perf-summary-test retried-tests-test lockf-test slot-test scope-test tier-test metrics metrics-on metrics-off metrics-test ci-metrics ci-metrics-test check-summary-test agent-app agent-call agent-eval agent-eval-test \
+	run-ui-dev release release-notarize release-archive dmg dmg-background bridge-gen vt-build vt-build-source vt-zip webkit-fork bootstrap bootstrap-test ui-preview check-commits startup-bench ext-bench energy-sample energy-compare energy-browsers perf-summary perf-compare perf-summary-test retried-tests-test lockf-test slot-test scope-test tier-test metrics metrics-on metrics-off metrics-test ci-metrics ci-metrics-test check-summary-test agent-app agent-call window-capture agent-eval agent-eval-test \
 	logs logs-stream site-dev site-dev-stop site-preview site-native-preview site-generate site-check site-fix site-test site-e2e site-release-capture site-capture-server site-capture-deps site-lock site-audit site-add-svelte site-playground-deps site-demo-icons site-deploy site-deploy-check emoji-data password-manager-icons \
 	docs-dev docs-build docs-check docs-test docs-preview docs-deploy-check docs-deploy docs-translate docs-eval docs-lock \
 	hooks-install hooks-test lint-commit-message lint-commits \
@@ -626,6 +626,15 @@ agent-call:
 	@test -n "$(CALLS)" || { echo "CALLS=calls.json is required" >&2; exit 2; }
 	@$(MAKE) --no-print-directory agent-app
 	@node scripts/agent_call.mjs build/debug/export/Lilo.app/Contents/MacOS/lilo-mcp "$(CALLS)"
+
+## Render the Debug app's main window to PNGs from inside the app, no screen permission (OUT=/abs/shot.png [SIZE=1280x800] [WIDTHS="203 150 rail"] [GIF=/abs/shots.gif])
+window-capture:
+	@case "$(OUT)" in /*.png) ;; *) echo "OUT=/absolute/path.png is required" >&2; exit 2;; esac
+	@mkdir -p build && OUT="$(OUT)" SIZE="$(SIZE)" WIDTHS="$(WIDTHS)" GIF="$(GIF)" node -e '\
+		const e = process.env, [width, height] = (e.SIZE || "1280x800").split("x").map(Number); \
+		const sidebarWidths = e.WIDTHS.split(/\s+/).filter(Boolean).map(w => w === "rail" ? w : Number(w)); \
+		console.log(JSON.stringify([{ tool: "window_capture", args: { path: e.OUT, width, height, ...(sidebarWidths.length && { sidebarWidths }), ...(e.GIF && { gif: e.GIF }) } }]))' > build/window-capture.json
+	@$(MAKE) --no-print-directory agent-call CALLS=build/window-capture.json
 
 ## Run the fixture agent tasks with Claude Code, graded in code (TOOL=lilo|playwright|chrome-devtools MODEL=sonnet PASSES=1 TASK=name)
 # The gate tasks (`asks`) run against an app answering every action question no, the others against one answering yes.
