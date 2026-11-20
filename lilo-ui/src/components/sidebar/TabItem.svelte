@@ -294,6 +294,8 @@
   const agentActing = $derived(getActingAgentTabIds().has(tab.id));
   const hangSeconds = $derived(getHangSeconds(tab.id));
   const hangRepeat = $derived(hangSeconds !== null && !!getPageHang(tab.id)?.repeat);
+  // A page suspended in place or discarded; a closed (saved) tab already reads "Asleep".
+  const isDozing = $derived(!!tab.isSleeping && !tab.isClosed && !isTerminal);
   const rowLabel = $derived(
     [
       terminalLabel || displayTitle,
@@ -305,6 +307,7 @@
       captureLabel,
       tab.isMuted ? t("tabItem.muted") : tab.isAudioPlaying ? t("tabItem.playingAudio") : "",
       tab.isClosed && !isTerminal ? t("tabItem.sleeping") : "",
+      isDozing ? t("tabItem.dozing") : "",
       awaitingInput && !isTerminal ? t("tabItem.terminalAttention") : "",
       pageUnreadCount > 0 ? t("tabItem.unreadCount", { count: String(pageUnreadCount) }) : hasPageUnread ? t("tabItem.unread") : "",
       terminalIconLabel,
@@ -456,6 +459,7 @@
   class:selected={isSelected}
   class:travel-hold={travelHold}
   class:closed={tab.isClosed}
+  class:dozing={isDozing}
   class:loading={tab.isLoading}
   class:split-drop-target={splitDropTarget}
   class:interactive
@@ -583,9 +587,12 @@
           url={tab.url}
           size={16}
           radius={4}
-          asleep={tab.isClosed}
+          asleep={tab.isClosed || isDozing}
         />
       </div>
+    {/if}
+    {#if isDozing}
+      <span class="doze-ring" aria-hidden="true" use:tooltip={{ text: t("tabItem.dozingHint"), placement: tooltipSide() }}></span>
     {/if}
     <!-- One corner mark at a time: the orange dot for a page or an agent's action waiting on you, else what the tab captures. -->
     {#if agentActing || (awaitingInput && !isTerminal && tab.kind !== "agent")}
@@ -783,6 +790,19 @@
   .tab-item.closed .tab-icon:not(:has(.site-favicon)) {
     filter: grayscale(1);
     opacity: 0.55;
+  }
+
+  /* Dimmed through the secondary text color, not opacity, so the title keeps its AA contrast. */
+  .tab-item.dozing .tab-title {
+    color: var(--text-secondary);
+  }
+
+  /* Auto Tab Discard's cue: a dotted circle around the favicon. It sits outside the 16px box, so nothing shifts. */
+  .doze-ring {
+    position: absolute;
+    inset: -3px;
+    border: 1.5px dotted var(--text-secondary);
+    border-radius: 50%;
   }
 
   .tab-icon {
