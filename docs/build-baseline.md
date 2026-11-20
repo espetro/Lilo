@@ -154,6 +154,37 @@ Re-run counts understate flakes, because `TEST_RETRY` retries a failed test insi
 Not measured. The host rule runs heavy commands one at a time because they starve memory, the machine was already at a load of 11 to 25 from other sessions, and the lane that contends (the Swift tests) cannot run here.
 A JavaScript-only trial would measure something the plan does not ask about.
 
+## The check tiers and the rule that keeps or drops a check
+
+The tiers are `make check` (in session, under 10 s), the pre-commit hook (under 15 s), the pre-push hook (`make validate-scope`, about 30 s warm) and CI ([CONTRIBUTING.md](../CONTRIBUTING.md#tests-and-validation)). Their first measurement, 2026-11-19, median of 3 runs, the machine at a load of 21 to 28:
+
+| Diff | `make check` | pre-commit | pre-push (`validate-scope`, no lock wait) | Bytes printed by `make check` |
+|---|---|---|---|---|
+| docs only | 2.7 s | 0.7 s | 0.5 s | 67 |
+| UI only, one file with a test | 5.1 s | 5.3 s | 21.4 s | 61 |
+| Swift only, one file | 0.7 s | 0.7 s | not run: Swift is code, so the full `validate` | 70 |
+
+No tier is judged by this table: it is a first reading on a loaded machine. The judgment waits for the baseline week.
+
+**The baseline week.** Run `make metrics-on`, install the hooks with `make hooks-install`, work as usual for a week (or 30 runs of a check, whichever is longer), then read the records:
+
+```
+make metrics SINCE=7
+# per tier: checks run, how many failed, and the median duration of a failing check (the time until that tier showed a problem)
+jq -rs '[.[]|select(.phase=="check" and .tier)] | group_by(.tier)[] | {tier:.[0].tier, runs:length, failed:(map(select(.exit!=0))|length), first_signal_s:(map(select(.exit!=0).dur_s)|sort|.[length/2|floor])} | "\(.tier) checks=\(.runs) failed=\(.failed) median_failing_s=\(.first_signal_s)"' ~/.cache/lilo/metrics.jsonl
+```
+
+Group by `.target` too to read one check. A `rerun_of` field marks a check run again after a failure: the reruns per change.
+
+**Keep or drop a check**, by its record over at least 30 runs or 4 weeks:
+
+- Keep it if it catches at least 1 real failure per 50 runs that nothing earlier catches.
+- Move it up a tier if it takes under 5 s.
+- Demote it if it takes over 10 % of its tier's budget and under 2 % of its failures escape to the next tier.
+- Drop it after 90 days with no catch and no overlap. Generated-file sync checks are excepted.
+
+The numbers behind the rule: time to first signal, CI failures a local tier would have caught, check-output tokens per agent turn (the bytes printed), reruns per change and CI minutes per PR.
+
 ## The recorder
 
 `make metrics-on` adds a block to the git-ignored `Makefile.local` that points `SHELL` at `scripts/metrics.py`; `make metrics-off` removes it, and `make metrics` summarizes.

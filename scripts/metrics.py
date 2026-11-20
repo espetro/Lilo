@@ -321,6 +321,7 @@ def print_summary(rows, out=None):
               f"{median:>10}{p95:>9}{row['max_concurrent']:>5}", file=out)
     print("\nFailures and interrupts are counted beside the timings: a median over successes alone flatters.", file=out)
     print("A target at level 0 contains the targets it runs through $(MAKE); do not add the rows up.", file=out)
+    print("Time to first signal per check tier (check, pre-commit, pre-push): see docs/build-baseline.md, \"The check tiers\".", file=out)
 
 
 def calibrate(runs=20):
