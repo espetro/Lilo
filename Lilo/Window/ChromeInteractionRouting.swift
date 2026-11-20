@@ -215,7 +215,13 @@ final class ChromeInteractionShieldView: NSView {
         )
         let (target, effects) = input.coordinator.routePositional(sample, family: family)
         switch target {
-        case .chrome: input.router.chromeView.map { forward($0, event) }
+        case .chrome:
+            // A conversation pane's zone covers the pane's native hover pill too: the pill gets its press.
+            if event.isMouseDown, let button = input.controller.splitPanes.handleButtonForChromePress(event) {
+                forward(button, event)
+            } else {
+                input.router.chromeView.map { forward($0, event) }
+            }
         case .content: (input.controller.splitPanes.view(for: event) ?? input.router.currentContentView()).map { forward($0, event) }
         case .none: break
         }
@@ -359,6 +365,9 @@ final class ChromeInputController {
         if event.isMouseDown, target == .content {
             _ = controller.splitPanes.view(for: event)
             controller.tabManager.activeEngineTab?.logUserInteraction()
+        } else if event.isMouseDown, target == .chrome {
+            // A conversation pane is all chrome zone: the press still focuses the pane's tab.
+            controller.splitPanes.activatePaneForChromePress(atWindowPoint: event.locationInWindow)
         }
     }
 
