@@ -84,8 +84,86 @@ final class AgentApprovalTests: AgentToolTestCase {
         XCTAssertTrue(result.isError)
         XCTAssertTrue(result.text.hasPrefix("[needs_user]"), result.text)
         XCTAssertTrue(result.text.contains("Place order"), result.text)
+        XCTAssertEqual(result.meta["lilo/consent"] as? String, "denied")
         let title = try await title(tab)
         XCTAssertEqual(title, "Shop")
+    }
+
+    /// The question nobody answers is withdrawn, and the agent is told so rather than that the user said no.
+    func testAnUnansweredOrderExpiresAndSaysSo() async throws {
+        AgentControl.actionConsentTimeout = 0.3
+        defer { AgentControl.actionConsentTimeout = 45 }
+        let tab = try await shopTab()
+
+        let reply = Task { try await click("Place order", tab: tab) }
+        let asked = await pollUntil(timeout: 5) { !self.control.pendingConsentAnswers.isEmpty }
+        XCTAssertTrue(asked, "the user is asked")
+        let withdrawn = await pollUntil(timeout: 5) { self.control.pendingConsentAnswers.isEmpty }
+        XCTAssertTrue(withdrawn, "the question is withdrawn unanswered")
+
+        let result = try await reply.value
+        XCTAssertTrue(result.isError)
+        XCTAssertTrue(result.text.hasPrefix("[needs_user]"), result.text)
+        XCTAssertTrue(result.text.contains("did not answer"), result.text)
+        XCTAssertEqual(result.meta["lilo/consent"] as? String, "expired")
+        let title = try await title(tab)
+        XCTAssertEqual(title, "Shop")
+    }
+
+    /// An expired question does not count as an answer: the next call asks again.
+    func testAnExpiredOrderIsAskedAgainAtTheNextCall() async throws {
+        AgentControl.actionConsentTimeout = 0.3
+        defer { AgentControl.actionConsentTimeout = 45 }
+        let tab = try await shopTab()
+
+        let first = Task { try await click("Place order", tab: tab) }
+        let asked = await pollUntil(timeout: 5) { !self.control.pendingConsentAnswers.isEmpty }
+        XCTAssertTrue(asked)
+        let withdrawn = await pollUntil(timeout: 5) { self.control.pendingConsentAnswers.isEmpty }
+        XCTAssertTrue(withdrawn)
+        _ = try await first.value
+
+        let second = Task { try await click("Place order", tab: tab) }
+        let requestId = try await pendingQuestion()
+
+        control.answerConsent(requestId, granted: false)
+        let result = try await second.value
+        XCTAssertTrue(result.isError)
+        XCTAssertEqual(result.meta["lilo/consent"] as? String, "denied")
+    }
+
+    /// With no window to ask in, the agent is told so instead of that the user said no.
+    func testAnOrderWithNoWindowSaysSo() async throws {
+        let tab = try await shopTab()
+        context.windows.remove(window)
+        defer { context.windows.add(window) }
+
+        let reply = try await click("Place order", tab: tab)
+
+        XCTAssertTrue(reply.isError)
+        XCTAssertTrue(reply.text.hasPrefix("[needs_user]"), reply.text)
+        XCTAssertTrue(reply.text.contains("no window"), reply.text)
+        XCTAssertEqual(reply.meta["lilo/consent"] as? String, "unavailable")
+        XCTAssertTrue(control.pendingConsentAnswers.isEmpty, "nothing was shown")
+    }
+
+    /// A call the client cancelled withdraws its question from the drawers.
+    func testACancelledOrderWithdrawsItsQuestion() async throws {
+        let tab = try await shopTab()
+        let found = await client.callTool("find", ["tabId": tab, "query": "Place order"])
+        let range = try XCTUnwrap(found.text.range(of: #"ref_\d+"#, options: .regularExpression), found.text)
+        let recorder = BridgeEventRecorder(window.bridgeRouter)
+        client.send(["jsonrpc": "2.0", "id": 999, "method": "tools/call",
+                     "params": ["name": "computer", "arguments": ["tabId": tab, "action": "left_click", "ref": String(found.text[range])]]])
+        let asked = await pollUntil(timeout: 5) { !self.control.pendingConsentAnswers.isEmpty }
+        XCTAssertTrue(asked, "the user is asked")
+
+        client.send(["jsonrpc": "2.0", "method": "notifications/cancelled", "params": ["requestId": 999]])
+
+        let withdrawn = await pollUntil(timeout: 5) { self.control.pendingConsentAnswers.isEmpty }
+        XCTAssertTrue(withdrawn, "the question leaves the drawers")
+        let closed = await pollUntil(timeout: 5) { recorder.events.contains { $0.name == "permissionRequestClosed" } }
+        XCTAssertTrue(closed, "the drawers are told to drop it")
     }
 
     /// A second window on a space of its own, with a tab of its own: it holds no page of the agent.
