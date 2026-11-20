@@ -1,0 +1,3 @@
+kind: Added
+body: A tab that is sleeping, its page suspended or released to save memory, now shows dimmed in the sidebar with a dotted ring around its icon and reads "Sleeping" to VoiceOver, and it clears the moment you open the tab
+time: 2026-11-20T14:09:45.279599-08:00
