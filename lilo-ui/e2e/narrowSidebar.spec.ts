@@ -174,3 +174,22 @@ test("the New Tab row keeps its buttons while the label steps down to the icon",
 	);
 	expect(hit).not.toMatch(/new-tab-row|new-terminal-button|agents-button/);
 });
+
+// The divider's search and sort buttons give way with the rows' close buttons (the 211 px container
+// threshold); Clear stays.
+test("the divider sheds its search and sort buttons in the narrow range and keeps Clear", async ({ page }) => {
+	await bootNarrow(page, "tabs", 203);
+	const search = page.locator(".divider-action.search-tabs");
+	const options = page.locator(".divider-action.list-options");
+	const clear = page.locator(".divider-action.clear-unpinned");
+	await expect(search).toBeVisible();
+	await expect(options).toBeVisible();
+	await expect(clear).toBeVisible();
+
+	await page.locator(".sidebar-resize-handle").focus();
+	await page.keyboard.press("ArrowLeft");
+	await expect.poll(() => page.evaluate(() => getComputedStyle(document.documentElement).getPropertyValue("--sidebar-width"))).toBe("195px");
+	await expect(search).toBeHidden();
+	await expect(options).toBeHidden();
+	await expect(clear).toBeVisible();
+});
