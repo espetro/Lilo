@@ -5,7 +5,7 @@ This page is about something else, the development loop.
 A coding agent running in a Linux sandbox or cloud box can do most of the work on Lilo's web side (the UI, the extension bridge, the websites, the documentation, the release tooling) and cannot do the Swift side.
 It describes what the agent can run, how to run several side by side, and where the Swift work goes.
 
-The partition below was measured on Debian 13 against `main` at `c24fc63c` (a 6-core, 11 GB box), and the `swiftlint` and `linux-checks` changes on this branch were checked against it.
+The partition below was measured on Debian 13 (6 cores, 11 GB) against `develop` at `51eaadfe`, with the per-target table under [Measurements](#measurements) recorded on the same host; an earlier spike ran against `main` at `c24fc63c`.
 Timings marked "this Mac" come from an Apple M1 with 8 GB of RAM under load from other work, so read them as an order of magnitude.
 
 ## What runs on Linux
@@ -13,27 +13,34 @@ Timings marked "this Mac" come from an Apple M1 with 8 GB of RAM under load from
 `make linux-checks` runs every check that needs no Xcode, in the order `make validate` runs them: it is `validate` without the app build and the Swift tests.
 CI runs the same targets on `ubuntu-latest` already (the `release-tooling`, `ui`, `e2e` and `bridge` jobs), so what passes there passes in a Linux sandbox.
 
-| Target | Checks | Result on Debian 13 |
-|--------|--------|---------------------|
-| `ui-lint` | svelte-check and lint of `lilo-ui` | 0 errors |
-| `ui-test` | `lilo-ui` unit tests | 654 of 654 |
-| `ext-bridge-test` | the extension bridge unit tests | 587 of 587 |
-| `site-check`, `site-test` | getlilo.app type check and tests | 0 errors, 86 of 86 |
-| `docs-check`, `docs-test` | docs.getlilo.app build, link and audit checks | no broken links, 4,503 audits |
-| `hooks-test`, `perf-summary-test`, `retried-tests-test`, `metrics-test`, `ci-metrics-test`, `lockf-test` | the commit hooks, the perf summary, the failed test report, the timing recorders and the lock wrapper | pass (the three added after the measurement are Python only and were not timed on Debian) |
-| `release-status` | pending release notes and the version files agree | pass |
-| `swiftlint` | Swift lint, no Xcode needed | 0 violations in 321 files |
+| Target | Makefile | Checks | Result on Debian 13 |
+|--------|----------|--------|---------------------|
+| `ui-lint` | `Makefile:381` | svelte-check and lint of `lilo-ui` | pass |
+| `ui-test` | `Makefile:386` | `lilo-ui` unit tests | 661 of 661 |
+| `ext-bridge-test` | `Makefile:488` | the extension bridge unit tests | 587 of 587 |
+| `site-check` | `Makefile:841` | getlilo.app type check | pass |
+| `site-test` | `Makefile:849` | site tests | 86 of 86 |
+| `docs-check` | `Makefile:911` | docs.getlilo.app link and audit checks | pass, no broken links |
+| `docs-test` | `Makefile:915` | docs build and tests | pass (red on `develop` until the tool-count fix in this change) |
+| `hooks-test` | `Makefile:163` | the commit hooks | pass |
+| `perf-summary-test`, `retried-tests-test`, `metrics-test`, `ci-metrics-test`, `check-summary-test`, `lockf-test` | `Makefile:753`, `:757`, `:777`, `:785`, `:793`, `:761` | the perf summary, the failed test report, the timing recorders and the lock wrapper | pass (Python only) |
+| `scope-test`, `tier-test` | `Makefile:801`, `:789` | the diff scoping and the check tiers | pass |
+| `release-status` | `Makefile:298` | pending release notes and the version files agree | pass |
+| `swiftlint` | `Makefile:243` | Swift lint, no Xcode needed | 0 violations in 323 files |
+
+`make linux-checks` itself (`Makefile:240`) is `validate` minus the Xcode build and the Swift tests, so it also runs on macOS; on Linux it is the full pre-push pass.
+Two host prerequisites the spike surfaced: the Makefile extracts archives with `unzip` (`Makefile:255`, `:263`, `:683`), which a stock Debian install lacks (`apt install unzip`, or any `unzip` on `PATH`), and the static SwiftLint writes its cache to `/var/tmp/SwiftLint`, which on a shared box can belong to another user — the lint itself passes and only the cache write fails; `--no-cache` avoids it.
 
 These pass on Linux too, and sit outside `linux-checks` because they are heavier or need a browser or a network download:
 
-| Target | Notes |
-|--------|-------|
-| `e2e` | Playwright against the built UI, 714 of 715 on the spike box: the one failure was a wall-clock performance guard on a shared machine. Needs `npx playwright install --only-shell chromium` first (CI does the same). |
-| `site-e2e` | 114 of 115: an iframe race that passes alone. |
-| `release-test`, `release-media-test` | release tooling tests. |
-| `site-deploy-check`, `docs-deploy-check` | what the Cloudflare builds run. |
-| `bridge-gen`, `ui-build`, `vt-build` | The generated sources come out identical to macOS (`ui-build` writes both generated Swift files; `vt-build` fetches the prebuilt libghostty-vt). |
-| `lint-commits` | Conventional Commits check of a range. |
+| Target | Makefile | Notes |
+|--------|----------|-------|
+| `e2e` | `Makefile:390` | Playwright against the vite dev server, no app needed: 714 of 715 on this host, the one failure a wall-clock guard (`longestTask` 1381 ms against a 1000 ms bound) on a box at load 5; it stays out of `linux-checks` because it is the heavy browser suite CI already runs sharded three ways. Needs `pnpm --dir lilo-ui exec playwright install --only-shell chromium` first (CI does the same). |
+| `site-e2e` | `Makefile:853` | Playwright against the built site. |
+| `release-test`, `release-media-test` | `Makefile:315`, `:333` | release tooling tests. |
+| `site-deploy-check`, `docs-deploy-check` | `Makefile:895`, `:923` | what the Cloudflare builds run. |
+| `bridge-gen`, `ui-build`, `vt-build` | `Makefile:664`, `:319`, `:670` | The generated sources come out identical to macOS (`ui-build` writes both generated Swift files; `vt-build` fetches the prebuilt libghostty-vt). |
+| `lint-commits` | `Makefile:159` | Conventional Commits check of a range. |
 
 `make swiftlint` on Linux downloads the static `swiftlint_linux_amd64.zip` (its own pinned checksum, in the Makefile beside the macOS one) and runs the same rules as macOS with two exceptions: `statement_position` and `vertical_whitespace_closing_braces` need SourceKit, which the static binary does not have, so it prints a warning and skips them.
 The macOS job in CI runs all of them, so a violation only those two rules find shows up there and not on Linux.
@@ -42,14 +49,18 @@ The dynamic binary in the same zip covers the two rules, but it needs a Swift to
 
 ## What needs macOS
 
-| Target | Why |
-|--------|-----|
-| `app`, `install`, `install-debug`, `xcode-build*`, `run-ui-dev` | `xcodebuild`, AppKit, WebKit and Metal exist only on macOS. |
-| `swift-test`, `swift-test-slow` | the tests run in the app host. |
-| `release*`, `dmg*` | signing, notarization and Sparkle. |
-| `ext-smoke*`, `ext-e2e*`, `ext-nightly`, every `*-bench`, `energy-*`, `agent-call` | they drive the built app. |
-| `project-sync` | it generates the UI bundle and the native strings, then stops: XcodeGen has no Linux build. |
-| `validate` | it ends in `swift-test`, so on Linux run `linux-checks`. |
+| Target | Makefile | Why |
+|--------|----------|-----|
+| `app`, `install`, `install-debug`, `xcode-build*`, `run-ui-dev` | `Makefile:555`, `:559`, `:563`, `:567`, `:572`, `:577` | `xcodebuild`, AppKit, WebKit and Metal exist only on macOS. |
+| `swift-test`, `swift-test-slow` | `Makefile:413`, `:419` | the tests run in the app host. |
+| `test-build` and everything under it (`*-bench`, `blocker-*`, `script-bench`, `speedometer-bench`, `page-bench`, `preload-bench`, `port-bench`, `terminal-bench`, `startup-bench`) | `Makefile:399` | they build the app or its test bundle with `xcodebuild`. |
+| `release*`, `dmg*` | `Makefile:634`, `:638`, `:644`, `:649`, `:660` | signing, notarization and Sparkle. |
+| `ext-smoke*`, `ext-nightly`, `ext-e2e*`, `agent-call`, `agent-app*`, `energy-*` | `Makefile:492`, `:496`, `:500`, `:504`, `:511`, `:586`, `:612`, `:738`, `:742` | they drive the built app. |
+| `project-sync` | `Makefile:247` | it generates the UI bundle and the native strings, then stops: XcodeGen has no Linux build. |
+| `validate` | `Makefile:179` | it ends in `swift-test`, so on Linux run `linux-checks`. |
+| `webkit-fork` | `Makefile:686` | extracts with `ditto`, which exists only on macOS. |
+
+`vt-build-source` (`Makefile:698`) is unverified: it needs only Zig, which runs on Linux, but it emits an `.xcframework`, an Apple bundle format, so it probably wants a macOS SDK; not tried on the spike box.
 
 Two targets write to the tree from live data and must never run speculatively:
 `make chrome-surface` and `make public-suffix-list` rewrite committed generated files from the network, which dirties the tree and makes `ext-bridge-test` fail until the files are checked out again.
@@ -93,11 +104,37 @@ GitHub-hosted `xcode-27` runners stay the primary builder: they are free and unl
 The constraint is the five macOS jobs GitHub runs at once on a free plan, and one pull request already uses four of them (three test shards and the release build), so one slot is spare.
 A Linux agent's loop for a Swift change is then: edit, `make swiftlint`, push the branch, read the macOS job's result from CI.
 
-A self-hosted Mac is a purchase to make only if that cap really queues pull requests: Scaleway (Paris, from about €0.22 an hour, runner preinstalled), JUUZ (about €119 a month) or MacStadium (about $149 a month). OVHcloud sells no Mac minis.
+A self-hosted Mac is a purchase to make only if that cap really queues pull requests: the tailnet `quinos-mac-mini` is the candidate already on the network (unreachable from the spike box, so its warm Xcode + Metal toolchain is unverified), and the rental options are Scaleway (Paris, from about €0.22 an hour, runner preinstalled), JUUZ (about €119 a month) or MacStadium (about $149 a month). OVHcloud sells no Mac minis.
 With a Mac on the network, `xcodebuild` over SSH needs no change: `-derivedDataPath` and `-clonedSourcePackagesDirPath` are paths on the Mac, so sync the worktree and run `make` there.
 The latency of that worktree-to-Mac loop is not measured, since no Mac was reachable from the Linux box.
 
 ## Measurements
+
+Wall time per target on Debian 13 (6 cores, 11 GB, other sessions loading the box), dependencies installed, each target run alone after a full `make linux-checks` pass:
+
+| Target | Result | Seconds |
+|--------|--------|---------|
+| `ui-lint` | pass | 41 |
+| `ui-test` | 661 of 661 | 19 |
+| `site-check` | pass | 71 |
+| `site-test` | 86 of 86 | 29 |
+| `docs-check` | pass | 119 |
+| `docs-test` | pass | 140 |
+| `hooks-test` | pass | 2 |
+| `perf-summary-test` | pass | 0 |
+| `retried-tests-test` | pass | 1 |
+| `scope-test` | pass | 0 |
+| `tier-test` | pass | 3 |
+| `metrics-test` | pass | 4 |
+| `ci-metrics-test` | pass | 0 |
+| `check-summary-test` | pass | 2 |
+| `lockf-test` | pass | 6 |
+| `ext-bridge-test` | 587 of 587 | 10 |
+| `release-status` | pass | 0 |
+| `swiftlint` | 0 violations in 323 files | 5 (`--no-cache`; the cache write needs a writable `/var/tmp/SwiftLint`) |
+
+`make linux-checks` end to end took 6 min 25 s warm on the same loaded box (it stops at `swiftlint` there only because of the `/var/tmp` cache ownership above; every member passes).
+`make e2e` needs `pnpm --dir lilo-ui exec playwright install --only-shell chromium` once (a 120 MB download), then runs the 715 Playwright tests against the vite dev server: 714 passed in 12.1 min with `--workers=4`, the one failure the `longestTask` guard above under load.
 
 Wall time per target on this Mac (M1, 8 GB, other sessions running), after the dependencies were installed:
 
@@ -121,5 +158,5 @@ Wall time per target on this Mac (M1, 8 GB, other sessions running), after the d
 `linux-checks` runs its targets one after another, where `make validate` runs its groups in parallel, so on a quiet multi-core box `validate`'s approach finishes sooner.
 The two totals differ by 28 s; the load average was 11 to 13 throughout, so I did not attribute the gap to anything but noise. Treat both as one sample, not a benchmark.
 
-Not measured: the same table on Linux (the spike recorded the results above, not per-target timings), the dependency install time on a cold Linux box, and the worktree-to-Mac latency.
-Measured on Debian 13 for this change: `make swiftlint` from an empty `build/` (download, checksum, unzip, lint of 321 files) took about 9 s.
+Not measured: the dependency install time on a cold Linux box (the spike box's pnpm store was warm), `site-e2e` on this host, and the worktree-to-Mac latency.
+Measured on Debian 13 for this change: `make swiftlint` from an empty `build/` (download, checksum, unzip, lint of 321 files) took about 9 s; the same download and lint of 323 files took about 7 s here once `unzip` was on `PATH`.
