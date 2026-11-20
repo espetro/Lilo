@@ -327,6 +327,12 @@
 				"description": "비활성 탭을 일시 정지하고 메모리에서 내리는 속도입니다.",
 				"keywords": "메모리 성능 배터리 정지 내리기 잠자기"
 			},
+			"tabSleepAllowlist": {
+				"title": "계속 로드할 사이트",
+				"description": "이 사이트(하위 도메인 포함)의 탭은 절대 동결되거나 언로드되지 않으므로 메모리와 배터리를 계속 사용합니다. 쉼표로 구분합니다.",
+				"keywords": "로드 유지 예외 허용 목록 절전 안 함 동결 언로드",
+				"placeholder": "mail.example.com, example.org"
+			},
 			"singleWindow": {
 				"title": "하나의 윈도우에서 모두 유지",
 				"description": "새 윈도우와 페이지 팝업을 여기에 탭으로 엽니다.",
@@ -862,6 +868,9 @@
 		"unreadCount": "읽지 않은 항목 {count}개",
 		"previewOpen": "열기",
 		"sleeping": "잠자기 상태",
+		"dozing": "절전 중",
+		"dozingHint": "메모리를 절약하기 위해 절전 중입니다. 열면 다시 활성화됩니다.",
+		"keepLoaded": "로드 유지됨",
 		"pinned": "고정됨",
 		"loading": "로드 중",
 		"muted": "음소거됨",
@@ -2111,6 +2120,7 @@
 		"Open in Split View": "분할 보기에서 열기",
 		"Hide Element…": "요소 가리기…",
 		"Click an element to hide it on this site. Press Esc to cancel.": "이 사이트에서 가릴 요소를 클릭하세요. 취소하려면 Esc 키를 누르세요.",
+		"Click an element or drag an area. Arrow keys change the element, Return captures, Esc cancels.": "요소를 클릭하거나 영역을 드래그하세요. 화살표 키로 요소를 바꾸고, Return으로 캡처하고, Esc로 취소합니다.",
 		"Picture in Picture": "화면 속 화면",
 		"Develop": "개발자용",
 		"Show Web Inspector": "웹 속성 보기",
@@ -2197,6 +2207,7 @@
 		"Download Complete": "다운로드 완료",
 		"Download Failed": "다운로드 실패",
 		"Keep Awake Until Done": "완료될 때까지 잠자기 방지",
+		"Keep Loaded": "계속 로드 유지",
 		"Sleep is back on": "잠자기가 다시 활성화되었습니다",
 		"The battery is below %d%%.": "배터리가 %d%% 미만입니다.",
 		"The Mac is too hot.": "Mac이 너무 뜨겁습니다.",

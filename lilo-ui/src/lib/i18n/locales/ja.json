@@ -327,6 +327,12 @@
 				"description": "使っていないタブを一時停止し、メモリから解放するまでの時間。",
 				"keywords": "メモリ パフォーマンス バッテリー 一時停止 解放 スリープ"
 			},
+			"tabSleepAllowlist": {
+				"title": "読み込んだままにするサイト",
+				"description": "これらのサイト(サブドメインを含む)のタブは凍結も解放もされないため、メモリとバッテリーを使い続けます。カンマで区切ります。",
+				"keywords": "読み込んだまま 例外 許可リスト スリープしない 凍結 解放",
+				"placeholder": "mail.example.com, example.org"
+			},
 			"singleWindow": {
 				"title": "すべてを1つのウインドウにまとめる",
 				"description": "新規ウインドウやページのポップアップを、このウインドウのタブとして開きます。",
@@ -862,6 +868,9 @@
 		"unreadCount": "未読{count}件",
 		"previewOpen": "開く",
 		"sleeping": "スリープ中",
+		"dozing": "休止中",
+		"dozingHint": "メモリを節約するため休止中です。開くと復帰します。",
+		"keepLoaded": "読み込んだまま",
 		"pinned": "固定済み",
 		"loading": "読み込み中",
 		"muted": "消音中",
@@ -2111,6 +2120,7 @@
 		"Open in Split View": "分割表示で開く",
 		"Hide Element…": "要素を非表示…",
 		"Click an element to hide it on this site. Press Esc to cancel.": "このサイトで非表示にする要素をクリックしてください。キャンセルするにはEscキーを押します。",
+		"Click an element or drag an area. Arrow keys change the element, Return captures, Esc cancels.": "要素をクリックするか、範囲をドラッグします。矢印キーで要素を変更し、Returnでキャプチャ、Escでキャンセルします。",
 		"Picture in Picture": "ピクチャ・イン・ピクチャ",
 		"Develop": "開発",
 		"Show Web Inspector": "Web インスペクタを表示",
@@ -2197,6 +2207,7 @@
 		"Download Complete": "ダウンロード完了",
 		"Download Failed": "ダウンロード失敗",
 		"Keep Awake Until Done": "完了までスリープを防止",
+		"Keep Loaded": "読み込んだままにする",
 		"Sleep is back on": "スリープが再び有効になりました",
 		"The battery is below %d%%.": "バッテリー残量が %d%% を下回りました。",
 		"The Mac is too hot.": "Mac が熱くなりすぎています。",

@@ -127,7 +127,7 @@ TEST := $(TEST_LOCK) $(TEST_CONFIG) test-without-building $(TEST_TIMEOUTS)
 TEST_RETRY := $(if $(CI),-retry-tests-on-failure -test-iterations 2)
 TEST_WORKERS = $(shell cores=$$(sysctl -n hw.perflevel0.physicalcpu 2>/dev/null || sysctl -n hw.ncpu); echo $$((cores / $(TEST_SLOTS) > 0 ? cores / $(TEST_SLOTS) : 1)))
 
-.PHONY: help site-release-import validate validate-scope validate-ui check check-staged ui-check swiftlint-changed sync-check linux-checks swiftlint project-sync ui-build ui-watch ui-dev ui-lint ui-test e2e e2e-energy \
+.PHONY: help site-release-import validate validate-scope validate-ui check check-staged ui-check swiftlint-changed sync-check linux-checks swiftlint project-sync ui-build ui-watch ui-dev ui-lint ui-test e2e e2e-energy ui-capture \
 	swift-test swift-test-slow blocker-coverage blocker-bench script-bench speedometer-bench page-bench preload-bench terminal-bench ext-bridge-build ext-bridge-test ext-smoke ext-nightly ext-e2e-passwords ext-e2e-passwords-trust top-extensions top-manifests chrome-surface \
 	chrome-contracts chrome-smoke public-suffix-list app install install-debug xcode-build xcode-build-release \
 	run-ui-dev release release-notarize release-archive dmg dmg-background bridge-gen vt-build vt-build-source vt-zip webkit-fork bootstrap bootstrap-test ui-preview check-commits startup-bench ext-bench energy-sample energy-compare energy-browsers perf-summary perf-compare perf-summary-test retried-tests-test lockf-test slot-test scope-test tier-test metrics metrics-on metrics-off metrics-test ci-metrics ci-metrics-test check-summary-test agent-app agent-call window-capture agent-eval agent-eval-test \
@@ -401,6 +401,11 @@ ui-test: $(UI_DEPS)
 ## Run the chrome UI end-to-end tests (Playwright; E2E_ARGS narrows the run)
 e2e: $(UI_DEPS)
 	@pnpm --dir $(UI_DIR) run test:e2e $(E2E_ARGS) || { echo 'If Chromium is missing, install it with: pnpm --dir $(UI_DIR) exec playwright install chromium' >&2; exit 1; }
+
+## Capture chrome-UI screenshots and videos of the capture scenarios (OUT=out dir, PROJECT=browser)
+ui-capture: $(UI_DEPS)
+	@pnpm --dir $(UI_DIR) exec playwright test --config=captures/playwright.capture.config.ts $(PROJECT) || { echo 'If a browser is missing, install it with: pnpm --dir $(UI_DIR) exec playwright install webkit chromium' >&2; exit 1; }
+	@node $(UI_DIR)/captures/to-media.mjs $(OUT)
 
 # Not part of e2e: it takes about three minutes and drives the app with System Events keystrokes.
 ## Leave a Release build idle with tabs and a hidden terminal; fail on idle git, worker or snapshot work (IDLE=45 TABS=3 TERMINAL=1)

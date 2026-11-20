@@ -327,6 +327,12 @@
 				"description": "Quanto rapidamente le schede inattive vengono sospese e scaricate dalla memoria.",
 				"keywords": "memoria prestazioni batteria sospendi scarica stop"
 			},
+			"tabSleepAllowlist": {
+				"title": "Siti mantenuti caricati",
+				"description": "Le schede di questi siti, sottodomini inclusi, non vengono mai congelate né scaricate e continuano a usare memoria e batteria. Separati da virgole.",
+				"keywords": "mantieni caricata eccezione lista consentita mai sospendere congelare scaricare",
+				"placeholder": "mail.example.com, example.org"
+			},
 			"singleWindow": {
 				"title": "Mantieni tutto in una finestra",
 				"description": "Nuove finestre e finestre a comparsa si aprono qui come schede.",
@@ -862,6 +868,9 @@
 		"unreadCount": "{count} da leggere",
 		"previewOpen": "Apri",
 		"sleeping": "In stop",
+		"dozing": "Inattiva",
+		"dozingHint": "Sospesa per risparmiare memoria. Si riattiva quando la apri.",
+		"keepLoaded": "Resta caricata",
 		"pinned": "Fissata",
 		"loading": "Caricamento",
 		"muted": "Audio disattivato",
@@ -2111,6 +2120,7 @@
 		"Open in Split View": "Apri in vista divisa",
 		"Hide Element…": "Nascondi elemento…",
 		"Click an element to hide it on this site. Press Esc to cancel.": "Fai clic su un elemento per nasconderlo su questo sito. Premi Esc per annullare.",
+		"Click an element or drag an area. Arrow keys change the element, Return captures, Esc cancels.": "Fai clic su un elemento o trascina un'area. Le frecce cambiano elemento, Invio cattura, Esc annulla.",
 		"Picture in Picture": "Picture in Picture",
 		"Develop": "Sviluppo",
 		"Show Web Inspector": "Mostra Inspector web",
@@ -2197,6 +2207,7 @@
 		"Download Complete": "Download completato",
 		"Download Failed": "Download non riuscito",
 		"Keep Awake Until Done": "Mantieni attivo fino al termine",
+		"Keep Loaded": "Mantieni caricata",
 		"Sleep is back on": "Lo stop è di nuovo attivo",
 		"The battery is below %d%%.": "La batteria è sotto il %d%%.",
 		"The Mac is too hot.": "Il Mac è troppo caldo.",

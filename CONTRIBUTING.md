@@ -262,6 +262,18 @@ Heavier checks, run when your change touches their area:
 | `make ext-bench` | a Release build with 20 store extensions: restore, worker starts, API latency and idle CPU, failing when idle CPU % goes over `MAX_IDLE_CPU=35,25` (Lilo, its WebKit processes; `MAX_IDLE_CPU=` only measures) |
 | `make e2e-energy` | idle energy guard on a Release build (about 3 minutes, see [DEBUGGING.md](docs/DEBUGGING.md#9-measuring-energy)) |
 
+### Capturing UI media
+
+`make ui-capture` records the chrome interface (`lilo-ui/`) through the e2e fake host and writes a PNG and a webm per named scenario and browser to `build/captures/<browser>/` (git-ignored), plus an mp4 and a gif of each recording when `ffmpeg` is on PATH.
+The scenarios are the sidebar at narrow, default and wide widths in light and dark, the spaces switch and the command bar.
+It needs no macOS: it runs headless on a Debian VPS or in CI with `pnpm --dir lilo-ui exec playwright install --with-deps webkit chromium`.
+`OUT=dir` changes the output directory and `PROJECT="--project=webkit"` (or `chromium`) limits the browser.
+WebKit is the faithful engine (the app runs on it); headless Chromium is the quick one.
+Add a scenario by appending to `lilo-ui/captures/scenarios.ts`; it is a named state: a world, a color scheme and the steps that reach it.
+
+The harness shows the chrome only.
+The native AppKit app (window, menus, real web content, terminal tabs) cannot run on Debian, so media of it needs a Mac: with a Debug build, `make agent-app`, then `make agent-call CALLS=calls.json` with the `computer` tool's `screenshot` action and a `savePath`, or the `gif_creator` tool.
+
 ### Where tests go
 
 - **Swift**: `LiloTests/` mirrors the source tree, so the tests of `Lilo/<Folder>/X.swift` go in
