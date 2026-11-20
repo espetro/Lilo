@@ -327,6 +327,12 @@
 				"description": "Rapidité avec laquelle les onglets inactifs sont gelés puis déchargés.",
 				"keywords": "mémoire performance batterie gel veille"
 			},
+			"tabSleepAllowlist": {
+				"title": "Sites gardés chargés",
+				"description": "Les onglets de ces sites, sous-domaines compris, ne sont jamais gelés ni déchargés et continuent d'utiliser mémoire et batterie. Séparés par des virgules.",
+				"keywords": "garder chargé exception liste autorisée jamais veille geler décharger",
+				"placeholder": "mail.example.com, example.org"
+			},
 			"singleWindow": {
 				"title": "Tout garder dans une seule fenêtre",
 				"description": "Nouvelles fenêtres et popups s'ouvrent en onglets ici.",
@@ -864,6 +870,7 @@
 		"sleeping": "En veille",
 		"dozing": "Endormi",
 		"dozingHint": "Endormi pour économiser la mémoire. Se réveille à l'ouverture.",
+		"keepLoaded": "Gardé chargé",
 		"pinned": "Épinglé",
 		"loading": "Chargement",
 		"muted": "Son coupé",
@@ -2200,6 +2207,7 @@
 		"Download Complete": "Téléchargement terminé",
 		"Download Failed": "Échec du téléchargement",
 		"Keep Awake Until Done": "Garder éveillé jusqu'à la fin",
+		"Keep Loaded": "Garder chargé",
 		"Sleep is back on": "La veille est rétablie",
 		"The battery is below %d%%.": "La batterie est sous %d %%.",
 		"The Mac is too hot.": "Le Mac est trop chaud.",

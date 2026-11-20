@@ -327,6 +327,12 @@
 				"description": "Jak szybko nieaktywne karty są wstrzymywane i usuwane z pamięci.",
 				"keywords": "pamięć wydajność bateria wstrzymanie usuwanie usypianie"
 			},
+			"tabSleepAllowlist": {
+				"title": "Witryny zostające wczytane",
+				"description": "Karty tych witryn, łącznie z subdomenami, nigdy nie są zamrażane ani zwalniane, więc nadal zużywają pamięć i baterię. Oddzielone przecinkami.",
+				"keywords": "zostaw wczytaną wyjątek lista dozwolonych nigdy nie usypiaj zamrażanie zwalnianie",
+				"placeholder": "mail.example.com, example.org"
+			},
 			"singleWindow": {
 				"title": "Wszystko w jednym oknie",
 				"description": "Nowe okna i wyskakujące okna stron otwierają się tutaj jako karty.",
@@ -864,6 +870,7 @@
 		"sleeping": "Uśpiona",
 		"dozing": "Uśpiona",
 		"dozingHint": "Uśpiona, by oszczędzać pamięć. Wybudzi się po otwarciu.",
+		"keepLoaded": "Pozostaje wczytana",
 		"pinned": "Przypięta",
 		"loading": "Wczytywanie",
 		"muted": "Wyciszona",
@@ -2200,6 +2207,7 @@
 		"Download Complete": "Pobieranie zakończone",
 		"Download Failed": "Pobieranie nie powiodło się",
 		"Keep Awake Until Done": "Zapobiegaj usypianiu do zakończenia",
+		"Keep Loaded": "Zostaw wczytaną",
 		"Sleep is back on": "Usypianie znowu włączone",
 		"The battery is below %d%%.": "Poziom baterii spadł poniżej %d%%.",
 		"The Mac is too hot.": "Mac jest zbyt gorący.",

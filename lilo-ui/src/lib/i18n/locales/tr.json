@@ -327,6 +327,12 @@
 				"description": "Etkin olmayan sekmelerin ne kadar hızlı dondurulup bellekten çıkarılacağı.",
 				"keywords": "bellek performans pil dondur boşalt uyku"
 			},
+			"tabSleepAllowlist": {
+				"title": "Yüklü tutulan siteler",
+				"description": "Bu sitelerin sekmeleri, alt alan adları dahil, asla dondurulmaz veya bellekten çıkarılmaz; bellek ve pil kullanmaya devam eder. Virgülle ayırın.",
+				"keywords": "yüklü tut istisna izin listesi asla uyutma dondurma boşaltma",
+				"placeholder": "mail.example.com, example.org"
+			},
 			"singleWindow": {
 				"title": "Her şeyi tek pencerede tut",
 				"description": "Yeni pencereler ve sayfa açılır pencereleri burada sekme olarak açılır.",
@@ -864,6 +870,7 @@
 		"sleeping": "Uykuda",
 		"dozing": "Uyuyor",
 		"dozingHint": "Bellek tasarrufu için uyuyor. Açtığınızda uyanır.",
+		"keepLoaded": "Yüklü tutuluyor",
 		"pinned": "Sabitlenmiş",
 		"loading": "Yükleniyor",
 		"muted": "Sesi kapalı",
@@ -2200,6 +2207,7 @@
 		"Download Complete": "İndirme Tamamlandı",
 		"Download Failed": "İndirme Başarısız",
 		"Keep Awake Until Done": "Bitene Kadar Uyanık Tut",
+		"Keep Loaded": "Yüklü Tut",
 		"Sleep is back on": "Uyku yeniden açık",
 		"The battery is below %d%%.": "Pil %d%% altında.",
 		"The Mac is too hot.": "Mac çok sıcak.",

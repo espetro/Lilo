@@ -327,6 +327,12 @@
 				"description": "Wie schnell inaktive Tabs eingefroren und entladen werden.",
 				"keywords": "speicher leistung batterie einfrieren entladen ruhezustand"
 			},
+			"tabSleepAllowlist": {
+				"title": "Websites, die geladen bleiben",
+				"description": "Tabs dieser Websites, Subdomains eingeschlossen, werden nie eingefroren oder entladen und verbrauchen weiter Speicher und Akku. Durch Kommas getrennt.",
+				"keywords": "geladen lassen ausnahme erlaubnisliste nie einfrieren entladen ruhezustand",
+				"placeholder": "mail.example.com, example.org"
+			},
 			"singleWindow": {
 				"title": "Alles in einem Fenster behalten",
 				"description": "Neue Fenster und Pop-ups werden hier als Tabs geöffnet.",
@@ -864,6 +870,7 @@
 		"sleeping": "Im Ruhezustand",
 		"dozing": "Schläft",
 		"dozingHint": "Schläft, um Speicher zu sparen. Wacht beim Öffnen auf.",
+		"keepLoaded": "Bleibt geladen",
 		"pinned": "Angeheftet",
 		"loading": "Wird geladen",
 		"muted": "Stumm",
@@ -2200,6 +2207,7 @@
 		"Download Complete": "Download abgeschlossen",
 		"Download Failed": "Download fehlgeschlagen",
 		"Keep Awake Until Done": "Bis zum Abschluss wach halten",
+		"Keep Loaded": "Geladen lassen",
 		"Sleep is back on": "Ruhezustand ist wieder aktiviert",
 		"The battery is below %d%%.": "Der Batteriestand liegt unter %d%%.",
 		"The Mac is too hot.": "Der Mac ist zu heiß.",

@@ -327,6 +327,12 @@
 				"description": "Quanto rapidamente le schede inattive vengono sospese e scaricate dalla memoria.",
 				"keywords": "memoria prestazioni batteria sospendi scarica stop"
 			},
+			"tabSleepAllowlist": {
+				"title": "Siti mantenuti caricati",
+				"description": "Le schede di questi siti, sottodomini inclusi, non vengono mai congelate né scaricate e continuano a usare memoria e batteria. Separati da virgole.",
+				"keywords": "mantieni caricata eccezione lista consentita mai sospendere congelare scaricare",
+				"placeholder": "mail.example.com, example.org"
+			},
 			"singleWindow": {
 				"title": "Mantieni tutto in una finestra",
 				"description": "Nuove finestre e finestre a comparsa si aprono qui come schede.",
@@ -864,6 +870,7 @@
 		"sleeping": "In stop",
 		"dozing": "Inattiva",
 		"dozingHint": "Sospesa per risparmiare memoria. Si riattiva quando la apri.",
+		"keepLoaded": "Resta caricata",
 		"pinned": "Fissata",
 		"loading": "Caricamento",
 		"muted": "Audio disattivato",
@@ -2200,6 +2207,7 @@
 		"Download Complete": "Download completato",
 		"Download Failed": "Download non riuscito",
 		"Keep Awake Until Done": "Mantieni attivo fino al termine",
+		"Keep Loaded": "Mantieni caricata",
 		"Sleep is back on": "Lo stop è di nuovo attivo",
 		"The battery is below %d%%.": "La batteria è sotto il %d%%.",
 		"The Mac is too hot.": "Il Mac è troppo caldo.",
