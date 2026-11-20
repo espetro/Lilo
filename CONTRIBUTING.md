@@ -394,6 +394,22 @@ Edit `bridge-schema/tab.json`, then run `make bridge-gen` to regenerate
 - Query website data with `WKWebsiteDataStore.testDataTypes`, not `allWebsiteDataTypes()`: Screen Time's type waits on a system service, for seconds when several runs ask at once.
 - Size fixtures for the behavior, not for realism, and guard scaling by comparing a run with one twice its size (CPU time, not wall time), as `ImportScaleTests` does.
 
+### Capture the main window for a pull request
+
+A change to native chrome (window buttons, sidebar, split panes) needs a screenshot from the real window. Never use
+`screencapture` or give an agent Screen Recording or Accessibility: the Debug build renders its own window from inside
+the app (`Lilo/Agent/AgentWindowCapture.swift`), so it needs no permission, sees no other app and never takes focus.
+
+```bash
+make window-capture OUT=/tmp/shot.png                                  # 1280x800 content
+make window-capture OUT=/tmp/shot.png SIZE=900x600 WIDTHS="260 203 150 rail" GIF=/tmp/widths.gif
+```
+
+`WIDTHS` drags the sidebar to each width the way a user does and writes `shot-<width>.png` per width (`GIF` joins them
+into one animation); the sidebar returns to its width after. The tool is the Debug-only `window_capture` agent tool, so
+it also answers `make agent-call`, and `AgentWindowCaptureTests` fails if a Release build could hold it. The window
+is drawn by AppKit and each web view by WebKit's own snapshot, so vibrancy and the window shadow are not part of it.
+
 ## Pull requests
 
 1. Fork the repository and branch from `main`.
