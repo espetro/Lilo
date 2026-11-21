@@ -1,0 +1,3 @@
+kind: Added
+body: Trackpad gestures drive the Picture-in-Picture windows - a two-finger pan over the window's bar (or anywhere with Option held) moves it and a pinch resizes it, while a pan over the page still scrolls the page
+time: 2026-11-21T14:15:00.000000-08:00
