@@ -165,20 +165,23 @@ final class TrafficLightAnimatorTests: XCTestCase {
         ))
     }
 
-    func testANarrowedSidebarKeepsTheLightsPastItsColumn() throws {
+    func testTheLightsKeepTheirPlaceOverTheSidebarDownToItsNarrowest() throws {
         let controller = MainWindowController(context: browserContext.context)
-        controller.sidebarWidth = 180
-        controller.sidebarExpandedWidth = 180
+        let window = try XCTUnwrap(controller.window)
+        window.setContentSize(NSSize(width: 1200, height: 800))
+        controller.window?.contentView?.addSubview(controller.contentContainerView)
+        defer { controller.pendingSidebarWidthPersistWork?.cancel() }
+        let corner = try closeButtonFrame(controller, layout: .default)
+        controller.syncTrafficLights(animated: false)
 
-        // The default layout has no toolbar row: the lights still stay, past the sidebar's column.
-        XCTAssertTrue(controller.areTrafficLightsVisible())
-        let narrow = try closeButtonFrame(controller, layout: .default)
-        XCTAssertEqual(narrow.minX, 180 + MainWindowController.contentInset + MainWindowController.trafficLightsInset,
-                       "as far past the column as they sit into the header")
-
-        // Folding to the rail takes their home with it.
-        controller.sidebarRail = true
-        XCTAssertFalse(controller.areTrafficLightsVisible(), "no toolbar row holds them, as with the sidebar hidden")
+        // The header's buttons give way under 203 pt; the lights never fade or move.
+        for width: CGFloat in [202, 170, MainWindowController.sidebarWidthRange.lowerBound] {
+            controller.updateSidebarWidth(width)
+            XCTAssertEqual(controller.sidebarWidth, width)
+            XCTAssertTrue(controller.areTrafficLightsVisible(), "\(width)")
+            XCTAssertEqual(controller.lastSentTrafficLightsVisible, true)
+            XCTAssertEqual(try closeButtonFrame(controller, layout: .default), corner, "\(width)")
+        }
     }
 
     func testARightSidebarKeepsTheLightsOnItsToolbarRowDownTheNarrowRange() throws {
