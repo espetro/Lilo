@@ -97,9 +97,6 @@
       </span>
     </span>
     {#if row.agents.length}
-      <UiButton variant="ghost" onclick={() => (permissionsOpen = permissionsOpen === row.key ? null : row.key)} expanded={permissionsOpen === row.key}>
-        {t("settings.agents.permissions.button")}
-      </UiButton>
       <UiButton onclick={() => revoke(row.agents.map((agent) => agent.name))}>
         {t("settings.agents.revoke")}
       </UiButton>
@@ -108,10 +105,13 @@
         {row.client.configured ? t("settings.agents.repair") : t("settings.agents.connect")}
       </UiButton>
     {/if}
-    {#if row.client?.configured}
+    {#if row.client?.configured || row.agents.length}
       <UiMoreMenu
         label={t("settings.agents.moreFor", { client: row.title })}
-        items={[{ label: t("settings.agents.removeFrom", { client: row.title }), danger: true, onclick: () => previewAgentClient(row.client?.id ?? "", true) }]}
+        items={[
+          ...(row.agents.length ? [{ label: t("settings.agents.permissions.button"), onclick: () => (permissionsOpen = permissionsOpen === row.key ? null : row.key) }] : []),
+          ...(row.client?.configured ? [{ label: t("settings.agents.removeFrom", { client: row.title }), danger: true, onclick: () => previewAgentClient(row.client?.id ?? "", true) }] : []),
+        ]}
       />
     {/if}
   </div>
