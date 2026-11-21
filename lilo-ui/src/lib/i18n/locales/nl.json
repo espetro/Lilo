@@ -677,12 +677,34 @@
 				"claudeCode": "Claude Code",
 				"claudeDesktop": "Claude Desktop",
 				"codex": "Codex",
-				"cursor": "Cursor"
+				"cursor": "Cursor",
+				"zed": "Zed",
+				"vscode": "VS Code",
+				"opencode": "OpenCode",
+				"gemini": "Gemini CLI"
 			},
 			"connect": "Verbind",
 			"copy": "Kopieer configuratie",
 			"clientDescription": "Voegt Lilo toe aan de MCP-servers.",
 			"revoke": "Verwijder",
+			"repair": "Herstellen",
+			"moreFor": "Meer acties voor {client}",
+			"removeFrom": "Lilo uit {client} verwijderen…",
+			"sheet": {
+				"addTitle": "Lilo aan {client} toevoegen",
+				"repairTitle": "Lilo in {client} herstellen",
+				"removeTitle": "Lilo uit {client} verwijderen",
+				"diff": "Lilo wijzigt deze regels en verder niets.",
+				"runs": "Lilo voert dit commando uit.",
+				"unchanged": "In dit bestand verandert niets.",
+				"addedLine": "Toegevoegd",
+				"removedLine": "Verwijderd",
+				"add": "Lilo toevoegen",
+				"repair": "Herstellen",
+				"remove": "Lilo verwijderen",
+				"copy": "Kopieer",
+				"copied": "Gekopieerd"
+			},
 			"status": {
 				"acting": "Nu bezig",
 				"connected": "Verbonden",
@@ -691,7 +713,9 @@
 				"ready": "Geconfigureerd"
 			},
 			"allowedSeen": "Toegestaan, laatst gezien {time}",
-			"readyLine": "Ingesteld. Lilo vraagt het je bij de eerste verbinding."
+			"readyLine": "Ingesteld. Lilo vraagt het je bij de eerste verbinding.",
+			"detectedLine": "Gevonden op deze Mac. Nog niet ingesteld.",
+			"moreApps": "Meer apps"
 		},
 		"navGroups": {
 			"tools": "Hulpmiddelen"
@@ -2429,6 +2453,11 @@
 		"Added Lilo to Claude Desktop: quit and reopen Claude to load it": "Lilo toegevoegd aan Claude Desktop: stop en heropen Claude om het te laden",
 		"Added Lilo to Cursor": "Lilo toegevoegd aan Cursor",
 		"Added Lilo to Codex": "Lilo toegevoegd aan Codex",
+		"Added Lilo to Zed": "Lilo toegevoegd aan Zed",
+		"Added Lilo to VS Code": "Lilo toegevoegd aan VS Code",
+		"Added Lilo to OpenCode": "Lilo toegevoegd aan OpenCode",
+		"Added Lilo to Gemini CLI": "Lilo toegevoegd aan Gemini CLI",
+		"Removed Lilo": "Lilo verwijderd",
 		"Lilo could not read %@: add this server to it yourself: %@": "Lilo kon %@ niet lezen: voeg deze server zelf toe: %@",
 		"Stop Agents": "Stop agents",
 		"Delete %@ and its %d tabs?": {"one": "%@ en %d tabblad verwijderen?", "other": "%@ en %d tabbladen verwijderen?"},

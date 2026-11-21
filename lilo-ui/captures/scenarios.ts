@@ -53,6 +53,13 @@ export const scenarios: CaptureScenario[] = [
 		{ name: `little-results-${colorScheme}`, colorScheme, viewport: START, boot: bootLittle, run: littleResults },
 		{ name: `little-page-${colorScheme}`, colorScheme, viewport: PAGE, boot: bootLittle, run: littlePage },
 	]),
+	...(["light", "dark"] as const).map((colorScheme) => ({ name: `agents-connect-sheet-${colorScheme}`, colorScheme, run: agentsConnectSheet })),
+	// Settings > Agents: Connect shows what it will write, writes it, then Remove takes Lilo out again.
+	{ name: "agents-connect-flow", run: agentsConnectFlow },
+	// Settings > Agents: the apps found on this Mac come first, the rest wait under "More apps".
+	...(["light", "dark"] as const).map((colorScheme) => ({ name: `agents-discovery-${colorScheme}`, colorScheme, run: agentsDiscovery })),
+	// Zed is found, Connect shows the file it will change, Add writes it, the tile reads Configured.
+	{ name: "agents-discovery-flow", run: agentsDiscoveryFlow },
 	// The start card, a search, Enter, then the page window's strip: the card grows into the window natively.
 	{ name: "little-flow", viewport: { width: 900, height: 640 }, boot: bootLittle, run: littleFlow },
 	// Settings > Agents' instances page and the sheet that adds to it.
@@ -413,3 +420,137 @@ scenarios.push(
 	{ name: "cmdbar-compact-light", world: compactWorld(), run: openCommandBarIdle },
 	{ name: "cmdbar-compact-dark", colorScheme: "dark", world: compactWorld(), run: openCommandBarIdle },
 );
+
+const CURSOR_CONFIG = "~/.cursor/mcp.json";
+const HELPER = "/Applications/Lilo.app/Contents/MacOS/lilo-mcp";
+const ADD_LINES = [
+	{ number: 3, removed: true, text: "    }" },
+	{ number: 3, removed: false, text: "    }," },
+	{ number: 4, removed: false, text: '    "lilo" : {' },
+	{ number: 5, removed: false, text: `      "command" : "${HELPER}"` },
+	{ number: 6, removed: false, text: "    }" },
+];
+const REMOVE_LINES = [
+	{ number: 3, removed: true, text: "    }," },
+	{ number: 3, removed: false, text: "    }" },
+	{ number: 4, removed: true, text: '    "lilo" : {' },
+	{ number: 5, removed: true, text: `      "command" : "${HELPER}"` },
+	{ number: 6, removed: true, text: "    }" },
+];
+const APP_ICON = "data:image/svg+xml;base64," + Buffer.from('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64"><rect width="64" height="64" rx="14" fill="#6b7280"/></svg>').toString("base64");
+
+async function send(page: Page, event: Record<string, unknown>) {
+	await page.evaluate((payload) => window.__lilo!.receive(payload), event);
+}
+
+async function openAgents(page: Page, cursorConfigured: boolean) {
+	await send(page, { event: "openSettings" });
+	await send(page, { event: "settingsLoaded", settings: { agentControlEnabled: "true" } });
+	await agentClients(page, cursorConfigured);
+	await page.locator(".section-nav-button").filter({ hasText: "Agents" }).click();
+}
+
+async function agentClients(page: Page, cursorConfigured: boolean) {
+	await send(page, {
+		event: "agentClientsLoaded",
+		clients: [
+			{ id: "claudeCode", configured: true, installed: true, stale: false, icon: null },
+			{ id: "cursor", configured: cursorConfigured, installed: true, stale: false, icon: APP_ICON },
+			{ id: "codex", configured: false, installed: false, stale: false, icon: null },
+		],
+		allowed: [],
+	});
+}
+
+async function discoveredClients(page: Page, zedConfigured: boolean) {
+	await send(page, {
+		event: "agentClientsLoaded",
+		clients: [
+			{ id: "claudeCode", configured: true, installed: true, stale: false, icon: null },
+			{ id: "claudeDesktop", configured: false, installed: false, stale: false, icon: null },
+			{ id: "codex", configured: false, installed: false, stale: false, icon: null },
+			{ id: "cursor", configured: true, installed: true, stale: false, icon: APP_ICON },
+			{ id: "zed", configured: zedConfigured, installed: true, stale: false, icon: APP_ICON },
+			{ id: "vscode", configured: false, installed: false, stale: false, icon: null },
+			{ id: "opencode", configured: false, installed: true, stale: false, icon: null },
+			{ id: "gemini", configured: false, installed: false, stale: false, icon: null },
+		],
+		allowed: [],
+	});
+}
+
+async function openDiscovery(page: Page, zedConfigured: boolean) {
+	await send(page, { event: "openSettings" });
+	await send(page, { event: "settingsLoaded", settings: { agentControlEnabled: "true" } });
+	await discoveredClients(page, zedConfigured);
+	await page.locator(".section-nav-button").filter({ hasText: "Agents" }).click();
+}
+
+async function agentsDiscovery(page: Page) {
+	await openDiscovery(page, false);
+	await page.getByRole("button", { name: "More apps" }).click();
+	await page.waitForTimeout(400);
+}
+
+async function agentsDiscoveryFlow(page: Page) {
+	await openDiscovery(page, false);
+	await page.waitForTimeout(1200);
+	const zed = page.locator(".agent-tile").filter({ hasText: "Zed" });
+	await zed.getByRole("button", { name: "Connect" }).click();
+	await send(page, {
+		event: "agentClientPreview", client: "zed", remove: false, path: "~/.config/zed/settings.json", command: null,
+		snippet: "{}", blocked: null,
+		lines: [
+			{ number: 2, removed: false, text: '  "context_servers" : {' },
+			{ number: 3, removed: false, text: '    "lilo" : {' },
+			{ number: 4, removed: false, text: '      "command" : "/Applications/Lilo.app/Contents/MacOS/lilo-mcp"' },
+			{ number: 5, removed: false, text: "    }" },
+			{ number: 6, removed: false, text: "  }," },
+		],
+	});
+	await expect(page.locator('[data-modal="agent-config"]')).toBeVisible();
+	await page.waitForTimeout(1800);
+	await page.getByRole("button", { name: /Add Lilo/ }).click();
+	await discoveredClients(page, true);
+	await send(page, { event: "settingsActionCompleted", action: "connectAgentClient", message: "Added Lilo to Zed", level: "info" });
+	await page.waitForTimeout(1500);
+	await page.getByRole("button", { name: "More apps" }).click();
+	await page.waitForTimeout(1500);
+}
+
+const cursorPreview = (remove: boolean) => ({
+	event: "agentClientPreview", client: "cursor", remove, path: CURSOR_CONFIG, command: null,
+	snippet: "{}", blocked: null, lines: remove ? REMOVE_LINES : ADD_LINES,
+});
+
+async function agentsConnectSheet(page: Page) {
+	await openAgents(page, false);
+	await page.locator(".agent-tile").filter({ hasText: "Cursor" }).getByRole("button", { name: "Connect" }).click();
+	await send(page, cursorPreview(false));
+	await expect(page.locator('[data-modal="agent-config"]')).toBeVisible();
+	await page.waitForTimeout(300);
+}
+
+async function agentsConnectFlow(page: Page) {
+	await openAgents(page, false);
+	await page.waitForTimeout(600);
+	const cursor = page.locator(".agent-tile").filter({ hasText: "Cursor" });
+	await cursor.getByRole("button", { name: "Connect" }).click();
+	await send(page, cursorPreview(false));
+	await expect(page.locator('[data-modal="agent-config"]')).toBeVisible();
+	await page.waitForTimeout(1800);
+	await page.getByRole("button", { name: /Add Lilo/ }).click();
+	await agentClients(page, true);
+	await send(page, { event: "settingsActionCompleted", action: "connectAgentClient", message: "Added Lilo to Cursor", level: "info" });
+	await page.waitForTimeout(1200);
+	await cursor.getByRole("button", { name: "More actions for Cursor" }).click();
+	await page.waitForTimeout(500);
+	await page.getByRole("menuitem", { name: "Remove Lilo from Cursor…" }).click();
+	await send(page, cursorPreview(true));
+	await expect(page.locator('[data-modal="agent-config"]')).toBeVisible();
+	await page.waitForTimeout(1800);
+	await page.getByRole("button", { name: /Remove Lilo/ }).click();
+	await agentClients(page, false);
+	await send(page, { event: "settingsActionCompleted", action: "connectAgentClient", message: "Removed Lilo", level: "info" });
+	await page.waitForTimeout(1200);
+}

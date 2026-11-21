@@ -342,14 +342,19 @@ final class AgentCaptureTests: AgentToolTestCase {
     func testToolsAreListed() async throws {
         let tools = (await client.request("tools/list"))?["tools"] as? [[String: Any]] ?? []
 
-        XCTAssertEqual(Set(tools.compactMap { $0["name"] as? String }), [
+        var expected: Set<String> = [
             "tabs_context_mcp", "tabs_create_mcp", "tabs_close_mcp", "navigate", "computer", "read_page", "find", "wait_for", "form_input",
             "get_page_text", "javascript_tool", "read_console_messages", "read_network_requests", "resize_window", "file_upload",
             "upload_image", "gif_creator", "browser_batch",
             "list_profiles", "switch_profile", "reset_profile", "fetch", "run",
-            "flow_start", "flow_save", "flow_run",
+            "flow_start", "flow_save", "flow_run", "browser_config",
             "devtools_command", "devtools_events", "network_mock", "network_response", "cookies", "emulate", "performance"
-        ])
+        ]
+        // tools/list adds the Debug-only window_capture in a Debug build.
+        #if DEBUG
+        expected.insert("window_capture")
+        #endif
+        XCTAssertEqual(Set(tools.compactMap { $0["name"] as? String }), expected)
     }
 
     func testTheBrowserPickersAreNotListedButStillAnswered() async throws {

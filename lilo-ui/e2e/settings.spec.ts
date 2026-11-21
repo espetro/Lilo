@@ -1,4 +1,4 @@
-import { expect, test, type Locator } from "@playwright/test";
+import { expect, test, type Locator, type Page } from "@playwright/test";
 import { bootChrome, sentCommands } from "./fakeHost";
 import { initialWorld } from "./fixtures";
 
@@ -51,7 +51,7 @@ test("the agent tiles style their secondary buttons like the other agent rows", 
 	await page.evaluate(() => window.__lilo!.receive({ event: "settingsLoaded", settings: { agentControlEnabled: "true" } }));
 	await page.evaluate(() => window.__lilo!.receive({
 		event: "agentClientsLoaded",
-		clients: [{ id: "claudeCode", configured: true, icon: null }],
+		clients: [{ id: "claudeCode", configured: true, installed: false, icon: null }],
 		allowed: [{ name: "claude-code", displayName: "Claude Code", lastSeen: null, client: "claudeCode" }],
 	}));
 	await page.locator(".section-nav-button").filter({ hasText: "Agents" }).click();
@@ -422,26 +422,136 @@ test("a search result's highlight clears with Reduce motion on", async ({ page }
 	await expect(row).not.toHaveClass(/setting-flash/, { timeout: 4000 });
 });
 
-test("connecting an agent app shows it working until Lilo answers", async ({ page }) => {
+const PREVIEW = {
+	event: "agentClientPreview",
+	client: "claudeCode",
+	remove: false,
+	path: "~/.cursor/mcp.json",
+	command: null,
+	snippet: "{}",
+	blocked: null,
+	lines: [
+		{ number: 3, removed: true, text: "    }" },
+		{ number: 3, removed: false, text: "    }," },
+		{ number: 4, removed: false, text: '    "lilo": {' },
+		{ number: 5, removed: false, text: '      "command" : "/Applications/Lilo.app/Contents/MacOS/lilo-mcp"' },
+		{ number: 6, removed: false, text: "    }" },
+	],
+};
+
+async function openAgentsSettings(page: Page, clients: unknown[]) {
 	await bootChrome(page, initialWorld());
 	await page.evaluate(() => window.__lilo!.receive({ event: "openSettings" }));
 	await page.evaluate(() => window.__lilo!.receive({ event: "settingsLoaded", settings: { agentControlEnabled: "true" } }));
-	await page.evaluate(() => window.__lilo!.receive({
-		event: "agentClientsLoaded",
-		clients: [{ id: "claudeCode", configured: false, icon: null }],
-		allowed: [],
-	}));
+	await page.evaluate((clients) => window.__lilo!.receive({ event: "agentClientsLoaded", clients, allowed: [] }), clients);
 	await page.locator(".section-nav-button").filter({ hasText: "Agents" }).click();
+}
 
-	const connect = page.locator(".agent-tile .ui-button.primary");
-	await connect.click();
-	await expect(connect).toHaveAttribute("aria-busy", "true");
-	await expect(connect).toBeDisabled();
-	await connect.click({ force: true });
+test("Connect shows what it will write, and writes only when confirmed", async ({ page }) => {
+	await openAgentsSettings(page, [{ id: "claudeCode", configured: false, installed: true, icon: null }]);
+
+	await page.locator(".agent-tile .ui-button.primary").click();
+	expect((await sentCommands(page)).filter((command) => command.action === "previewAgentClient").map((command) => command.payload))
+		.toEqual([{ client: "claudeCode", remove: false }]);
+	await expect(page.locator('[data-modal="agent-config"]')).toHaveCount(0);
+	expect((await sentCommands(page)).filter((command) => command.action === "connectAgentClient")).toHaveLength(0);
+
+	await page.evaluate((preview) => window.__lilo!.receive(preview), PREVIEW);
+	const sheet = page.locator('[data-modal="agent-config"]');
+	await expect(sheet.getByRole("heading")).toHaveText("Add Lilo to Claude Code");
+	await expect(sheet).toContainText("~/.cursor/mcp.json");
+	await expect(sheet.locator(".diff-line.removed")).toHaveCount(1);
+	await expect(sheet.locator(".diff-line:not(.removed)")).toHaveCount(4);
+	await expect(sheet.locator(".diff-line").nth(3)).toContainText('"command" : "/Applications/Lilo.app/Contents/MacOS/lilo-mcp"');
+
+	// Cancel (and Esc) write nothing.
+	await page.keyboard.press("Escape");
+	await expect(sheet).toHaveCount(0);
+	expect((await sentCommands(page)).filter((command) => command.action === "connectAgentClient")).toHaveLength(0);
+
+	await page.locator(".agent-tile .ui-button.primary").click();
+	await page.evaluate((preview) => window.__lilo!.receive(preview), PREVIEW);
+	const write = sheet.getByRole("button", { name: /Add Lilo/ });
+	await write.click();
+	await expect(write).toHaveAttribute("aria-busy", "true");
+	await expect(write).toBeDisabled();
+	await write.click({ force: true });
 	expect((await sentCommands(page)).filter((command) => command.action === "connectAgentClient")).toHaveLength(1);
 
 	await page.evaluate(() => window.__lilo!.receive({ event: "settingsActionCompleted", action: "connectAgentClient", message: "Connected", level: "info" }));
-	await expect(connect).toHaveAttribute("aria-busy", "false");
+	await expect(sheet).toHaveCount(0);
+});
+
+test("apps found on this Mac offer Connect, the others wait under More apps", async ({ page }) => {
+	await openAgentsSettings(page, [
+		{ id: "opencode", configured: false, installed: true, icon: null },
+		{ id: "zed", configured: true, installed: true, icon: null },
+		{ id: "gemini", configured: false, installed: false, icon: null },
+		{ id: "vscode", configured: false, installed: false, icon: null },
+	]);
+	const tile = (name: string) => page.locator(".agent-tile").filter({ has: page.locator(".name", { hasText: name }) });
+	await expect(tile("OpenCode").locator(".status")).toHaveText("Found on this Mac. Not set up yet.");
+	await expect(tile("OpenCode").getByRole("button", { name: "Connect" })).toBeVisible();
+	await expect(tile("Zed").locator(".status")).toHaveText("Configured. Lilo asks you the first time it connects.");
+	await expect(page.locator(".agent-tile")).toHaveCount(2);
+
+	const more = page.getByRole("button", { name: "More apps" });
+	await expect(more).toHaveAttribute("aria-expanded", "false");
+	await more.click();
+	await expect(more).toHaveAttribute("aria-expanded", "true");
+	await expect(tile("Gemini CLI").locator(".status")).toHaveText("Not installed");
+	await expect(tile("VS Code")).toBeVisible();
+
+	// Connecting one of them opens the same preview sheet as any other app.
+	await tile("Gemini CLI").getByRole("button", { name: "Connect" }).click();
+	expect((await sentCommands(page)).filter((command) => command.action === "previewAgentClient").map((command) => command.payload))
+		.toEqual([{ client: "gemini", remove: false }]);
+});
+
+test("Claude Code's preview is the command, and a file Lilo cannot read blocks the write", async ({ page }) => {
+	await openAgentsSettings(page, [{ id: "claudeCode", configured: false, installed: true, icon: null }]);
+	await page.locator(".agent-tile .ui-button.primary").click();
+	await page.evaluate((preview) => window.__lilo!.receive({ ...preview, command: "claude mcp add --scope user lilo -- /Applications/Lilo.app/Contents/MacOS/lilo-mcp", lines: [], path: "~/.claude.json" }), PREVIEW);
+	const sheet = page.locator('[data-modal="agent-config"]');
+	await expect(sheet.locator(".sheet-code")).toContainText("claude mcp add --scope user lilo --");
+	await expect(sheet.getByRole("button", { name: /Add Lilo/ })).toBeEnabled();
+	await page.keyboard.press("Escape");
+
+	await page.locator(".agent-tile .ui-button.primary").click();
+	await page.evaluate((preview) => window.__lilo!.receive({ ...preview, lines: [], blocked: "Lilo could not read ~/.cursor/mcp.json" }), PREVIEW);
+	await expect(sheet.getByRole("alert")).toContainText("could not read");
+	await expect(sheet.getByRole("button", { name: /Add Lilo/ })).toBeDisabled();
+	await expect(sheet.getByRole("button", { name: "Copy" })).toBeVisible();
+});
+
+test("a configured app can be repaired or removed through the same sheet", async ({ page }) => {
+	await openAgentsSettings(page, [
+		{ id: "claudeCode", configured: true, installed: false, stale: false, icon: null },
+		{ id: "codex", configured: true, installed: false, stale: true, icon: null },
+	]);
+	const tile = (name: string) => page.locator(".agent-tile").filter({ has: page.locator(".name", { hasText: name }) });
+
+	await expect(tile("Claude Code").locator("button:not(.ui-more-button)")).toHaveCount(0);
+	await tile("Codex").getByRole("button", { name: "Repair" }).click();
+	await page.evaluate((preview) => window.__lilo!.receive({ ...preview, client: "codex" }), PREVIEW);
+	const sheet = page.locator('[data-modal="agent-config"]');
+	await expect(sheet.getByRole("heading")).toHaveText("Repair Lilo in Codex");
+	await page.keyboard.press("Escape");
+
+	await tile("Claude Code").getByRole("button", { name: "More actions for Claude Code" }).click();
+	await page.getByRole("menuitem", { name: "Remove Lilo from Claude Code…" }).click();
+	expect((await sentCommands(page)).filter((command) => command.action === "previewAgentClient").map((command) => command.payload).at(-1))
+		.toEqual({ client: "claudeCode", remove: true });
+	await page.evaluate((preview) => window.__lilo!.receive({ ...preview, remove: true, lines: preview.lines.slice(2).map((line) => ({ ...line, removed: true })) }), PREVIEW);
+	await expect(sheet.getByRole("heading")).toHaveText("Remove Lilo from Claude Code");
+	await expect(sheet.locator(".diff-line:not(.removed)")).toHaveCount(0);
+	await expect(sheet.getByRole("button", { name: "Copy" })).toHaveCount(0);
+
+	await sheet.getByRole("button", { name: /Remove Lilo/ }).click();
+	expect((await sentCommands(page)).filter((command) => command.action === "removeAgentClient").map((command) => command.payload))
+		.toEqual([{ client: "claudeCode" }]);
+	await page.evaluate(() => window.__lilo!.receive({ event: "settingsActionCompleted", action: "connectAgentClient", message: "Removed Lilo", level: "info" }));
+	await expect(sheet).toHaveCount(0);
 });
 
 test("a settings group's heading is its small caps title alone and keeps its height in search results", async ({ page }) => {
@@ -531,10 +641,10 @@ test("each agent app shows its status line and at most one action", async ({ pag
 	await page.evaluate((icon) => window.__lilo!.receive({
 		event: "agentClientsLoaded",
 		clients: [
-			{ id: "claudeCode", configured: true, icon },
-			{ id: "cursor", configured: true, icon: null },
-			{ id: "codex", configured: false, icon },
-			{ id: "claudeDesktop", configured: true, icon },
+			{ id: "claudeCode", configured: true, installed: true, icon },
+			{ id: "cursor", configured: true, installed: false, icon: null },
+			{ id: "codex", configured: false, installed: true, icon },
+			{ id: "claudeDesktop", configured: true, installed: true, icon },
 		],
 		allowed: [{ name: "claude-code", displayName: "Claude Code", lastSeen: null, client: "claudeCode" }],
 	}), icon);
@@ -546,11 +656,11 @@ test("each agent app shows its status line and at most one action", async ({ pag
 	const row = (name: string) => page.locator(".agent-tile, [data-setting-id='agentOther']").filter({ has: page.locator(".name, .ui-list-row-title", { hasText: name }) });
 	const expectRow = async (name: string, status: string | null, buttons: string[]) => {
 		if (status) await expect(row(name).locator(".status")).toHaveText(status);
-		await expect(row(name).getByRole("button")).toHaveText(buttons);
+		await expect(row(name).locator("button:not(.ui-more-button)")).toHaveText(buttons);
 	};
 	await expectRow("Claude Code", "Connected", ["Remove"]);
 	await expectRow("Cursor", "Not installed", []);
-	await expectRow("Codex", "Adds Lilo to its MCP servers.", ["Connect"]);
+	await expectRow("Codex", "Found on this Mac. Not set up yet.", ["Connect"]);
 	await expectRow("Claude Desktop", "Configured. Lilo asks you the first time it connects.", []);
 	await expectRow("Other agents", null, ["Copy Configuration"]);
 	await expect(row("Claude Code")).toHaveAttribute("data-agent-status", "connected");

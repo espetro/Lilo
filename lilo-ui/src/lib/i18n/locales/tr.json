@@ -677,12 +677,34 @@
 				"claudeCode": "Claude Code",
 				"claudeDesktop": "Claude Desktop",
 				"codex": "Codex",
-				"cursor": "Cursor"
+				"cursor": "Cursor",
+				"zed": "Zed",
+				"vscode": "VS Code",
+				"opencode": "OpenCode",
+				"gemini": "Gemini CLI"
 			},
 			"connect": "Bağlan",
 			"copy": "Yapılandırmayı kopyala",
 			"clientDescription": "Lilo'yu istemcinin MCP sunucularına ekler.",
 			"revoke": "Kaldır",
+			"repair": "Onar",
+			"moreFor": "{client} için diğer eylemler",
+			"removeFrom": "Lilo'yu {client} uygulamasından kaldır…",
+			"sheet": {
+				"addTitle": "Lilo'yu {client} uygulamasına ekle",
+				"repairTitle": "{client} uygulamasındaki Lilo'yu onar",
+				"removeTitle": "Lilo'yu {client} uygulamasından kaldır",
+				"diff": "Lilo yalnızca bu satırları değiştirecek.",
+				"runs": "Lilo bu komutu çalıştıracak.",
+				"unchanged": "Bu dosyada hiçbir şey değişmiyor.",
+				"addedLine": "Eklendi",
+				"removedLine": "Kaldırıldı",
+				"add": "Lilo'yu ekle",
+				"repair": "Onar",
+				"remove": "Lilo'yu kaldır",
+				"copy": "Kopyala",
+				"copied": "Kopyalandı"
+			},
 			"status": {
 				"acting": "İşlem yapıyor",
 				"connected": "Bağlı",
@@ -691,7 +713,9 @@
 				"ready": "Yapılandırıldı"
 			},
 			"allowedSeen": "İzin verildi, son görülme {time}",
-			"readyLine": "Yapılandırıldı. Lilo ilk bağlantıda size sorar."
+			"readyLine": "Yapılandırıldı. Lilo ilk bağlantıda size sorar.",
+			"detectedLine": "Bu Mac'te bulundu. Henüz yapılandırılmadı.",
+			"moreApps": "Diğer uygulamalar"
 		},
 		"navGroups": {
 			"tools": "Araçlar"
@@ -2429,6 +2453,11 @@
 		"Added Lilo to Claude Desktop: quit and reopen Claude to load it": "Lilo, Claude Desktop'a eklendi. Yüklenmesi için Claude'dan çıkıp yeniden açın",
 		"Added Lilo to Cursor": "Lilo, Cursor'a eklendi",
 		"Added Lilo to Codex": "Lilo, Codex'e eklendi",
+		"Added Lilo to Zed": "Lilo, Zed'e eklendi",
+		"Added Lilo to VS Code": "Lilo, VS Code'a eklendi",
+		"Added Lilo to OpenCode": "Lilo, OpenCode'a eklendi",
+		"Added Lilo to Gemini CLI": "Lilo, Gemini CLI'ya eklendi",
+		"Removed Lilo": "Lilo kaldırıldı",
 		"Lilo could not read %@: add this server to it yourself: %@": "Lilo %@ dosyasını okuyamadı. Şu sunucuyu kendiniz ekleyin: %@",
 		"Stop Agents": "Ajanları Durdur",
 		"Delete %@ and its %d tabs?": {"one": "%@ ve içindeki %d sekme silinsin mi?", "other": "%@ ve içindeki %d sekme silinsin mi?"},

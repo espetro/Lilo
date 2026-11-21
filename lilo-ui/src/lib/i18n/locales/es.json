@@ -677,12 +677,34 @@
 				"claudeCode": "Claude Code",
 				"claudeDesktop": "Claude Desktop",
 				"codex": "Codex",
-				"cursor": "Cursor"
+				"cursor": "Cursor",
+				"zed": "Zed",
+				"vscode": "VS Code",
+				"opencode": "OpenCode",
+				"gemini": "Gemini CLI"
 			},
 			"connect": "Conectar",
 			"copy": "Copiar configuración",
 			"clientDescription": "Añade Lilo a sus servidores MCP.",
 			"revoke": "Quitar",
+			"repair": "Reparar",
+			"moreFor": "Más acciones para {client}",
+			"removeFrom": "Quitar Lilo de {client}…",
+			"sheet": {
+				"addTitle": "Añadir Lilo a {client}",
+				"repairTitle": "Reparar Lilo en {client}",
+				"removeTitle": "Quitar Lilo de {client}",
+				"diff": "Lilo cambiará estas líneas y nada más.",
+				"runs": "Lilo ejecutará este comando.",
+				"unchanged": "Nada cambia en este archivo.",
+				"addedLine": "Añadida",
+				"removedLine": "Eliminada",
+				"add": "Añadir Lilo",
+				"repair": "Reparar",
+				"remove": "Quitar Lilo",
+				"copy": "Copiar",
+				"copied": "Copiado"
+			},
 			"status": {
 				"acting": "Actuando ahora",
 				"connected": "Conectado",
@@ -691,7 +713,9 @@
 				"ready": "Configurado"
 			},
 			"allowedSeen": "Permitido, visto por última vez {time}",
-			"readyLine": "Configurado. Lilo te pregunta la primera vez que se conecta."
+			"readyLine": "Configurado. Lilo te pregunta la primera vez que se conecta.",
+			"detectedLine": "Encontrado en este Mac. Aún sin configurar.",
+			"moreApps": "Más apps"
 		},
 		"navGroups": {
 			"tools": "Herramientas"
@@ -2429,6 +2453,11 @@
 		"Added Lilo to Claude Desktop: quit and reopen Claude to load it": "Lilo añadido a Claude Desktop: cierra y vuelve a abrir Claude para cargarlo",
 		"Added Lilo to Cursor": "Lilo añadido a Cursor",
 		"Added Lilo to Codex": "Lilo añadido a Codex",
+		"Added Lilo to Zed": "Lilo añadido a Zed",
+		"Added Lilo to VS Code": "Lilo añadido a VS Code",
+		"Added Lilo to OpenCode": "Lilo añadido a OpenCode",
+		"Added Lilo to Gemini CLI": "Lilo añadido a Gemini CLI",
+		"Removed Lilo": "Lilo quitado",
 		"Lilo could not read %@: add this server to it yourself: %@": "Lilo no ha podido leer %@: añade este servidor manualmente: %@",
 		"Stop Agents": "Detener agentes",
 		"Delete %@ and its %d tabs?": {"one": "¿Eliminar %@ y su %d pestaña?", "other": "¿Eliminar %@ y sus %d pestañas?"},
