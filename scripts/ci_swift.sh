@@ -42,7 +42,7 @@ else
 fi
 
 summary=$(gh run view "$id" --json status,conclusion,jobs \
-  --jq '.jobs[] | select(.name | startswith("App Validate")) | [.name, (.conclusion // .status), (.startedAt // "-"), (.completedAt // "-")] | join("|"))')
+  --jq '.jobs[] | select(.name | startswith("App Validate")) | [.name, (.conclusion // .status), (.startedAt // "-"), (.completedAt // "-")] | join("|")')
 [ -n "$summary" ] || { echo "ci-swift: the run has no macOS Swift jobs (docs-only change?): nothing to report"; exit 0; }
 
 status=0
