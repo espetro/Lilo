@@ -1,0 +1,3 @@
+kind: Added
+body: 'Worktree housekeeping behind make: worktree-new creates a worktree seeded by APFS clonefile from a warm checkout (Vendor, generated sources, build tools) so it is ready in seconds, and worktree-gc lists and removes worktrees whose pull request is merged or closed, that are clean, pushed and unused'
+time: 2026-11-21T23:28:00.000000Z
