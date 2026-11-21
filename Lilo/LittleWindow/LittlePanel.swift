@@ -47,7 +47,7 @@ final class LittleChromeHost: NSView {
     let zones = ChromeInteractiveZoneStore()
 
     override func hitTest(_ point: NSPoint) -> NSView? {
-        guard zones.isInteractive(convert(point, from: superview), in: bounds, isFlipped: isFlipped) else { return nil }
+        guard zones.isInteractive(convert(point, from: unsafe superview), in: bounds, isFlipped: isFlipped) else { return nil }
         return super.hitTest(point)
     }
 }

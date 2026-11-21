@@ -39,7 +39,7 @@ Other references: Zen's Glance and Lilo's own Peek are previews over a tab, not 
 
 ### Window
 
-- `LittlePanel`, an `NSPanel` subclass: `.titled, .closable, .resizable, .fullSizeContentView, .nonactivatingPanel`, `isFloatingPanel = false`, `hidesOnDeactivate = false`, `canBecomeKey` and `canBecomeMain` true. `collectionBehavior = [.fullScreenAuxiliary, .canJoinAllSpaces, .moveToActiveSpace]` is not used: `canJoinAllSpaces` and `fullScreenAuxiliary` together are what lets it appear over a full-screen Space without a Space switch, so it works while the main window is in native full screen. The window still takes key focus (`makeKeyAndOrderFront` plus `NSApp.activate`), so the field is focused and the menu shortcuts keep working.
+- `LittlePanel`, an `NSPanel` subclass: `.titled, .closable, .resizable, .fullSizeContentView, .nonactivatingPanel`, `hidesOnDeactivate = false`, `canBecomeKey` true. `collectionBehavior = [.canJoinAllSpaces, .fullScreenAuxiliary]` together with the non-activating style is what lets it appear over a full-screen Space without a Space switch, so it works while the main window is in native full screen. The start card floats (`.floating` level); the page window is a normal-level window. The window still takes key focus: the shortcut activates the app first, then `makeKeyAndOrderFront`, so the field holds the keyboard from the first keystroke and the menu shortcuts keep working.
 - Content: the page's `WKWebView` below, and above it one chrome `WKWebView` (`lilo-chrome://ui/index.html?little`), the same bundle and scheme as the main window, transparent. Native, not hosted in the title bar: the chrome view is a normal subview, so nothing depends on AppKit's title bar internals.
 - Traffic lights are AppKit's: standard size, never moved or resized by us. The chrome reserves the lights' width (read from the close and zoom buttons' frames, sent as `leadingInset`).
 - Two modes, one window:
@@ -54,7 +54,7 @@ Other references: Zen's Glance and Lilo's own Peek are previews over a tab, not 
 - `CommandBar` takes `onEscape` and `scopes` props: Esc, once there is no scope or move to leave, calls `onEscape`; `scopes` narrows the scope chips to what makes sense with no tabs (all, history).
 - `commandBarSearch` gets `setCommandBarActions(false)`: actions (`:` scope, the actions section) are off in the Little window, as every one of them acts on a browser window.
 
-Enter on a URL, a search or a history row posts the same `navigate` command the main window gets; the Little window's bridge handler loads it in its engine and switches to page mode. ⌘↩ on a result opens it as a tab of the Space right away.
+Enter on a URL, a search or a history row posts the same `navigate` command the main window gets; the Little window's bridge handler loads it in its engine (web pages and local files only) and switches to page mode. ⌘↩ on a result (`createTab`) opens it as a tab of the Space right away and closes the window. The row keys that need tabs or Spaces (split, peek, close, move) are filtered out by `restrictCommandBar`.
 
 ### Page view: the minimal chrome
 
@@ -80,7 +80,11 @@ Enter on a URL, a search or a history row posts the same `navigate` command the 
 
 Esc in the page is taken in `LittlePanel.sendEvent` before the page sees it, as Peek and Glance do (a text composition in progress keeps it). A page that needs Esc (a dialog, full-screen video) keeps it: WebKit's own dialogs and full screen run before the key reaches the panel.
 
-Dismissal: in start mode the panel closes when it resigns key (click outside, another app), like Spotlight; a page-mode window stays until closed, it is a window. Cmd+W closes in either. The window being closed with no page records nothing in Recently Closed.
+Dismissal: in start mode the panel closes when it resigns key (click outside, another app), like Spotlight; a page-mode window stays until closed, it is a window. Cmd+W closes in either. A window closed with no page records nothing in Recently Closed. Until the chrome has loaded (about 100 ms in the shared chrome process) Esc closes the window natively.
+
+### Interaction model
+
+The chrome view is transparent and covers the window, with the page view below it. The chrome reports its interactive zones through the existing `registerInteractiveZones` messages (the strip, the command bar and its scrim, a menu), and `LittleChromeHost.hitTest` lets every other point through to the page or the title bar, as the main window's overlay does. No mode message is needed for a popover to receive clicks.
 
 ### Efficiency
 

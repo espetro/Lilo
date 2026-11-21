@@ -152,11 +152,11 @@ final class LittleWindowController: NSObject, NSWindowDelegate {
     private func applyMode() {
         let isStart = mode == .start
         for type in [NSWindow.ButtonType.closeButton, .miniaturizeButton, .zoomButton] {
-            unsafe window.standardWindowButton(type)?.isHidden = isStart
+            window.standardWindowButton(type)?.isHidden = isStart
         }
         window.level = isStart ? .floating : .normal
         window.contentMinSize = isStart ? Self.startSize : NSSize(width: 360, height: 240)
-        window.contentMaxSize = isStart ? Self.startSize : NSSize(width: .greatestFiniteMagnitude, height: .greatestFiniteMagnitude)
+        window.contentMaxSize = isStart ? Self.startSize : NSSize(width: CGFloat.greatestFiniteMagnitude, height: CGFloat.greatestFiniteMagnitude)
         pageContainer.isHidden = isStart
     }
 
@@ -203,7 +203,7 @@ final class LittleWindowController: NSObject, NSWindowDelegate {
 
     /// Where the strip starts: past the zoom button, wherever AppKit puts it.
     private func trafficLightsInset() -> CGFloat {
-        guard let zoom = unsafe window.standardWindowButton(.zoomButton) else { return 78 }
+        guard let zoom = window.standardWindowButton(.zoomButton) else { return 78 }
         return zoom.convert(zoom.bounds, to: nil).maxX + 12
     }
 
