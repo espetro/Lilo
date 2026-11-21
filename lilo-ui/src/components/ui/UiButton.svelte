@@ -7,6 +7,8 @@
     disabled?: boolean;
     /** Waiting on what the click started: a spinner, and no second click. */
     busy?: boolean;
+    /** Opens or closes something under it: the state assistive tech reads. */
+    expanded?: boolean;
     onclick?: (event: MouseEvent) => void;
     children?: Snippet;
   }
@@ -15,6 +17,7 @@
     variant = "secondary",
     disabled = false,
     busy = false,
+    expanded,
     onclick,
     children,
   }: Props = $props();
@@ -30,6 +33,7 @@
   type="button"
   disabled={disabled || busy}
   aria-busy={busy}
+  aria-expanded={expanded}
   {onclick}
 >
   {#if busy}<span class="ui-button-spinner" aria-hidden="true"></span>{/if}

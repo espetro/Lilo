@@ -3,9 +3,11 @@
   import { getFormatLocale, t } from "../../lib/i18n/state.svelte";
   import { CLAUDE, type TerminalProgramIcon } from "../../lib/terminalIcons";
   import { getAgentClients } from "../../stores/agents.svelte";
-  import { getAgentClientsSnapshot, getAgentPreview, isConnectingAgentClient, previewAgentClient } from "../../stores/settings.svelte";
+  import { getAgentClientsSnapshot, getAgentPreview, getSetting, isConnectingAgentClient, previewAgentClient, setSetting } from "../../stores/settings.svelte";
   import { OPENAI } from "../agents/modelLogos";
   import SettingsAgentConfigSheet from "./SettingsAgentConfigSheet.svelte";
+  import SettingsAgentPermissions from "./SettingsAgentPermissions.svelte";
+  import { parseAgentPermissions, setAgentPermission, DEFAULT_AGENT_PERMISSION } from "./agentPermissions";
   import SettingsIcon from "./SettingsIcon.svelte";
   import UiButton from "../ui/UiButton.svelte";
   import UiInsetList from "../ui/UiInsetList.svelte";
@@ -38,6 +40,18 @@
     snapshot.clients.filter((client) => !shown(client)).map((client) => ({ key: client.id, title: t(`settings.agents.names.${client.id}`), client, agents: [] })),
   );
   let moreOpen = $state(false);
+  // The row whose permissions show under it.
+  let permissionsOpen = $state<string | null>(null);
+
+  // Revoking forgets what an agent may do unasked, as Lilo does: the page must not write it back.
+  function revoke(names: string[]): void {
+    const stored = getSetting("agentClientPermissions", "");
+    const known = parseAgentPermissions(stored);
+    if (names.some((name) => name in known)) {
+      setSetting("agentClientPermissions", names.reduce((value, name) => setAgentPermission(value, name, DEFAULT_AGENT_PERMISSION), stored));
+    }
+    names.forEach((name) => settingsActions.revokeAgentClient(name));
+  }
 
   function shown(client: { installed: boolean; configured: boolean }): boolean {
     return client.installed || client.configured;
@@ -83,7 +97,10 @@
       </span>
     </span>
     {#if row.agents.length}
-      <UiButton onclick={() => row.agents.forEach((agent) => settingsActions.revokeAgentClient(agent.name))}>
+      <UiButton variant="ghost" onclick={() => (permissionsOpen = permissionsOpen === row.key ? null : row.key)} expanded={permissionsOpen === row.key}>
+        {t("settings.agents.permissions.button")}
+      </UiButton>
+      <UiButton onclick={() => revoke(row.agents.map((agent) => agent.name))}>
         {t("settings.agents.revoke")}
       </UiButton>
     {:else if row.client && (!row.client.configured || row.client.stale)}
@@ -105,6 +122,11 @@
     <div class="agent-tiles">
       {#each rows as row (row.key)}
         {@render tile(row)}
+        {#if permissionsOpen === row.key}
+          {#each row.agents as agent (agent.name)}
+            <div class="agent-permissions"><SettingsAgentPermissions name={agent.name} title={agent.displayName} /></div>
+          {/each}
+        {/if}
       {/each}
     </div>
   {/if}
@@ -143,6 +165,10 @@
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
     gap: var(--space-12);
+  }
+
+  .agent-permissions {
+    grid-column: 1 / -1;
   }
 
   .more-apps {
