@@ -411,10 +411,7 @@ final class TabBridgeHandler: BridgeHandler {
             }
 
         case "unsplitTab":
-            if let tabId = message.uuid("tabId"),
-               let spaceId = tabManager.context(for: tabId)?.spaceId ?? tabManager.currentSpaceId {
-                _ = tryApplyStateCommand(.unsplitTab(spaceId: spaceId, tabId: tabId))
-            }
+            if let tabId = message.uuid("tabId") { windowController?.unsplitTab(tabId) }
 
         case "maximizeSplitPane":
             if let tabId = message.uuid("tabId") { windowController?.maximizeSplitPane(tabId) }
