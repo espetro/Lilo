@@ -95,7 +95,7 @@ final class AgentFlowTests: AgentToolTestCase {
         XCTAssertTrue(save.contains("Saved flow \"set-phone\""), save)
         XCTAssertTrue(save.contains("parameters: phone"), save)
 
-        try await js("document.getElementById('phone').value=''; window.saved=0; document.getElementById('result').textContent=''", tab: tab)
+        _ = try await js("document.getElementById('phone').value=''; window.saved=0; document.getElementById('result').textContent=''", tab: tab)
         let run = await client.callTool("flow_run", ["name": "set-phone", "tabId": tab, "params": ["phone": "555 010 0199"]])
 
         XCTAssertFalse(run.isError, run.text)
@@ -171,7 +171,7 @@ final class AgentFlowTests: AgentToolTestCase {
             _ = await client.callTool("computer", ["tabId": tab, "action": "left_click", "ref": try self.ref("Save", in: read.text)])
         }
         // The page drifts: the button's name is no longer the recorded one. Replay must stop, not guess.
-        try await js("document.getElementById('save').textContent='Delete'", tab: tab)
+        _ = try await js("document.getElementById('save').textContent='Delete'", tab: tab)
 
         let run = await client.callTool("flow_run", ["name": "set-phone", "tabId": tab, "params": ["phone": "2"]])
 
@@ -195,7 +195,7 @@ final class AgentFlowTests: AgentToolTestCase {
             control.answerConsent(control.pendingConsentAnswers.keys.first!, granted: true)
             _ = await recording.value
         }
-        try await js("window.paid = false", tab: tab)
+        _ = try await js("window.paid = false", tab: tab)
 
         let running = Task { await client.callTool("flow_run", ["name": "checkout", "tabId": tab]) }
         await pollUntil(timeout: 5) { !self.control.pendingConsentAnswers.isEmpty }
