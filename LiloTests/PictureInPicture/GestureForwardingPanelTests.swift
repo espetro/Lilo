@@ -16,7 +16,9 @@ final class GestureForwardingPanelTests: XCTestCase {
         defer { panel.orderOut(nil) }
         let spy = GestureSpy(frame: NSRect(origin: .zero, size: NSSize(width: 320, height: 200)))
         panel.contentView?.addSubview(spy)
-        panel.orderFrontOffscreen()
+        // Transparent but in place: the synthesized scroll event must land on the panel's real frame.
+        panel.alphaValue = 0
+        panel.orderFrontRegardless()
 
         // A scroll CGEvent over the panel, as AgentInput.scroll makes one. Its NSEvent has no
         // window, so `locationInWindow` carries the flipped global point as-is: give it the point

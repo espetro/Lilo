@@ -10,8 +10,8 @@ M-series Mac shared with other agents.
 
 | Layer | Where | Count | Wall time | Needs |
 |-------|-------|-------|-----------|-------|
-| UI unit | `lilo-ui/src/**/*.test.ts`, `node --test` via tsx (`make ui-test`) | 95 files, ~670 tests | ~TBD s local | Node only, no app, no display |
-| UI e2e | `lilo-ui/e2e/*.spec.ts`, Playwright headless Chromium + fakeHost (`make e2e`) | 72 specs, ~715 tests | 1.8–2.1 min/shard ×3 shards in CI; ~TBD min local | Node + Playwright shell; no app |
+| UI unit | `lilo-ui/src/**/*.test.ts`, `node --test` via tsx (`make ui-test`) | 95 files, 678 tests | 3.0 s warm local (tsx); `ui-lint` 7.4 s | Node only, no app, no display |
+| UI e2e | `lilo-ui/e2e/*.spec.ts`, Playwright headless Chromium + fakeHost (`make e2e`) | 72 specs, 749 tests | 1.8–2.1 min/shard ×3 shards in CI; 3.3 min local | Node + Playwright shell; no app |
 | Extension bridge | `Lilo/Extensions/bridge-src/**/*.test.ts`, `node --test` (`make ext-bridge-test`) | 64 files, 587 tests | 0.4 min CI job (median, whole job) | Node only |
 | Swift unit | `LiloTests/**/*.swift`, XCTest in the app host (`make swift-test`) | 313 classes, ~3 000 `func test` in 320 files | 5.8 min/shard ×3 shards in CI (build cached); cold build ~10–30 min | macOS, Xcode, a display session, per-worktree app-support dir |
 | Swift slow | 7 tests waiting out real clocks (`make swift-test-slow`, `SLOW_TESTS` in Makefile:89) | 7 tests | 1.3 min CI | same |
@@ -38,7 +38,7 @@ window server session; e2e needs only a browser; `ext-*` need network and the ke
 ### Flaky / retried tests
 
 CI retries once and reports the retried set; local runs fail on the first flake by design
-(CONTRIBUTING.md). Known flaky set from brief + observation:
+(CONTRIBUTING.md). Known flaky set, from maintainer notes and observation:
 
 - `AgentCaptureTests.testToolsAreListed` (LiloTests/Agent/AgentCaptureTests.swift:342)
 - `IdleBridgeHandlerTests` (LiloTests/Extensions/IdleBridgeHandlerTests.swift)
@@ -50,6 +50,10 @@ CI retries once and reports the retried set; local runs fail on the first flake 
   (lilo-ui/e2e/largeSidebar.spec.ts:155) — failed once on a loaded Debian box at
   1381 ms (docs/LINUX-AGENTS.md measurements). A perf assertion inside a functional
   suite: it flakes under load and its budget is not adjustable.
+- Local `make e2e` on a loaded Mac: 749 passed, 4 failed (agentPicker row height,
+  dnd favorites-grid columns, pinnedDivider command-bar scope, sidebarTree arrow
+  keys) — timing-sensitive specs on a contended machine; see the flaky ledger
+  proposal below for why this set should be measured, not guessed.
 - 104 `Task.sleep`/`Thread.sleep` call sites across 42 Swift test files (heaviest:
   RealExtensionSmokeTests 10, ProfileExtensionRegistryTests 6, TerminalSessionTests 4).
 
@@ -97,7 +101,8 @@ AgentInputTests, MenuIconTests, WKWebViewTabDialogTests, CaptureBridgeHandlerTes
 DebuggerGapAPITests, PageCaptureGapAPITests, ChromeGlobalEventRoutingTests ×2,
 PagePopupTests, PageSnapshotServiceRegionSelectionTests, WKWebViewTabNavigationPolicyTests,
 GestureForwardingPanelTests — `alphaValue = 0` + `orderFrontRegardless` + frame at
-(−20 000, −20 000).
+(−20 000, −20 000). The panel test is the exception: it stays in place because its
+synthesized scroll event is addressed by screen coordinates.
 
 Options considered:
 
@@ -119,15 +124,17 @@ Options considered:
 5. `WKWebView.takeSnapshot` / in-process rendering: already used where pixels matter
    (screenshot tests); not a windowing fix.
 
-Verification: `swift-test` on the touched classes after conversion
-(EngineFreezerTests, PiPControllerTests, WKWebViewTabPrintTests,
-WKWebViewTabTeardownTests, WKWebViewTabWindowFrameTests, LittleWindowTests,
-ExtensionPageTabTests, MenuIconTests, TestRunCleanupTests,
-WKWebViewTabDialogTests, GestureForwardingPanelTests and the refactored hidden
-sites via their owning classes). The one risk is `ExtensionPageTabTests`: its
-comment says "a popover shows only from a window on screen" — ordering in
-offscreen may still satisfy AppKit's "on screen" check (the window is ordered in
-and on an active space); if it fails there it stays visible.
+Verification (`make swift-test` on the touched classes, this worktree): every
+converted site passed — including the riskier ones: PiPControllerTests (real
+media through WebKit offscreen), ExtensionPageTabTests (the "a popover shows
+only from a window on screen" comment — ordering in offscreen satisfies it),
+WKWebViewTabWindowFrameTests (`outerWidth` unaffected), LittleWindowTests
+(`makeKey` on an offscreen window), WKWebViewTabPrintTests, EngineFreezerTests,
+WKWebViewTabTeardownTests, WKWebViewTabDialogTests, MenuIconTests,
+TestRunCleanupTests. **One site reverted**: GestureForwardingPanelTests feeds a
+synthesized scroll CGEvent at global coordinates, which only lands on the panel
+at its real frame — it keeps `alphaValue = 0` + `orderFrontRegardless` in place
+(invisible, un-moved).
 
 ## 3. Debian offload
 
