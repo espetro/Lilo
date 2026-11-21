@@ -884,8 +884,13 @@ extension MainWindowController: NSWindowDelegate {
     }
 
     func windowDidResize(_ notification: Notification) {
-        // A fitted width crossing the lights' threshold or the narrow range moves them too.
-        if fittedSidebarWidth != sidebarWidth { applySidebarLayout(animated: false, syncTrafficLights: true) }
+        // A fitted width crossing the lights' threshold or the narrow range moves them too; every
+        // resize asks for the sync anyway, so the lights follow the frame the window changed.
+        if fittedSidebarWidth != sidebarWidth {
+            applySidebarLayout(animated: false, syncTrafficLights: true)
+        } else {
+            syncTrafficLights(animated: false)
+        }
         if window?.inLiveResize == false { scheduleWindowFrameSave() }
     }
 
