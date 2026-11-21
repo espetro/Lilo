@@ -1,6 +1,7 @@
 import { expect, test, type Page } from "@playwright/test";
 import { bootChrome, sentCommands } from "./fakeHost";
 import { initialWorld, SPACE_1, SPACE_2 } from "./fixtures";
+import { tab, treeItem } from "../src/stores/testFixtures";
 
 const box = async (page: Page, selector: string) => {
 	const rect = await page.locator(selector).first().boundingBox();
@@ -163,13 +164,24 @@ test("a Space's stored pin fold hides its pinned rows until they are needed", as
 	await expect(page.locator('.pinned-list [data-tab-id="tab-home"]')).toBeHidden();
 });
 
-test("the folded pinned area stays open while the active tab is pinned", async ({ page }) => {
+test("the folded pinned area keeps the active tab's row and its head still unfolds", async ({ page }) => {
 	const world = initialWorld();
 	world.activeTabBySpace[SPACE_1] = "tab-home";
 	world.settings = { [`sidebarPinnedFolded.${SPACE_1}`]: "true" };
+	world.tabsBySpace[SPACE_1].push(tab("tab-pinned-docs", SPACE_1, { title: "Pinned Docs", isPinned: true }));
+	world.treeItemsBySpace[SPACE_1].push(treeItem("tab-pinned-docs", SPACE_1, 1, "pinned"));
 	await bootChrome(page, world);
 
+	// The fold keeps the active row, like a folded tray's, and the other pinned rows hide.
+	const head = page.locator(".pinned-head").first();
+	await expect(head).toHaveAttribute("aria-expanded", "false");
 	await expect(page.locator('.pinned-list [data-tab-id="tab-home"]')).toBeVisible();
+	await expect(page.locator('.pinned-list [data-tab-id="tab-pinned-docs"]')).toBeHidden();
+
+	// The head is not dead: it still unfolds, even with a pinned tab in use.
+	await head.click();
+	await expect(head).toHaveAttribute("aria-expanded", "true");
+	await expect(page.locator('.pinned-list [data-tab-id="tab-pinned-docs"]')).toBeVisible();
 });
 
 test("the pinned head is absent while the Space holds no pinned tabs", async ({ page }) => {
