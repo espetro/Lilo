@@ -37,7 +37,9 @@ final class TestRunCleanup: NSObject, XCTestObservation {
                     }
                 }
             }
+            if ProcessInfo.processInfo.environment["LILO_TEST_QUIET"] == "1" { Self.hideWindowsEveryTurn() }
         }
+        if ProcessInfo.processInfo.environment["LILO_TEST_DEMOTE"] == "1" { Self.demote() }
         // Login shells in tests skip the user's zsh config: it can take seconds to start and drop typed input.
         let zdotdir = FileManager.default.temporaryDirectory.appendingPathComponent("lilo-tests-zdotdir")
         try? FileManager.default.createDirectory(at: zdotdir, withIntermediateDirectories: true)
@@ -66,8 +68,28 @@ final class TestRunCleanup: NSObject, XCTestObservation {
         }
     }
 
-    /// Sends SIGKILL to every process `shouldEnd` picks from its pid, its responsible process's pid and its executable path.
-    private static func killProcesses(where shouldEnd: (_ pid: pid_t, _ responsible: pid_t, _ path: String) -> Bool) {
+    /// `make swift-test` runs quiet (TEST_QUIET): a window the code under test shows on its own, like the hold-to-quit HUD
+    /// or a popup, is made invisible and lets clicks through before its first frame, instead of landing over whatever the
+    /// user is doing, and never animates. Before Core Animation commits, on every turn of the main run loop: a timer or a dispatched block ends
+    /// a turn without any event, so an `NSApplication.didUpdateNotification` observer would miss it.
+    private static func hideWindowsEveryTurn() {
+        let observer = CFRunLoopObserverCreateWithHandler(nil, CFRunLoopActivity.beforeWaiting.rawValue, true, 0) { _, _ in
+            MainActor.assumeIsolated {
+                for window in NSApp.windows {
+                    // The system's close animation draws a window for a few frames whatever its alpha.
+                    if window.animationBehavior != .none { window.animationBehavior = .none }
+                    if window.isVisible, window.alphaValue > 0 || !window.ignoresMouseEvents {
+                        window.alphaValue = 0
+                        window.ignoresMouseEvents = true
+                    }
+                }
+            }
+        }
+        CFRunLoopAddObserver(CFRunLoopGetMain(), observer, .commonModes)
+    }
+
+    /// Calls `body` with every process's pid, its responsible process's pid and its executable path.
+    private static func forEachProcess(_ body: (_ pid: pid_t, _ responsible: pid_t, _ path: String) -> Void) {
         guard let symbol = dlsym(UnsafeMutableRawPointer(bitPattern: -2), "responsibility_get_pid_responsible_for_pid") else { return }
         let responsible = unsafeBitCast(symbol, to: (@convention(c) (pid_t) -> pid_t).self)
         var pids = [pid_t](repeating: 0, count: 16384)
@@ -75,7 +97,26 @@ final class TestRunCleanup: NSObject, XCTestObservation {
         var path = [CChar](repeating: 0, count: Int(MAXPATHLEN))
         for pid in pids.prefix(Int(max(count, 0))) where pid > 0 {
             let length = proc_pidpath(pid, &path, UInt32(path.count))
-            if shouldEnd(pid, responsible(pid), length > 0 ? String(cString: path) : "") { kill(pid, SIGKILL) }
+            body(pid, responsible(pid), length > 0 ? String(cString: path) : "")
+        }
+    }
+
+    /// Sends SIGKILL to every process `shouldEnd` picks from its pid, its responsible process's pid and its executable path.
+    private static func killProcesses(where shouldEnd: (_ pid: pid_t, _ responsible: pid_t, _ path: String) -> Bool) {
+        forEachProcess { pid, responsible, path in
+            if shouldEnd(pid, responsible, path) { kill(pid, SIGKILL) }
+        }
+    }
+
+    /// Runs this host and the WebKit processes it is responsible for at background priority. The host's parent is launchd, not
+    /// xcodebuild: `taskpolicy` on the make command never reaches it, and a helper starts at normal priority.
+    private static func demote() {
+        let host = getpid()
+        setpriority(PRIO_DARWIN_PROCESS, UInt32(host), PRIO_DARWIN_BG)
+        Timer.scheduledTimer(withTimeInterval: 2, repeats: true) { _ in
+            forEachProcess { pid, responsible, _ in
+                if pid != host, responsible == host { setpriority(PRIO_DARWIN_PROCESS, UInt32(pid), PRIO_DARWIN_BG) }
+            }
         }
     }
 
