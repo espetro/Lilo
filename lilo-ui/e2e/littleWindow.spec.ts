@@ -30,7 +30,7 @@ test("the start view is the command bar in place, focused, with no tab, Space or
 	await page.locator(".command-bar-input").fill(":settings");
 	await expect(page.locator(".command-bar-section-title", { hasText: "Actions" })).toHaveCount(0);
 	// Chips for what a window without tabs can search: everything and history.
-	await expect(page.locator(".scope-picker")).toBeVisible();
+	await expect(page.locator(".scope-hint .scope-hint-label")).toHaveText(["All", "History"]);
 });
 
 test("Escape and the close button close the start view", async ({ page }) => {
