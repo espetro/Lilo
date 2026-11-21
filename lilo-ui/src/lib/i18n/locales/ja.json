@@ -166,6 +166,7 @@
 			"passwords": "パスワード",
 			"agentAccess": "Lilo を使うエージェント",
 			"agentClients": "Lilo を使えるアプリ",
+			"agentActivity": "アクティビティ",
 			"lilo": "Lilo",
 			"tabsWindows": "タブとウインドウ",
 			"sitePermissions": "サイトのアクセス権",
@@ -211,16 +212,18 @@
 			"more": "ほかに{count}件あります。検索して絞り込んでください。"
 		},
 		"items": {
+			"agentInstances": {
+				"title": "エージェント",
+				"description": "質問バーが提供するレジストリのエージェントと独自のコマンドです。オフにしたものはピッカーから外れます。",
+				"keywords": "エージェント acp レジストリ カスタム コマンド プロバイダ インスタンス 有効 無効 ピッカー"
+			},
 			"customAgent": {
-				"title": "カスタムエージェント",
-				"description": "レジストリのエージェントと並べて、自分のプログラムをエージェントとして起動します。",
-				"keywords": "カスタム エージェント コマンド acp ローカル スクリプト 環境 変数 引数",
 				"name": "名前",
 				"namePlaceholder": "マイエージェント",
 				"executable": "コマンド",
 				"arguments": "引数（1行に1つ）",
 				"environment": "環境（1行に NAME=値）",
-				"note": "コマンドは、標準入出力で Agent Client Protocol を話す実行可能ファイルのフルパスです。保存するとエージェントの一覧に加わり、コマンドを空にすると取り除かれます。"
+				"note": "コマンドは、標準入出力で Agent Client Protocol を話す実行可能ファイルのフルパスです。"
 			},
 			"commandBarLayout": {
 				"title": "コマンドバーのレイアウト",
@@ -533,6 +536,11 @@
 				"title": "その他のエージェント",
 				"description": "Lilo の構成を使用する、その他の MCP クライアント。"
 			},
+			"agentActivity": {
+				"title": "最近のエージェントの呼び出し",
+				"description": "各アプリの直近の呼び出しを新しい順に表示します。このページを開いたとき、または更新したときに読み込みます。",
+				"keywords": "エージェント ログ 履歴 監査 操作 最近 呼び出し アクティビティ"
+			},
 			"autoplay": {
 				"title": "自動再生",
 				"description": "これから開くページに適用します。",
@@ -559,8 +567,8 @@
 				"keywords": "キーボード ショートカット ホットキー キー コマンド"
 			},
 			"holdToQuit": {
-				"title": "⌘Q を長押しで終了",
-				"description": "⌘Q を押すと確認が表示され、キーを押し続けた場合のみ Lilo を終了します。",
+				"title": "終了ショートカットを長押しで終了",
+				"description": "終了ショートカットを押すと確認が表示され、キーを押し続けた場合のみ Lilo を終了します。",
 				"keywords": "終了 閉じる q 誤操作 長押し"
 			},
 			"newProfile": {
@@ -675,12 +683,34 @@
 				"claudeCode": "Claude Code",
 				"claudeDesktop": "Claude Desktop",
 				"codex": "Codex",
-				"cursor": "Cursor"
+				"cursor": "Cursor",
+				"zed": "Zed",
+				"vscode": "VS Code",
+				"opencode": "OpenCode",
+				"gemini": "Gemini CLI"
 			},
 			"connect": "接続",
 			"copy": "構成をコピー",
 			"clientDescription": "MCP サーバーに Lilo を追加します。",
 			"revoke": "取り除く",
+			"repair": "修復",
+			"moreFor": "{client}のその他の操作",
+			"removeFrom": "{client}から Lilo を削除…",
+			"sheet": {
+				"addTitle": "{client}に Lilo を追加",
+				"repairTitle": "{client}の Lilo を修復",
+				"removeTitle": "{client}から Lilo を削除",
+				"diff": "Lilo はこれらの行だけを変更します。",
+				"runs": "Lilo は次のコマンドを実行します。",
+				"unchanged": "このファイルは変更されません。",
+				"addedLine": "追加",
+				"removedLine": "削除",
+				"add": "Lilo を追加",
+				"repair": "修復",
+				"remove": "Lilo を削除",
+				"copy": "コピー",
+				"copied": "コピーしました"
+			},
 			"status": {
 				"acting": "操作中",
 				"connected": "接続済み",
@@ -689,7 +719,32 @@
 				"ready": "構成済み"
 			},
 			"allowedSeen": "許可済み、最終接続 {time}",
-			"readyLine": "設定済み。初回接続時に Lilo が確認します。"
+			"readyLine": "設定済み。初回接続時に Lilo が確認します。",
+			"detectedLine": "この Mac で見つかりました。未設定です。",
+			"moreApps": "その他の App",
+			"permissions": {
+				"button": "権限",
+				"group": "{client}の権限",
+				"act": "ページでの操作",
+				"actHint": "送信、支払い、購入、削除、公開を行うクリックとリクエスト。",
+				"askingOff": "上の設定で、すべてのエージェントの確認がオフになっています。",
+				"ask": "毎回確認",
+				"always": "常に許可",
+				"sites": "これらのサイトで許可",
+				"addSite": "サイトを追加",
+				"addSiteLabel": "{client}が確認なしで操作できるサイトを追加",
+				"removeSite": "{site}を削除",
+				"floor": "サインイン、支払い、他のサイトへのデータ送信は常に確認されます。"
+			}
+		},
+		"agentActivity": {
+			"refresh": "更新",
+			"open": "操作ログを開く",
+			"off": "操作ログはオフです",
+			"offDescription": "Lilo はエージェントの呼び出しを記録していません。オンにするとここに表示されます。",
+			"turnOn": "オンにする",
+			"empty": "記録された呼び出しはまだありません。",
+			"failed": "失敗"
 		},
 		"navGroups": {
 			"tools": "ツール"
@@ -805,7 +860,27 @@
 			"sidebar": "サイドバー内",
 			"floating": "フローティングウインドウ"
 		},
-		"terminalImportCaption": "読み込めるのは iTerm2 のカラープリセット (.itermcolors)、VS Code のカラーテーマ (.json)、Ghostty のテーマファイルです。"
+		"terminalImportCaption": "読み込めるのは iTerm2 のカラープリセット (.itermcolors)、VS Code のカラーテーマ (.json)、Ghostty のテーマファイルです。",
+		"agentInstances": {
+			"registry": "レジストリ",
+			"command": "コマンド",
+			"add": "エージェントを追加",
+			"hint": "リストに載っていないレジストリのエージェントもピッカーには表示されます。オフにするにはここに追加します。",
+			"menu": "{name} のアクション",
+			"edit": "編集"
+		},
+		"agentSheet": {
+			"addTitle": "エージェントを追加",
+			"editTitle": "エージェントを編集",
+			"registryTab": "レジストリから",
+			"commandTab": "カスタムコマンド",
+			"sourceLabel": "エージェントのソース",
+			"searchPlaceholder": "エージェントを検索",
+			"add": "追加",
+			"added": "追加済み",
+			"loading": "レジストリを読み込み中…",
+			"none": "一致するエージェントがありません。"
+		}
 	},
 	"nav": {
 		"navigationControls": "ナビゲーションコントロール",
@@ -2407,6 +2482,11 @@
 		"Added Lilo to Claude Desktop: quit and reopen Claude to load it": "Claude Desktop に Lilo を追加しました。Claude を終了して開き直すと読み込まれます",
 		"Added Lilo to Cursor": "Cursor に Lilo を追加しました",
 		"Added Lilo to Codex": "Codex に Lilo を追加しました",
+		"Added Lilo to Zed": "Zed に Lilo を追加しました",
+		"Added Lilo to VS Code": "VS Code に Lilo を追加しました",
+		"Added Lilo to OpenCode": "OpenCode に Lilo を追加しました",
+		"Added Lilo to Gemini CLI": "Gemini CLI に Lilo を追加しました",
+		"Removed Lilo": "Lilo を削除しました",
 		"Lilo could not read %@: add this server to it yourself: %@": "Lilo は %@ を読み取れませんでした。このサーバを手動で追加してください：%@",
 		"Stop Agents": "エージェントを停止",
 		"Delete %@ and its %d tabs?": {"one": "%@ とその%d個のタブを削除しますか？", "other": "%@ とその%d個のタブを削除しますか？"},

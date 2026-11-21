@@ -290,9 +290,14 @@
       if (other === el) break
       if ((role(other) ?? 'generic') === r && name(other) === n && shown(other)) nth++
     }
-    const autocomplete = (el.getAttribute('autocomplete') ?? '').toLowerCase()
-    const sensitive = el.type === 'password' || autocomplete === 'one-time-code' || autocomplete.startsWith('cc-')
-    return { role: r, name: n, nth, sensitive }
+    return { role: r, name: n, nth, sensitive: credential(el) }
+  }
+
+  // Whether keys sent now would land in a secret field. A frame's field is out of reach: counted as one.
+  const focusedSecret = () => {
+    let el = document.activeElement
+    while (el?.shadowRoot?.activeElement) el = el.shadowRoot.activeElement
+    return ['IFRAME', 'FRAME'].includes(el?.tagName) || !!el && credential(el)
   }
 
   // A recorded step's locator back to a live ref: the nth shown element with exactly that role and name,
@@ -556,8 +561,8 @@
   }
 
   // The fallback when a control's form says nothing: verbs matched as whole words (any script), once lowercased
-  // and stripped of accents. A bare "order" is a noun on most pages ("Save order", "Order history"), so only
-  // phrases that place one are listed.
+  // and stripped of accents. "order" is a noun on most pages ("Save order", "Order history"), so it asks only as
+  // the whole label or in a phrase that places one.
   const commitWords = new RegExp(`(?<!\\p{L})(?:${[
     'send|pay|payment|buy|purchase|checkout|delete|transfer|publish|post|tweet|reply|sign ?up|register|subscribe|donate',
     '(?:place|confirm|complete|submit)(?: your| the| my)? order|order now',
@@ -584,7 +589,7 @@
   }
   // The label of the control a click on `ref` or at (x, y), or Enter in the focused field, would trigger, when it
   // submits a form that signs in or pays or sends data to another origin, or says it sends, pays, buys, orders,
-  // deletes, transfers, publishes or signs up; null otherwise. The form decides first: a label can be an icon, or
+  // deletes, transfers, publishes or signs up, with whether the form said so (`structural`); null otherwise. The form decides first: a label can be an icon, or
   // in any language.
   const consequential = ({ ref: id, x, y, enter }) => {
     const controls = 'button, a[href], input[type=submit], input[type=button], input[type=image], [role=button], [role=link], [role=menuitem]'
@@ -606,7 +611,7 @@
         if (!start.contentDocument) {
           let host = ''
           try { host = new URL(start.src, location.href).host } catch {}
-          return clip(start.title) || host || start.tagName.toLowerCase()
+          return { label: clip(start.title) || host || start.tagName.toLowerCase(), structural: true }
         }
         start = start.contentDocument.elementFromPoint(px, py)
       }
@@ -620,8 +625,9 @@
     const form = submitsForm(target)
     const action = (target.form ?? target).getAttribute?.('action') ?? ''
     const words = `${label} ${action}`.normalize('NFD').replace(/\p{M}/gu, '').toLowerCase()
-    const asks = form && ([...form.elements].some(credential) || leavesOrigin(target, form)) || commitWords.test(words) || commitGlyphs.test(words)
-    return asks ? label || clip(action) || location.host : null
+    // Structural hits are asked of every agent whatever the user let it do unasked; a word is only the fallback.
+    const structural = !!form && ([...form.elements].some(credential) || leavesOrigin(target, form))
+    return structural || commitWords.test(words) || commitGlyphs.test(words) || label.trim().toLowerCase() === 'order' ? { label: label || clip(action) || location.host, structural } : null
   }
 
   // Screenshots. A requestAnimationFrame never fires in a page that is not painted: the timeout keeps it from hanging.
@@ -687,7 +693,7 @@
   const captureRestore = ({ x, y }) => instantScroll(x, y)
 
   window.__liloAgent = {
-    prefix: () => prefix, readPage, find, hitAt, focusedField, waitFor, text, setValue, rect, scrollState, scrollBy, dropFile, act, locate, resolveTarget,
+    prefix: () => prefix, readPage, find, hitAt, focusedField, waitFor, text, setValue, rect, scrollState, scrollBy, dropFile, act, locate, resolveTarget, focusedSecret,
     request, consequential, captureScroll, captureBox, captureRestore, snapshot, delta
   }
 })()

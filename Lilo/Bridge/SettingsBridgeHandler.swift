@@ -39,8 +39,12 @@ final class SettingsBridgeHandler: BridgeHandler {
         "getTerminalOptions",
         "importTerminalTheme",
         "connectAgentClient",
+        "previewAgentClient",
+        "removeAgentClient",
         "getAgentClients",
         "revokeAgentClient",
+        "getAgentActionLog",
+        "openAgentActionLog",
         "getUpdaterStatus",
         "checkForUpdates",
         "installUpdate",
@@ -246,6 +250,32 @@ final class SettingsBridgeHandler: BridgeHandler {
             bridgeRouter?.sendActionCompleted("settingsActionCompleted", action: "connectAgentClient", message: text, level: level)
             await publishAgentClients()
 
+        case "previewAgentClient":
+            if let client = message.string("client").flatMap(AgentClientConfig.Client.init(rawValue:)) {
+                let home = FileManager.default.homeDirectoryForCurrentUser
+                let remove = message.bool("remove")
+                let preview = await Task.detached { AgentClientConfig.preview(client, home: home, remove: remove) }.value
+                bridgeRouter?.send(event: "agentClientPreview", data: [
+                    "client": client.rawValue, "remove": remove, "path": preview.path,
+                    "command": preview.command ?? NSNull(), "snippet": preview.snippet, "blocked": preview.blocked ?? NSNull(),
+                    "lines": preview.lines.map { ["number": $0.number, "removed": $0.removed, "text": $0.text] as [String: Any] }
+                ])
+            }
+
+        case "removeAgentClient":
+            var text = "Removed Lilo".localized
+            var level = "info"
+            if let client = message.string("client").flatMap(AgentClientConfig.Client.init(rawValue:)) {
+                do {
+                    try await AgentClientConfig.remove(client, home: FileManager.default.homeDirectoryForCurrentUser)
+                } catch {
+                    text = error.localizedDescription
+                    level = "error"
+                }
+            }
+            bridgeRouter?.sendActionCompleted("settingsActionCompleted", action: "connectAgentClient", message: text, level: level)
+            await publishAgentClients()
+
         case "getAgentClients":
             await publishAgentClients()
 
@@ -253,6 +283,15 @@ final class SettingsBridgeHandler: BridgeHandler {
             if let name = message.string("name") {
                 context?.agentControl.revoke(name)
                 await publishAgentClients()
+            }
+
+        case "getAgentActionLog":
+            await publishAgentActionLog()
+
+        case "openAgentActionLog":
+            if let directory = context?.agentControl.actionLog.directory {
+                try? FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true, attributes: [.posixPermissions: 0o700])
+                NSWorkspace.shared.open(directory)
             }
 
         case "getUpdaterStatus":
@@ -537,19 +576,21 @@ final class SettingsBridgeHandler: BridgeHandler {
         ])
     }
 
-    /// The agent apps installed or naming Lilo in their configuration (read off the main thread), and the
-    /// agents allowed in.
+    /// The catalog's agent apps, with which are installed and which name Lilo in their configuration (read off
+    /// the main thread), and the agents allowed in.
     private func publishAgentClients() async {
         let home = FileManager.default.homeDirectoryForCurrentUser
         let found = await Task.detached {
             let connected = AgentClientConfig.connectedClients(home: home)
-            return AgentClientConfig.Client.all.compactMap { client -> (AgentClientConfig.Client, Bool, URL?)? in
-                let app = AgentClientConfig.iconApp(of: client, home: home)
-                return app != nil || connected.contains(client) ? (client, connected.contains(client), app) : nil
+            let stale = AgentClientConfig.staleClients(home: home)
+            return AgentClientConfig.Client.all.map { client in
+                (client, connected.contains(client), stale.contains(client), AgentClientConfig.iconApp(of: client, home: home))
             }
         }.value
-        let clients = found.map { client, configured, app in
-            ["id": client.rawValue, "configured": configured, "icon": app.flatMap(Self.appIconDataURL) ?? NSNull()] as [String: Any]
+        // Every catalog row, installed or not: the page keeps the ones it did not find under "More apps".
+        let clients = found.map { client, configured, stale, app in
+            ["id": client.rawValue, "configured": configured, "stale": stale, "installed": app != nil,
+             "icon": app.flatMap(Self.appIconDataURL) ?? NSNull()] as [String: Any]
         }
         let control = context?.agentControl
         let lastSeen = control?.lastSeen ?? [:]
@@ -558,6 +599,19 @@ final class SettingsBridgeHandler: BridgeHandler {
              "client": AgentClientConfig.Client(clientName: $0)?.rawValue ?? NSNull()] as [String: Any]
         }
         bridgeRouter?.send(event: "agentClientsLoaded", data: ["clients": clients, "allowed": allowed])
+    }
+
+    /// The latest calls of each client that has a log, read off the main thread when the page asks.
+    private func publishAgentActionLog() async {
+        guard let control = context?.agentControl else { return }
+        let directory = control.actionLog.directory
+        let names = Dictionary(control.allowedClients.keys.map { (AgentActionLog.clientFile($0), AgentControl.displayName($0)) }, uniquingKeysWith: { first, _ in first })
+        let clients = await Task.detached { AgentActionTail.clients(in: directory, names: names) }.value
+        bridgeRouter?.send(event: "agentActionLog", data: ["clients": clients.map { client in
+            ["name": client.name, "calls": client.calls.map { call in
+                ["time": call.time, "tool": call.tool, "host": call.host ?? NSNull(), "ok": call.ok, "code": call.code ?? NSNull()] as [String: Any]
+            }] as [String: Any]
+        }])
     }
 
     private static var appIconDataURLs: [URL: String] = [:]

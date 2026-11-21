@@ -166,6 +166,7 @@
 			"passwords": "密码",
 			"agentAccess": "使用 Lilo 的智能体",
 			"agentClients": "可使用 Lilo 的应用",
+			"agentActivity": "活动",
 			"lilo": "Lilo",
 			"tabsWindows": "标签页与窗口",
 			"sitePermissions": "网站权限",
@@ -211,16 +212,18 @@
 			"more": "另有 {count} 项。搜索以缩小列表范围。"
 		},
 		"items": {
+			"agentInstances": {
+				"title": "智能体",
+				"description": "提问栏提供的注册表智能体和自定义命令；关闭后将从选择器中移除。",
+				"keywords": "智能体 acp 注册表 自定义 命令 提供方 实例 启用 禁用 选择器"
+			},
 			"customAgent": {
-				"title": "自定义代理",
-				"description": "把你自己的程序作为代理启动，与注册表中的代理并列。",
-				"keywords": "自定义 代理 命令 acp 本地 脚本 环境 变量 参数",
 				"name": "名称",
 				"namePlaceholder": "我的代理",
 				"executable": "命令",
 				"arguments": "参数，每行一个",
 				"environment": "环境，每行 NAME=值",
-				"note": "命令是可执行文件的完整路径，该文件通过标准输入输出使用 Agent Client Protocol。保存后它会加入代理列表；清空命令即可移除。"
+				"note": "命令是可执行文件的完整路径，该文件通过标准输入输出使用 Agent Client Protocol。"
 			},
 			"commandBarLayout": {
 				"title": "命令栏布局",
@@ -533,6 +536,11 @@
 				"title": "其他智能体",
 				"description": "使用 Lilo 配置的其他 MCP 客户端。"
 			},
+			"agentActivity": {
+				"title": "最近的智能体调用",
+				"description": "每个应用最近的调用，最新的在前。打开此页面或刷新时读取。",
+				"keywords": "智能体 日志 历史 审计 操作 最近 调用 活动"
+			},
 			"autoplay": {
 				"title": "自动播放",
 				"description": "应用于此后打开的网页。",
@@ -559,8 +567,8 @@
 				"keywords": "键盘 快捷键 热键 按键 命令"
 			},
 			"holdToQuit": {
-				"title": "按住 ⌘Q 以退出",
-				"description": "按下 ⌘Q 会显示提示；只有按住按键不放时 Lilo 才会退出。",
+				"title": "按住退出快捷键以退出",
+				"description": "按下退出快捷键会显示提示；只有按住按键不放时 Lilo 才会退出。",
 				"keywords": "退出 关闭 命令 q 误按 按住"
 			},
 			"newProfile": {
@@ -675,12 +683,34 @@
 				"claudeCode": "Claude Code",
 				"claudeDesktop": "Claude Desktop",
 				"codex": "Codex",
-				"cursor": "Cursor"
+				"cursor": "Cursor",
+				"zed": "Zed",
+				"vscode": "VS Code",
+				"opencode": "OpenCode",
+				"gemini": "Gemini CLI"
 			},
 			"connect": "连接",
 			"copy": "拷贝配置",
 			"clientDescription": "将 Lilo 添加到其 MCP 服务器。",
 			"revoke": "移除",
+			"repair": "修复",
+			"moreFor": "{client}的更多操作",
+			"removeFrom": "从{client}移除 Lilo…",
+			"sheet": {
+				"addTitle": "将 Lilo 添加到{client}",
+				"repairTitle": "修复{client}中的 Lilo",
+				"removeTitle": "从{client}移除 Lilo",
+				"diff": "Lilo 只会更改这些行。",
+				"runs": "Lilo 将运行此命令。",
+				"unchanged": "此文件不会有任何更改。",
+				"addedLine": "已添加",
+				"removedLine": "已移除",
+				"add": "添加 Lilo",
+				"repair": "修复",
+				"remove": "移除 Lilo",
+				"copy": "拷贝",
+				"copied": "已拷贝"
+			},
 			"status": {
 				"acting": "正在操作",
 				"connected": "已连接",
@@ -689,7 +719,32 @@
 				"ready": "已配置"
 			},
 			"allowedSeen": "已允许，上次连接 {time}",
-			"readyLine": "已配置。首次连接时 Lilo 会询问你。"
+			"readyLine": "已配置。首次连接时 Lilo 会询问你。",
+			"detectedLine": "在这台 Mac 上找到。尚未配置。",
+			"moreApps": "更多 App",
+			"permissions": {
+				"button": "权限",
+				"group": "{client}的权限",
+				"act": "在页面上的操作",
+				"actHint": "发送、支付、购买、删除或发布的点击和请求。",
+				"askingOff": "在上方的设置中,所有代理的询问均已关闭。",
+				"ask": "每次询问",
+				"always": "始终允许",
+				"sites": "在这些网站上允许",
+				"addSite": "添加网站",
+				"addSiteLabel": "添加 {client} 无需询问即可操作的网站",
+				"removeSite": "移除 {site}",
+				"floor": "登录、支付和向其他网站发送数据始终会询问。"
+			}
+		},
+		"agentActivity": {
+			"refresh": "刷新",
+			"open": "打开操作日志",
+			"off": "操作日志已关闭",
+			"offDescription": "Lilo 没有记录智能体的调用。打开后会显示在这里。",
+			"turnOn": "打开",
+			"empty": "尚无已记录的调用。",
+			"failed": "失败"
 		},
 		"navGroups": {
 			"tools": "工具"
@@ -805,7 +860,27 @@
 			"sidebar": "在边栏中",
 			"floating": "浮动窗口"
 		},
-		"terminalImportCaption": "可导入 iTerm2 颜色预设 (.itermcolors)、VS Code 颜色主题 (.json) 或 Ghostty 主题文件。"
+		"terminalImportCaption": "可导入 iTerm2 颜色预设 (.itermcolors)、VS Code 颜色主题 (.json) 或 Ghostty 主题文件。",
+		"agentInstances": {
+			"registry": "注册表",
+			"command": "命令",
+			"add": "添加智能体",
+			"hint": "列表未列出的注册表智能体仍会出现在选择器中；在此添加即可将其关闭。",
+			"menu": "{name} 的操作",
+			"edit": "编辑"
+		},
+		"agentSheet": {
+			"addTitle": "添加智能体",
+			"editTitle": "编辑智能体",
+			"registryTab": "从注册表",
+			"commandTab": "自定义命令",
+			"sourceLabel": "智能体来源",
+			"searchPlaceholder": "搜索智能体",
+			"add": "添加",
+			"added": "已添加",
+			"loading": "正在加载注册表…",
+			"none": "没有匹配的智能体。"
+		}
 	},
 	"nav": {
 		"navigationControls": "导航控制",
@@ -2407,6 +2482,11 @@
 		"Added Lilo to Claude Desktop: quit and reopen Claude to load it": "已将 Lilo 添加到 Claude Desktop：退出并重新打开 Claude 以载入",
 		"Added Lilo to Cursor": "已将 Lilo 添加到 Cursor",
 		"Added Lilo to Codex": "已将 Lilo 添加到 Codex",
+		"Added Lilo to Zed": "已将 Lilo 添加到 Zed",
+		"Added Lilo to VS Code": "已将 Lilo 添加到 VS Code",
+		"Added Lilo to OpenCode": "已将 Lilo 添加到 OpenCode",
+		"Added Lilo to Gemini CLI": "已将 Lilo 添加到 Gemini CLI",
+		"Removed Lilo": "已移除 Lilo",
 		"Lilo could not read %@: add this server to it yourself: %@": "Lilo 无法读取 %@：请自行添加此服务器：%@",
 		"Stop Agents": "停止智能体",
 		"Delete %@ and its %d tabs?": {"one": "删除 %@ 及其 %d 个标签页？", "other": "删除 %@ 及其 %d 个标签页？"},

@@ -166,6 +166,7 @@
 			"passwords": "Passwörter",
 			"agentAccess": "Agenten, die Lilo nutzen",
 			"agentClients": "Apps, die Lilo nutzen können",
+			"agentActivity": "Aktivität",
 			"lilo": "Lilo",
 			"tabsWindows": "Tabs und Fenster",
 			"sitePermissions": "Websiteberechtigungen",
@@ -211,16 +212,18 @@
 			"more": "{count} weitere. Grenze die Liste mit der Suche ein."
 		},
 		"items": {
+			"agentInstances": {
+				"title": "Agenten",
+				"description": "Agenten aus der Registrierung und eigene Befehle, die die Fragenleiste anbietet; ein ausgeschalteter verlässt die Auswahl.",
+				"keywords": "agenten acp registrierung eigener befehl anbieter instanz aktivieren deaktivieren auswahl"
+			},
 			"customAgent": {
-				"title": "Eigener Agent",
-				"description": "Starte ein eigenes Programm als Agent, neben denen der Registry.",
-				"keywords": "eigener agent befehl acp lokal skript umgebung variablen argumente",
 				"name": "Name",
 				"namePlaceholder": "Mein Agent",
 				"executable": "Befehl",
 				"arguments": "Argumente, eines pro Zeile",
 				"environment": "Umgebung, NAME=Wert pro Zeile",
-				"note": "Der Befehl ist der vollständige Pfad einer ausführbaren Datei, die das Agent Client Protocol über Standardeingabe und -ausgabe spricht. Nach dem Sichern erscheint er in der Agentenliste; ein leerer Befehl entfernt ihn."
+				"note": "Der Befehl ist der vollständige Pfad einer ausführbaren Datei, die das Agent Client Protocol über Standardeingabe und -ausgabe spricht."
 			},
 			"commandBarLayout": {
 				"title": "Befehlsleistenlayout",
@@ -533,6 +536,11 @@
 				"title": "Andere Agenten",
 				"description": "Jeder andere MCP-Client mit Lilos Konfiguration."
 			},
+			"agentActivity": {
+				"title": "Letzte Agentenaufrufe",
+				"description": "Die letzten Aufrufe jeder App, neueste zuerst. Gelesen beim Öffnen dieser Seite oder beim Aktualisieren.",
+				"keywords": "agent protokoll verlauf audit aktionen letzte aufrufe aktivität"
+			},
 			"autoplay": {
 				"title": "Automatische Wiedergabe",
 				"description": "Gilt für ab jetzt geöffnete Seiten.",
@@ -559,8 +567,8 @@
 				"keywords": "tastatur kurzbefehl tastenkombination tasten befehl"
 			},
 			"holdToQuit": {
-				"title": "Zum Beenden ⌘Q gedrückt halten",
-				"description": "⌘Q zeigt einen Hinweis; Lilo wird nur beendet, wenn die Tasten gedrückt bleiben.",
+				"title": "Zum Beenden den Kurzbefehl gedrückt halten",
+				"description": "Der Kurzbefehl zum Beenden zeigt einen Hinweis; Lilo wird nur beendet, wenn die Tasten gedrückt bleiben.",
 				"keywords": "beenden verlassen Befehl q versehentlich halten"
 			},
 			"newProfile": {
@@ -675,12 +683,34 @@
 				"claudeCode": "Claude Code",
 				"claudeDesktop": "Claude Desktop",
 				"codex": "Codex",
-				"cursor": "Cursor"
+				"cursor": "Cursor",
+				"zed": "Zed",
+				"vscode": "VS Code",
+				"opencode": "OpenCode",
+				"gemini": "Gemini CLI"
 			},
 			"connect": "Verbinden",
 			"copy": "Konfiguration kopieren",
 			"clientDescription": "Fügt Lilo zu seinen MCP-Servern hinzu.",
 			"revoke": "Entfernen",
+			"repair": "Reparieren",
+			"moreFor": "Weitere Aktionen für {client}",
+			"removeFrom": "Lilo aus {client} entfernen …",
+			"sheet": {
+				"addTitle": "Lilo zu {client} hinzufügen",
+				"repairTitle": "Lilo in {client} reparieren",
+				"removeTitle": "Lilo aus {client} entfernen",
+				"diff": "Lilo ändert diese Zeilen und sonst nichts.",
+				"runs": "Lilo führt diesen Befehl aus.",
+				"unchanged": "In dieser Datei ändert sich nichts.",
+				"addedLine": "Hinzugefügt",
+				"removedLine": "Entfernt",
+				"add": "Lilo hinzufügen",
+				"repair": "Reparieren",
+				"remove": "Lilo entfernen",
+				"copy": "Kopieren",
+				"copied": "Kopiert"
+			},
 			"status": {
 				"acting": "Handelt gerade",
 				"connected": "Verbunden",
@@ -689,7 +719,32 @@
 				"ready": "Konfiguriert"
 			},
 			"allowedSeen": "Erlaubt, zuletzt gesehen {time}",
-			"readyLine": "Eingerichtet. Lilo fragt dich bei der ersten Verbindung."
+			"readyLine": "Eingerichtet. Lilo fragt dich bei der ersten Verbindung.",
+			"detectedLine": "Auf diesem Mac gefunden. Noch nicht eingerichtet.",
+			"moreApps": "Weitere Apps",
+			"permissions": {
+				"button": "Berechtigungen",
+				"group": "Berechtigungen von {client}",
+				"act": "Aktionen auf Seiten",
+				"actHint": "Klicks und Anfragen, die senden, bezahlen, kaufen, löschen oder veröffentlichen.",
+				"askingOff": "Nachfragen ist für alle Agenten in der Einstellung oben ausgeschaltet.",
+				"ask": "Jedes Mal fragen",
+				"always": "Immer erlauben",
+				"sites": "Auf diesen Websites erlaubt",
+				"addSite": "Website hinzufügen",
+				"addSiteLabel": "Website hinzufügen, auf der {client} ohne Nachfrage handeln darf",
+				"removeSite": "{site} entfernen",
+				"floor": "Anmelden, Bezahlen und das Senden von Daten an eine andere Website werden immer abgefragt."
+			}
+		},
+		"agentActivity": {
+			"refresh": "Aktualisieren",
+			"open": "Aktionsprotokoll öffnen",
+			"off": "Das Aktionsprotokoll ist aus",
+			"offDescription": "Lilo zeichnet keine Agentenaufrufe auf. Schalte es ein, um sie hier zu sehen.",
+			"turnOn": "Einschalten",
+			"empty": "Noch keine Aufrufe aufgezeichnet.",
+			"failed": "Fehlgeschlagen"
 		},
 		"navGroups": {
 			"tools": "Werkzeuge"
@@ -805,7 +860,27 @@
 			"sidebar": "In der Seitenleiste",
 			"floating": "Schwebendes Fenster"
 		},
-		"terminalImportCaption": "Importieren nimmt ein iTerm2-Farbschema (.itermcolors), ein VS-Code-Farbdesign (.json) oder eine Ghostty-Theme-Datei."
+		"terminalImportCaption": "Importieren nimmt ein iTerm2-Farbschema (.itermcolors), ein VS-Code-Farbdesign (.json) oder eine Ghostty-Theme-Datei.",
+		"agentInstances": {
+			"registry": "Registrierung",
+			"command": "Befehl",
+			"add": "Agent hinzufügen",
+			"hint": "Ein Agent der Registrierung, den die Liste nicht nennt, erscheint weiterhin in der Auswahl; füge ihn hinzu, um ihn auszuschalten.",
+			"menu": "Aktionen für {name}",
+			"edit": "Bearbeiten"
+		},
+		"agentSheet": {
+			"addTitle": "Agent hinzufügen",
+			"editTitle": "Agent bearbeiten",
+			"registryTab": "Aus der Registrierung",
+			"commandTab": "Eigener Befehl",
+			"sourceLabel": "Agentenquelle",
+			"searchPlaceholder": "Agenten suchen",
+			"add": "Hinzufügen",
+			"added": "Hinzugefügt",
+			"loading": "Registrierung wird geladen…",
+			"none": "Keine Agenten gefunden."
+		}
 	},
 	"nav": {
 		"navigationControls": "Navigationssteuerung",
@@ -2407,6 +2482,11 @@
 		"Added Lilo to Claude Desktop: quit and reopen Claude to load it": "Lilo zu Claude Desktop hinzugefügt: Beende und öffne Claude erneut, um es zu laden",
 		"Added Lilo to Cursor": "Lilo zu Cursor hinzugefügt",
 		"Added Lilo to Codex": "Lilo zu Codex hinzugefügt",
+		"Added Lilo to Zed": "Lilo zu Zed hinzugefügt",
+		"Added Lilo to VS Code": "Lilo zu VS Code hinzugefügt",
+		"Added Lilo to OpenCode": "Lilo zu OpenCode hinzugefügt",
+		"Added Lilo to Gemini CLI": "Lilo zu Gemini CLI hinzugefügt",
+		"Removed Lilo": "Lilo entfernt",
 		"Lilo could not read %@: add this server to it yourself: %@": "Lilo konnte %@ nicht lesen. Füge diesen Server dort selbst hinzu: %@",
 		"Stop Agents": "Agenten stoppen",
 		"Delete %@ and its %d tabs?": {"one": "%@ und den enthaltenen %d Tab löschen?", "other": "%@ und die enthaltenen %d Tabs löschen?"},

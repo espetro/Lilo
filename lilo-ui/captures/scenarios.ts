@@ -53,9 +53,81 @@ export const scenarios: CaptureScenario[] = [
 		{ name: `little-results-${colorScheme}`, colorScheme, viewport: START, boot: bootLittle, run: littleResults },
 		{ name: `little-page-${colorScheme}`, colorScheme, viewport: PAGE, boot: bootLittle, run: littlePage },
 	]),
+	...(["light", "dark"] as const).map((colorScheme) => ({ name: `agents-connect-sheet-${colorScheme}`, colorScheme, run: agentsConnectSheet })),
+	// Settings > Agents: Connect shows what it will write, writes it, then Remove takes Lilo out again.
+	{ name: "agents-connect-flow", run: agentsConnectFlow },
+	// Settings > Agents: the apps found on this Mac come first, the rest wait under "More apps".
+	...(["light", "dark"] as const).map((colorScheme) => ({ name: `agents-discovery-${colorScheme}`, colorScheme, run: agentsDiscovery })),
+	// Zed is found, Connect shows the file it will change, Add writes it, the tile reads Configured.
+	{ name: "agents-discovery-flow", run: agentsDiscoveryFlow },
+	// Settings > Agents > Activity: each app's latest calls from the action log.
+	...(["light", "dark"] as const).map((colorScheme) => ({ name: `agents-activity-${colorScheme}`, colorScheme, run: agentsActivity })),
+	// The log is off, Turn On, then the list fills and Refresh reads it again.
+	{ name: "agents-activity-flow", run: agentsActivityFlow },
+	// Settings > Agents: an allowed agent's Permissions row (ask each time or always allow, its own sites).
+	...(["light", "dark"] as const).map((colorScheme) => ({ name: `agents-permissions-${colorScheme}`, colorScheme, run: agentsPermissions })),
+	{ name: "agents-permissions-flow", run: agentsPermissionsFlow },
 	// The start card, a search, Enter, then the page window's strip: the card grows into the window natively.
 	{ name: "little-flow", viewport: { width: 900, height: 640 }, boot: bootLittle, run: littleFlow },
+	// Settings > Agents' instances page and the sheet that adds to it.
+	{ name: "agents-instances-light", world: agentInstancesWorld(), run: openAgentsPage },
+	{ name: "agents-instances-dark", world: agentInstancesWorld(), colorScheme: "dark", run: openAgentsPage },
+	{ name: "agents-add-sheet-light", world: agentInstancesWorld(), run: openAddAgent },
+	{ name: "agents-add-sheet-dark", world: agentInstancesWorld(), colorScheme: "dark", run: openAddAgent },
+	{ name: "agents-add", world: agentInstancesWorld(), run: addRegistryAgent },
 ];
+
+const ACTIVITY_LOG = {
+	event: "agentActionLog",
+	clients: [
+		{
+			name: "Claude Code",
+			calls: [
+				{ time: "2026-01-02T03:04:09.000Z", tool: "form_input", host: "example.com", ok: false, code: "no_such_ref" },
+				{ time: "2026-01-02T03:04:05.000Z", tool: "navigate", host: "example.org", ok: true, code: null },
+				{ time: "2026-01-02T03:03:58.000Z", tool: "get_page_text", host: "example.org", ok: true, code: null },
+			],
+		},
+		{
+			name: "Codex",
+			calls: [
+				{ time: "2026-01-02T03:02:30.000Z", tool: "tabs_context_mcp", host: null, ok: true, code: null },
+				{ time: "2026-01-02T03:02:12.000Z", tool: "read_page", host: "example.net", ok: true, code: null },
+			],
+		},
+	],
+};
+
+async function openActivity(page: Page, settings: Record<string, string>) {
+	await send(page, { event: "openSettings" });
+	await send(page, { event: "settingsLoaded", settings: { agentControlEnabled: "true", ...settings } });
+	await agentClients(page, true);
+	await page.locator(".section-nav-button").filter({ hasText: "Agents" }).click();
+}
+
+async function agentsActivity(page: Page) {
+	await openActivity(page, {});
+	await send(page, ACTIVITY_LOG);
+	await page.getByRole("region", { name: "Activity" }).scrollIntoViewIfNeeded();
+	await page.getByRole("region", { name: "Activity" }).evaluate((el) => el.scrollIntoView({ block: "end" }));
+	await page.waitForTimeout(400);
+}
+
+async function agentsActivityFlow(page: Page) {
+	await openActivity(page, { agentActionLog: "false" });
+	const activity = page.getByRole("region", { name: "Activity" });
+	await activity.evaluate((el) => el.scrollIntoView({ block: "end" }));
+	await page.waitForTimeout(1500);
+	await activity.getByRole("button", { name: "Turn On" }).click();
+	await send(page, { event: "settingsLoaded", settings: { agentControlEnabled: "true", agentActionLog: "true" } });
+	await page.waitForTimeout(800);
+	await send(page, ACTIVITY_LOG);
+	await activity.evaluate((el) => el.scrollIntoView({ block: "end" }));
+	await page.waitForTimeout(1500);
+	await activity.getByRole("button", { name: "Refresh" }).click();
+	await send(page, { ...ACTIVITY_LOG, clients: [{ ...ACTIVITY_LOG.clients[0], calls: [{ time: "2026-01-02T03:05:01.000Z", tool: "click", host: "example.com", ok: true, code: null }, ...ACTIVITY_LOG.clients[0].calls] }, ACTIVITY_LOG.clients[1]] });
+	await page.waitForTimeout(1500);
+}
 
 const LITTLE_SPACE = { id: "space-home", name: "Home", icon: "🏠", color: "#5865f2" };
 
@@ -169,6 +241,67 @@ const agentCatalog = agentNames.map(([id, name, description, featured]) => ({
 	description,
 	...(featured ? { featured: true } : {}),
 }));
+
+// The catalog with the provenance lines the registry publishes and the add sheet shows.
+const agentCatalogWithMeta = agentCatalog.map((agent, index) => ({
+	...agent,
+	repository: `https://github.com/example/${agent.id}`,
+	license: index % 2 === 0 ? "MIT" : "Apache-2.0",
+}));
+
+// The Settings > Agents page's stored list: two registry agents and a command of the user's.
+function agentInstancesWorld(): FakeHostWorld {
+	const world = initialWorld();
+	world.settings = {
+		agentsEnabled: "true",
+		agentAcpInstances: JSON.stringify([
+			{ id: "codex-acp", source: "registry", registryId: "codex-acp", name: "Codex", enabled: true },
+			{ id: "gemini", source: "registry", registryId: "gemini", name: "Gemini CLI", enabled: false },
+			{ id: "command-abc", source: "command", name: "Acme Agent", executable: "/usr/local/bin/acme-agent", arguments: "--acp", enabled: true },
+		]),
+	};
+	return world;
+}
+
+// Steps that only exist after the change are guarded, so the same scenario records the old
+// Agents section at a merge base.
+async function openAgentsPage(page: Page) {
+	await receive(page, [
+		{ event: "openSettings" },
+		{ event: "agentCatalog", agents: agentCatalogWithMeta, projects: ["/Users/example/Code/acme"], home: "/Users/example" },
+	]);
+	await page.locator(".section-nav-button").filter({ hasText: "Agents" }).click({ timeout: 5000 }).catch(() => {});
+	await page.locator("[data-setting-id='agentInstances'] .ui-link-row").click({ timeout: 3000 }).catch(() => {});
+	await page.getByRole("button", { name: "Add Agent" }).waitFor({ timeout: 5000 }).catch(() => {});
+	// The subpage fades in over 160ms; shooting mid-fade leaves a blank page on WebKit.
+	await page
+		.waitForFunction(
+			() => {
+				const el = document.querySelector(".settings-section-page");
+				return !el || getComputedStyle(el).opacity === "1";
+			},
+			{ timeout: 3000 },
+		)
+		.catch(() => {});
+}
+
+async function openAddAgent(page: Page) {
+	await openAgentsPage(page);
+	await page.getByRole("button", { name: "Add Agent" }).click({ timeout: 3000 }).catch(() => {});
+	await page.locator(".ui-modal-panel").waitFor({ state: "visible", timeout: 5000 }).catch(() => {});
+}
+
+// A registry agent added from the sheet's search, back to the list it joined.
+async function addRegistryAgent(page: Page) {
+	await openAddAgent(page);
+	const sheet = page.locator(".ui-modal-panel");
+	if (!(await sheet.count())) return;
+	await sheet.getByRole("searchbox").fill("auggie").catch(() => {});
+	const row = sheet.locator(".result").filter({ hasText: "Auggie CLI" });
+	await row.waitFor({ state: "visible", timeout: 5000 }).catch(() => {});
+	await row.getByRole("button", { name: "Add" }).click({ timeout: 5000 }).catch(() => {});
+	await sheet.waitFor({ state: "hidden", timeout: 5000 }).catch(() => {});
+}
 
 function receive(page: Page, messages: Record<string, unknown>[]): Promise<void> {
 	return page.evaluate((list) => {
@@ -346,3 +479,176 @@ scenarios.push(
 	{ name: "cmdbar-compact-light", world: compactWorld(), run: openCommandBarIdle },
 	{ name: "cmdbar-compact-dark", colorScheme: "dark", world: compactWorld(), run: openCommandBarIdle },
 );
+
+const CURSOR_CONFIG = "~/.cursor/mcp.json";
+const HELPER = "/Applications/Lilo.app/Contents/MacOS/lilo-mcp";
+const ADD_LINES = [
+	{ number: 3, removed: true, text: "    }" },
+	{ number: 3, removed: false, text: "    }," },
+	{ number: 4, removed: false, text: '    "lilo" : {' },
+	{ number: 5, removed: false, text: `      "command" : "${HELPER}"` },
+	{ number: 6, removed: false, text: "    }" },
+];
+const REMOVE_LINES = [
+	{ number: 3, removed: true, text: "    }," },
+	{ number: 3, removed: false, text: "    }" },
+	{ number: 4, removed: true, text: '    "lilo" : {' },
+	{ number: 5, removed: true, text: `      "command" : "${HELPER}"` },
+	{ number: 6, removed: true, text: "    }" },
+];
+const APP_ICON = "data:image/svg+xml;base64," + Buffer.from('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64"><rect width="64" height="64" rx="14" fill="#6b7280"/></svg>').toString("base64");
+
+async function send(page: Page, event: Record<string, unknown>) {
+	await page.evaluate((payload) => window.__lilo!.receive(payload), event);
+}
+
+async function openAgents(page: Page, cursorConfigured: boolean) {
+	await send(page, { event: "openSettings" });
+	await send(page, { event: "settingsLoaded", settings: { agentControlEnabled: "true" } });
+	await agentClients(page, cursorConfigured);
+	await page.locator(".section-nav-button").filter({ hasText: "Agents" }).click();
+}
+
+async function agentClients(page: Page, cursorConfigured: boolean) {
+	await send(page, {
+		event: "agentClientsLoaded",
+		clients: [
+			{ id: "claudeCode", configured: true, installed: true, stale: false, icon: null },
+			{ id: "cursor", configured: cursorConfigured, installed: true, stale: false, icon: APP_ICON },
+			{ id: "codex", configured: false, installed: false, stale: false, icon: null },
+		],
+		allowed: [],
+	});
+}
+
+async function discoveredClients(page: Page, zedConfigured: boolean) {
+	await send(page, {
+		event: "agentClientsLoaded",
+		clients: [
+			{ id: "claudeCode", configured: true, installed: true, stale: false, icon: null },
+			{ id: "claudeDesktop", configured: false, installed: false, stale: false, icon: null },
+			{ id: "codex", configured: false, installed: false, stale: false, icon: null },
+			{ id: "cursor", configured: true, installed: true, stale: false, icon: APP_ICON },
+			{ id: "zed", configured: zedConfigured, installed: true, stale: false, icon: APP_ICON },
+			{ id: "vscode", configured: false, installed: false, stale: false, icon: null },
+			{ id: "opencode", configured: false, installed: true, stale: false, icon: null },
+			{ id: "gemini", configured: false, installed: false, stale: false, icon: null },
+		],
+		allowed: [],
+	});
+}
+
+async function openDiscovery(page: Page, zedConfigured: boolean) {
+	await send(page, { event: "openSettings" });
+	await send(page, { event: "settingsLoaded", settings: { agentControlEnabled: "true" } });
+	await discoveredClients(page, zedConfigured);
+	await page.locator(".section-nav-button").filter({ hasText: "Agents" }).click();
+}
+
+async function agentsDiscovery(page: Page) {
+	await openDiscovery(page, false);
+	await page.getByRole("button", { name: "More apps" }).click();
+	await page.waitForTimeout(400);
+}
+
+async function agentsDiscoveryFlow(page: Page) {
+	await openDiscovery(page, false);
+	await page.waitForTimeout(1200);
+	const zed = page.locator(".agent-tile").filter({ hasText: "Zed" });
+	await zed.getByRole("button", { name: "Connect" }).click();
+	await send(page, {
+		event: "agentClientPreview", client: "zed", remove: false, path: "~/.config/zed/settings.json", command: null,
+		snippet: "{}", blocked: null,
+		lines: [
+			{ number: 2, removed: false, text: '  "context_servers" : {' },
+			{ number: 3, removed: false, text: '    "lilo" : {' },
+			{ number: 4, removed: false, text: '      "command" : "/Applications/Lilo.app/Contents/MacOS/lilo-mcp"' },
+			{ number: 5, removed: false, text: "    }" },
+			{ number: 6, removed: false, text: "  }," },
+		],
+	});
+	await expect(page.locator('[data-modal="agent-config"]')).toBeVisible();
+	await page.waitForTimeout(1800);
+	await page.getByRole("button", { name: /Add Lilo/ }).click();
+	await discoveredClients(page, true);
+	await send(page, { event: "settingsActionCompleted", action: "connectAgentClient", message: "Added Lilo to Zed", level: "info" });
+	await page.waitForTimeout(1500);
+	await page.getByRole("button", { name: "More apps" }).click();
+	await page.waitForTimeout(1500);
+}
+
+async function openPermissions(page: Page, settings: Record<string, string>) {
+	await send(page, { event: "openSettings" });
+	await send(page, { event: "settingsLoaded", settings: { agentControlEnabled: "true", ...settings } });
+	await send(page, {
+		event: "agentClientsLoaded",
+		clients: [
+			{ id: "claudeCode", configured: true, installed: true, stale: false, icon: null },
+			{ id: "cursor", configured: true, installed: true, stale: false, icon: APP_ICON },
+		],
+		allowed: [
+			{ name: "claude-code", displayName: "Claude Code", lastSeen: null, client: "claudeCode" },
+			{ name: "cursor", displayName: "Cursor", lastSeen: Date.now() / 1000 - 3600, client: "cursor" },
+		],
+	});
+	await page.locator(".section-nav-button").filter({ hasText: "Agents" }).click();
+	await page.locator(".agent-tile").filter({ hasText: "Claude Code" }).getByRole("button", { name: "More actions for Claude Code" }).click();
+	await page.getByRole("menuitem", { name: "Permissions" }).click();
+}
+
+async function agentsPermissions(page: Page) {
+	const stored = JSON.stringify({ "claude-code": { act: "ask", sites: ["shop.example.com"] } });
+	await openPermissions(page, { agentClientPermissions: stored });
+	await page.waitForTimeout(400);
+}
+
+async function agentsPermissionsFlow(page: Page) {
+	await openPermissions(page, {});
+	await page.waitForTimeout(1200);
+	const group = page.getByRole("group", { name: "Permissions of Claude Code" });
+	await group.getByRole("radio", { name: "Always allow" }).click();
+	await page.waitForTimeout(1200);
+	const field = group.getByRole("textbox", { name: /Add a site/ });
+	await field.pressSequentially("shop.example.com", { delay: 60 });
+	await field.press("Enter");
+	await page.waitForTimeout(1500);
+	await group.getByRole("radio", { name: "Ask each time" }).click();
+	await page.waitForTimeout(1500);
+}
+
+const cursorPreview = (remove: boolean) => ({
+	event: "agentClientPreview", client: "cursor", remove, path: CURSOR_CONFIG, command: null,
+	snippet: "{}", blocked: null, lines: remove ? REMOVE_LINES : ADD_LINES,
+});
+
+async function agentsConnectSheet(page: Page) {
+	await openAgents(page, false);
+	await page.locator(".agent-tile").filter({ hasText: "Cursor" }).getByRole("button", { name: "Connect" }).click();
+	await send(page, cursorPreview(false));
+	await expect(page.locator('[data-modal="agent-config"]')).toBeVisible();
+	await page.waitForTimeout(300);
+}
+
+async function agentsConnectFlow(page: Page) {
+	await openAgents(page, false);
+	await page.waitForTimeout(600);
+	const cursor = page.locator(".agent-tile").filter({ hasText: "Cursor" });
+	await cursor.getByRole("button", { name: "Connect" }).click();
+	await send(page, cursorPreview(false));
+	await expect(page.locator('[data-modal="agent-config"]')).toBeVisible();
+	await page.waitForTimeout(1800);
+	await page.getByRole("button", { name: /Add Lilo/ }).click();
+	await agentClients(page, true);
+	await send(page, { event: "settingsActionCompleted", action: "connectAgentClient", message: "Added Lilo to Cursor", level: "info" });
+	await page.waitForTimeout(1200);
+	await cursor.getByRole("button", { name: "More actions for Cursor" }).click();
+	await page.waitForTimeout(500);
+	await page.getByRole("menuitem", { name: "Remove Lilo from Cursor…" }).click();
+	await send(page, cursorPreview(true));
+	await expect(page.locator('[data-modal="agent-config"]')).toBeVisible();
+	await page.waitForTimeout(1800);
+	await page.getByRole("button", { name: /Remove Lilo/ }).click();
+	await agentClients(page, false);
+	await send(page, { event: "settingsActionCompleted", action: "connectAgentClient", message: "Removed Lilo", level: "info" });
+	await page.waitForTimeout(1200);
+}

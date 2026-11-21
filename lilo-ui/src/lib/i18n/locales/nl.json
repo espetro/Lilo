@@ -166,6 +166,7 @@
 			"passwords": "Wachtwoorden",
 			"agentAccess": "Agents die Lilo gebruiken",
 			"agentClients": "Apps die Lilo kunnen gebruiken",
+			"agentActivity": "Activiteit",
 			"lilo": "Lilo",
 			"tabsWindows": "Tabbladen en vensters",
 			"sitePermissions": "Websitebevoegdheden",
@@ -211,16 +212,18 @@
 			"more": "Nog {count}. Zoek om de lijst te verkleinen."
 		},
 		"items": {
+			"agentInstances": {
+				"title": "Agenten",
+				"description": "Agents uit het register en eigen opdrachten die de vraagbalk aanbiedt; een uitgeschakelde verdwijnt uit de kiezer.",
+				"keywords": "agenten acp register eigen opdracht provider instantie inschakelen uitschakelen kiezer"
+			},
 			"customAgent": {
-				"title": "Eigen agent",
-				"description": "Start een eigen programma als agent, naast die van het register.",
-				"keywords": "eigen agent opdracht acp lokaal script omgeving variabelen argumenten",
 				"name": "Naam",
 				"namePlaceholder": "Mijn agent",
 				"executable": "Opdracht",
 				"arguments": "Argumenten, één per regel",
 				"environment": "Omgeving, NAAM=waarde per regel",
-				"note": "De opdracht is het volledige pad van een uitvoerbaar bestand dat het Agent Client Protocol spreekt via standaardinvoer en -uitvoer. Het komt in de agentenlijst zodra het is bewaard; leegmaken haalt het weg."
+				"note": "De opdracht is het volledige pad van een uitvoerbaar bestand dat het Agent Client Protocol spreekt via standaardinvoer en -uitvoer."
 			},
 			"commandBarLayout": {
 				"title": "Indeling van de opdrachtbalk",
@@ -533,6 +536,11 @@
 				"title": "Andere agents",
 				"description": "Elke andere MCP-client, met de configuratie van Lilo."
 			},
+			"agentActivity": {
+				"title": "Recente agentaanroepen",
+				"description": "De laatste aanroepen van elke app, nieuwste eerst. Gelezen bij het openen van deze pagina of bij verversen.",
+				"keywords": "agent logboek geschiedenis audit acties recente aanroepen activiteit"
+			},
 			"autoplay": {
 				"title": "Automatisch afspelen",
 				"description": "Geldt voor pagina's die vanaf nu worden geopend.",
@@ -559,8 +567,8 @@
 				"keywords": "toetsenbord sneltoets toetsen command"
 			},
 			"holdToQuit": {
-				"title": "Houd ⌘Q ingedrukt om te stoppen",
-				"description": "⌘Q toont een melding; Lilo stopt alleen als de toetsen ingedrukt blijven.",
+				"title": "Houd de stopsneltoets ingedrukt om te stoppen",
+				"description": "De stopsneltoets toont een melding; Lilo stopt alleen als de toetsen ingedrukt blijven.",
 				"keywords": "stoppen afsluiten commando q per ongeluk houden"
 			},
 			"newProfile": {
@@ -675,12 +683,34 @@
 				"claudeCode": "Claude Code",
 				"claudeDesktop": "Claude Desktop",
 				"codex": "Codex",
-				"cursor": "Cursor"
+				"cursor": "Cursor",
+				"zed": "Zed",
+				"vscode": "VS Code",
+				"opencode": "OpenCode",
+				"gemini": "Gemini CLI"
 			},
 			"connect": "Verbind",
 			"copy": "Kopieer configuratie",
 			"clientDescription": "Voegt Lilo toe aan de MCP-servers.",
 			"revoke": "Verwijder",
+			"repair": "Herstellen",
+			"moreFor": "Meer acties voor {client}",
+			"removeFrom": "Lilo uit {client} verwijderen…",
+			"sheet": {
+				"addTitle": "Lilo aan {client} toevoegen",
+				"repairTitle": "Lilo in {client} herstellen",
+				"removeTitle": "Lilo uit {client} verwijderen",
+				"diff": "Lilo wijzigt deze regels en verder niets.",
+				"runs": "Lilo voert dit commando uit.",
+				"unchanged": "In dit bestand verandert niets.",
+				"addedLine": "Toegevoegd",
+				"removedLine": "Verwijderd",
+				"add": "Lilo toevoegen",
+				"repair": "Herstellen",
+				"remove": "Lilo verwijderen",
+				"copy": "Kopieer",
+				"copied": "Gekopieerd"
+			},
 			"status": {
 				"acting": "Nu bezig",
 				"connected": "Verbonden",
@@ -689,7 +719,32 @@
 				"ready": "Geconfigureerd"
 			},
 			"allowedSeen": "Toegestaan, laatst gezien {time}",
-			"readyLine": "Ingesteld. Lilo vraagt het je bij de eerste verbinding."
+			"readyLine": "Ingesteld. Lilo vraagt het je bij de eerste verbinding.",
+			"detectedLine": "Gevonden op deze Mac. Nog niet ingesteld.",
+			"moreApps": "Meer apps",
+			"permissions": {
+				"button": "Rechten",
+				"group": "Rechten van {client}",
+				"act": "Handelen op pagina's",
+				"actHint": "Klikken en verzoeken die versturen, betalen, kopen, verwijderen of publiceren.",
+				"askingOff": "Vragen staat voor alle agents uit, in de instelling hierboven.",
+				"ask": "Elke keer vragen",
+				"always": "Altijd toestaan",
+				"sites": "Toegestaan op deze sites",
+				"addSite": "Site toevoegen",
+				"addSiteLabel": "Site toevoegen waarop {client} zonder te vragen mag handelen",
+				"removeSite": "{site} verwijderen",
+				"floor": "Inloggen, betalen en gegevens naar een andere site sturen worden altijd gevraagd."
+			}
+		},
+		"agentActivity": {
+			"refresh": "Ververs",
+			"open": "Open actielogboek",
+			"off": "Het actielogboek staat uit",
+			"offDescription": "Lilo legt geen agentaanroepen vast. Zet het aan om ze hier te zien.",
+			"turnOn": "Zet aan",
+			"empty": "Nog geen aanroepen vastgelegd.",
+			"failed": "Mislukt"
 		},
 		"navGroups": {
 			"tools": "Hulpmiddelen"
@@ -805,7 +860,27 @@
 			"sidebar": "In de zijbalk",
 			"floating": "Zwevend venster"
 		},
-		"terminalImportCaption": "Importeren neemt een iTerm2-kleurvoorinstelling (.itermcolors), een VS Code-kleurthema (.json) of een Ghostty-themabestand."
+		"terminalImportCaption": "Importeren neemt een iTerm2-kleurvoorinstelling (.itermcolors), een VS Code-kleurthema (.json) of een Ghostty-themabestand.",
+		"agentInstances": {
+			"registry": "Register",
+			"command": "Opdracht",
+			"add": "Agent toevoegen",
+			"hint": "Een agent uit het register die de lijst niet noemt, verschijnt nog steeds in de kiezer; voeg hem hier toe om hem uit te schakelen.",
+			"menu": "Acties voor {name}",
+			"edit": "Bewerk"
+		},
+		"agentSheet": {
+			"addTitle": "Agent toevoegen",
+			"editTitle": "Agent bewerken",
+			"registryTab": "Uit het register",
+			"commandTab": "Eigen opdracht",
+			"sourceLabel": "Agentbron",
+			"searchPlaceholder": "Zoek agenten",
+			"add": "Voeg toe",
+			"added": "Toegevoegd",
+			"loading": "Register wordt geladen…",
+			"none": "Geen agenten gevonden."
+		}
 	},
 	"nav": {
 		"navigationControls": "Navigatieknoppen",
@@ -2407,6 +2482,11 @@
 		"Added Lilo to Claude Desktop: quit and reopen Claude to load it": "Lilo toegevoegd aan Claude Desktop: stop en heropen Claude om het te laden",
 		"Added Lilo to Cursor": "Lilo toegevoegd aan Cursor",
 		"Added Lilo to Codex": "Lilo toegevoegd aan Codex",
+		"Added Lilo to Zed": "Lilo toegevoegd aan Zed",
+		"Added Lilo to VS Code": "Lilo toegevoegd aan VS Code",
+		"Added Lilo to OpenCode": "Lilo toegevoegd aan OpenCode",
+		"Added Lilo to Gemini CLI": "Lilo toegevoegd aan Gemini CLI",
+		"Removed Lilo": "Lilo verwijderd",
 		"Lilo could not read %@: add this server to it yourself: %@": "Lilo kon %@ niet lezen: voeg deze server zelf toe: %@",
 		"Stop Agents": "Stop agents",
 		"Delete %@ and its %d tabs?": {"one": "%@ en %d tabblad verwijderen?", "other": "%@ en %d tabbladen verwijderen?"},

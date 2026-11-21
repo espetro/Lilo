@@ -28,6 +28,17 @@ final class WKEngineFactoryWarmPoolTests: XCTestCase {
                        "consuming the other slot must leave the persistent slot warm (refill is deferred)")
     }
 
+    /// Each private tab browses in a store of its own, which a warm view bound to another store cannot serve.
+    func testAPrivateStoreIsNeverWarmed() async {
+        let factory = WKEngineFactory()
+        let ephemeral = factory.createDataStore(persistent: false, identifier: nil)
+        factory.rearmWarmPool(dataStore: ephemeral, profileId: nil)
+        _ = factory.createTab(configuration: .init(dataStore: ephemeral))
+        // A refill lands 300 ms after the request: waiting past it shows none came.
+        let warmed = await pollUntil(timeout: 1) { factory.test_warmPoolCount != 0 }
+        XCTAssertFalse(warmed)
+    }
+
     /// Only a tab the user opens predicts another: a restored tab coming back, as at launch, builds no warm view.
     func testOnlyAnOpenedTabRefillsThePool() async {
         let factory = WKEngineFactory()

@@ -166,6 +166,7 @@
 			"passwords": "Passwords",
 			"agentAccess": "Agents using Lilo",
 			"agentClients": "Apps that can use Lilo",
+			"agentActivity": "Activity",
 			"lilo": "Lilo",
 			"tabsWindows": "Tabs and windows",
 			"sitePermissions": "Site permissions",
@@ -211,16 +212,18 @@
 			"more": "{count} more. Search to narrow the list."
 		},
 		"items": {
+			"agentInstances": {
+				"title": "Agents",
+				"description": "Registry agents and commands of your own that the ask bar offers; turn one off and it leaves the picker.",
+				"keywords": "agents acp registry custom command provider instance enable disable picker"
+			},
 			"customAgent": {
-				"title": "Custom agent",
-				"description": "Start a program of your own as an agent, next to the registry's.",
-				"keywords": "custom agent command acp local script harness environment variables arguments",
 				"name": "Name",
 				"namePlaceholder": "My agent",
 				"executable": "Command",
 				"arguments": "Arguments, one per line",
 				"environment": "Environment, NAME=value per line",
-				"note": "The command is the full path of an executable file that speaks the Agent Client Protocol over standard input and output. It joins the agent list once saved; clearing the command removes it."
+				"note": "The command is the full path of an executable file that speaks the Agent Client Protocol over standard input and output."
 			},
 			"commandBarLayout": {
 				"title": "Command bar layout",
@@ -533,6 +536,11 @@
 				"title": "Other agents",
 				"description": "Any other MCP client, with Lilo's configuration."
 			},
+			"agentActivity": {
+				"title": "Recent agent calls",
+				"description": "The latest calls each app made, newest first. Read when you open this page or refresh.",
+				"keywords": "agent log history audit actions recent calls activity"
+			},
 			"autoplay": {
 				"title": "Autoplay",
 				"description": "Applies to pages opened from now on.",
@@ -559,8 +567,8 @@
 				"keywords": "keyboard shortcut hotkey keys command"
 			},
 			"holdToQuit": {
-				"title": "Hold ⌘Q to quit",
-				"description": "Pressing ⌘Q shows a prompt; Lilo quits only when the keys are held down.",
+				"title": "Hold the quit shortcut to quit",
+				"description": "Pressing the quit shortcut shows a prompt; Lilo quits only when the keys are held down.",
 				"keywords": "quit exit command q accidental hold"
 			},
 			"newProfile": {
@@ -675,12 +683,34 @@
 				"claudeCode": "Claude Code",
 				"claudeDesktop": "Claude Desktop",
 				"codex": "Codex",
-				"cursor": "Cursor"
+				"cursor": "Cursor",
+				"zed": "Zed",
+				"vscode": "VS Code",
+				"opencode": "OpenCode",
+				"gemini": "Gemini CLI"
 			},
 			"connect": "Connect",
 			"copy": "Copy Configuration",
 			"clientDescription": "Adds Lilo to its MCP servers.",
 			"revoke": "Remove",
+			"repair": "Repair",
+			"moreFor": "More actions for {client}",
+			"removeFrom": "Remove Lilo from {client}…",
+			"sheet": {
+				"addTitle": "Add Lilo to {client}",
+				"repairTitle": "Repair Lilo in {client}",
+				"removeTitle": "Remove Lilo from {client}",
+				"diff": "Lilo will change these lines and nothing else.",
+				"runs": "Lilo will run this command.",
+				"unchanged": "Nothing in this file changes.",
+				"addedLine": "Added",
+				"removedLine": "Removed",
+				"add": "Add Lilo",
+				"repair": "Repair",
+				"remove": "Remove Lilo",
+				"copy": "Copy",
+				"copied": "Copied"
+			},
 			"status": {
 				"acting": "Acting now",
 				"connected": "Connected",
@@ -689,7 +719,32 @@
 				"ready": "Configured"
 			},
 			"allowedSeen": "Allowed, last seen {time}",
-			"readyLine": "Configured. Lilo asks you the first time it connects."
+			"readyLine": "Configured. Lilo asks you the first time it connects.",
+			"detectedLine": "Found on this Mac. Not set up yet.",
+			"moreApps": "More apps",
+			"permissions": {
+				"button": "Permissions",
+				"group": "Permissions of {client}",
+				"act": "Acting on pages",
+				"actHint": "Clicks and requests that send, pay, buy, delete or publish.",
+				"askingOff": "Questions are turned off for every agent, in the setting above.",
+				"ask": "Ask each time",
+				"always": "Always allow",
+				"sites": "Allowed on these sites",
+				"addSite": "Add a site",
+				"addSiteLabel": "Add a site {client} may act on without asking",
+				"removeSite": "Remove {site}",
+				"floor": "Signing in, paying and sending data to another site are always asked."
+			}
+		},
+		"agentActivity": {
+			"refresh": "Refresh",
+			"open": "Open Action Log",
+			"off": "The action log is off",
+			"offDescription": "Lilo is not recording agent calls. Turn it on to see them here.",
+			"turnOn": "Turn On",
+			"empty": "No calls recorded yet.",
+			"failed": "Failed"
 		},
 		"navGroups": {
 			"tools": "Tools"
@@ -805,7 +860,27 @@
 			"sidebar": "In the sidebar",
 			"floating": "Floating window"
 		},
-		"terminalImportCaption": "Import takes an iTerm2 color preset (.itermcolors), a VS Code color theme (.json) or a Ghostty theme file."
+		"terminalImportCaption": "Import takes an iTerm2 color preset (.itermcolors), a VS Code color theme (.json) or a Ghostty theme file.",
+		"agentInstances": {
+			"registry": "Registry",
+			"command": "Command",
+			"add": "Add Agent",
+			"hint": "A registry agent the list does not name still appears in the picker; add it here to turn it off.",
+			"menu": "Actions for {name}",
+			"edit": "Edit"
+		},
+		"agentSheet": {
+			"addTitle": "Add Agent",
+			"editTitle": "Edit Agent",
+			"registryTab": "From Registry",
+			"commandTab": "Custom Command",
+			"sourceLabel": "Agent source",
+			"searchPlaceholder": "Search agents",
+			"add": "Add",
+			"added": "Added",
+			"loading": "Loading the registry…",
+			"none": "No agents match."
+		}
 	},
 	"nav": {
 		"navigationControls": "Navigation controls",
@@ -2407,6 +2482,11 @@
 		"Added Lilo to Claude Desktop: quit and reopen Claude to load it": "Added Lilo to Claude Desktop: quit and reopen Claude to load it",
 		"Added Lilo to Cursor": "Added Lilo to Cursor",
 		"Added Lilo to Codex": "Added Lilo to Codex",
+		"Added Lilo to Zed": "Added Lilo to Zed",
+		"Added Lilo to VS Code": "Added Lilo to VS Code",
+		"Added Lilo to OpenCode": "Added Lilo to OpenCode",
+		"Added Lilo to Gemini CLI": "Added Lilo to Gemini CLI",
+		"Removed Lilo": "Removed Lilo",
 		"Lilo could not read %@: add this server to it yourself: %@": "Lilo could not read %@: add this server to it yourself: %@",
 		"Stop Agents": "Stop Agents",
 		"Delete %@ and its %d tabs?": {"one": "Delete %@ and its %d tab?", "other": "Delete %@ and its %d tabs?"},

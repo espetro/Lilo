@@ -166,6 +166,7 @@
 			"passwords": "Parolalar",
 			"agentAccess": "Lilo'yu kullanan ajanlar",
 			"agentClients": "Lilo'yu kullanabilen uygulamalar",
+			"agentActivity": "Etkinlik",
 			"lilo": "Lilo",
 			"tabsWindows": "Sekmeler ve pencereler",
 			"sitePermissions": "Site izinleri",
@@ -211,16 +212,18 @@
 			"more": "{count} tane daha. Listeyi daraltmak için arayın."
 		},
 		"items": {
+			"agentInstances": {
+				"title": "Ajanlar",
+				"description": "Soru çubuğunun sunduğu kayıt ajanları ve kendi komutlarınız; kapatılan seçiciden çıkar.",
+				"keywords": "ajanlar acp kayıt özel komut sağlayıcı örnek etkinleştir devre dışı seçici"
+			},
 			"customAgent": {
-				"title": "Özel ajan",
-				"description": "Kayıt defterindekilerin yanında, kendi programınızı ajan olarak başlatın.",
-				"keywords": "özel ajan komut acp yerel betik ortam değişkenler argümanlar",
 				"name": "Ad",
 				"namePlaceholder": "Ajanım",
 				"executable": "Komut",
 				"arguments": "Argümanlar, her satırda bir tane",
 				"environment": "Ortam, her satırda AD=değer",
-				"note": "Komut, Agent Client Protocol'ü standart girdi ve çıktı üzerinden konuşan çalıştırılabilir bir dosyanın tam yoludur. Kaydedilince ajan listesine katılır; komutu boşaltmak onu kaldırır."
+				"note": "Komut, Agent Client Protocol'ü standart girdi ve çıktı üzerinden konuşan çalıştırılabilir bir dosyanın tam yoludur."
 			},
 			"commandBarLayout": {
 				"title": "Komut çubuğu düzeni",
@@ -533,6 +536,11 @@
 				"title": "Diğer ajanlar",
 				"description": "Lilo'nun yapılandırmasıyla diğer tüm MCP istemcileri."
 			},
+			"agentActivity": {
+				"title": "Son aracı çağrıları",
+				"description": "Her uygulamanın son çağrıları, en yenisi başta. Bu sayfa açıldığında veya yenilendiğinde okunur.",
+				"keywords": "aracı günlük geçmiş denetim eylemler son çağrılar etkinlik"
+			},
 			"autoplay": {
 				"title": "Otomatik oynatma",
 				"description": "Bundan sonra açılan sayfalara uygulanır.",
@@ -559,8 +567,8 @@
 				"keywords": "klavye kestirme kısayol tuş komut"
 			},
 			"holdToQuit": {
-				"title": "Çıkmak için ⌘Q'yu basılı tut",
-				"description": "⌘Q bir uyarı gösterir; Lilo yalnızca tuşlar basılı tutulduğunda kapanır.",
+				"title": "Çıkmak için çıkış kestirmesini basılı tut",
+				"description": "Çıkış kestirmesi bir uyarı gösterir; Lilo yalnızca tuşlar basılı tutulduğunda kapanır.",
 				"keywords": "çık kapat komut q yanlışlıkla basılı"
 			},
 			"newProfile": {
@@ -675,12 +683,34 @@
 				"claudeCode": "Claude Code",
 				"claudeDesktop": "Claude Desktop",
 				"codex": "Codex",
-				"cursor": "Cursor"
+				"cursor": "Cursor",
+				"zed": "Zed",
+				"vscode": "VS Code",
+				"opencode": "OpenCode",
+				"gemini": "Gemini CLI"
 			},
 			"connect": "Bağlan",
 			"copy": "Yapılandırmayı kopyala",
 			"clientDescription": "Lilo'yu istemcinin MCP sunucularına ekler.",
 			"revoke": "Kaldır",
+			"repair": "Onar",
+			"moreFor": "{client} için diğer eylemler",
+			"removeFrom": "Lilo'yu {client} uygulamasından kaldır…",
+			"sheet": {
+				"addTitle": "Lilo'yu {client} uygulamasına ekle",
+				"repairTitle": "{client} uygulamasındaki Lilo'yu onar",
+				"removeTitle": "Lilo'yu {client} uygulamasından kaldır",
+				"diff": "Lilo yalnızca bu satırları değiştirecek.",
+				"runs": "Lilo bu komutu çalıştıracak.",
+				"unchanged": "Bu dosyada hiçbir şey değişmiyor.",
+				"addedLine": "Eklendi",
+				"removedLine": "Kaldırıldı",
+				"add": "Lilo'yu ekle",
+				"repair": "Onar",
+				"remove": "Lilo'yu kaldır",
+				"copy": "Kopyala",
+				"copied": "Kopyalandı"
+			},
 			"status": {
 				"acting": "İşlem yapıyor",
 				"connected": "Bağlı",
@@ -689,7 +719,32 @@
 				"ready": "Yapılandırıldı"
 			},
 			"allowedSeen": "İzin verildi, son görülme {time}",
-			"readyLine": "Yapılandırıldı. Lilo ilk bağlantıda size sorar."
+			"readyLine": "Yapılandırıldı. Lilo ilk bağlantıda size sorar.",
+			"detectedLine": "Bu Mac'te bulundu. Henüz yapılandırılmadı.",
+			"moreApps": "Diğer uygulamalar",
+			"permissions": {
+				"button": "İzinler",
+				"group": "{client} izinleri",
+				"act": "Sayfalarda eylemler",
+				"actHint": "Gönderen, ödeme yapan, satın alan, silen veya yayımlayan tıklamalar ve istekler.",
+				"askingOff": "Sorular, yukarıdaki ayarda tüm aracılar için kapalı.",
+				"ask": "Her seferinde sor",
+				"always": "Her zaman izin ver",
+				"sites": "Bu sitelerde izinli",
+				"addSite": "Site ekle",
+				"addSiteLabel": "{client} için sormadan eylem yapılabilecek bir site ekle",
+				"removeSite": "{site} sitesini kaldır",
+				"floor": "Oturum açma, ödeme ve başka bir siteye veri gönderme her zaman sorulur."
+			}
+		},
+		"agentActivity": {
+			"refresh": "Yenile",
+			"open": "Eylem günlüğünü aç",
+			"off": "Eylem günlüğü kapalı",
+			"offDescription": "Lilo aracı çağrılarını kaydetmiyor. Burada görmek için açın.",
+			"turnOn": "Aç",
+			"empty": "Henüz kaydedilmiş çağrı yok.",
+			"failed": "Başarısız"
 		},
 		"navGroups": {
 			"tools": "Araçlar"
@@ -805,7 +860,27 @@
 			"sidebar": "Kenar çubuğunda",
 			"floating": "Yüzen pencere"
 		},
-		"terminalImportCaption": "İçe aktarma bir iTerm2 renk ön ayarı (.itermcolors), bir VS Code renk teması (.json) veya bir Ghostty tema dosyası alır."
+		"terminalImportCaption": "İçe aktarma bir iTerm2 renk ön ayarı (.itermcolors), bir VS Code renk teması (.json) veya bir Ghostty tema dosyası alır.",
+		"agentInstances": {
+			"registry": "Kayıt",
+			"command": "Komut",
+			"add": "Ajan Ekle",
+			"hint": "Listenin adlandırmadığı bir kayıt ajanı yine seçicide görünür; kapatmak için buraya ekleyin.",
+			"menu": "{name} için eylemler",
+			"edit": "Düzenle"
+		},
+		"agentSheet": {
+			"addTitle": "Ajan Ekle",
+			"editTitle": "Ajanı Düzenle",
+			"registryTab": "Kayıttan",
+			"commandTab": "Özel Komut",
+			"sourceLabel": "Ajan kaynağı",
+			"searchPlaceholder": "Ajan ara",
+			"add": "Ekle",
+			"added": "Eklendi",
+			"loading": "Kayıt yükleniyor…",
+			"none": "Eşleşen ajan yok."
+		}
 	},
 	"nav": {
 		"navigationControls": "Gezinme denetimleri",
@@ -2407,6 +2482,11 @@
 		"Added Lilo to Claude Desktop: quit and reopen Claude to load it": "Lilo, Claude Desktop'a eklendi. Yüklenmesi için Claude'dan çıkıp yeniden açın",
 		"Added Lilo to Cursor": "Lilo, Cursor'a eklendi",
 		"Added Lilo to Codex": "Lilo, Codex'e eklendi",
+		"Added Lilo to Zed": "Lilo, Zed'e eklendi",
+		"Added Lilo to VS Code": "Lilo, VS Code'a eklendi",
+		"Added Lilo to OpenCode": "Lilo, OpenCode'a eklendi",
+		"Added Lilo to Gemini CLI": "Lilo, Gemini CLI'ya eklendi",
+		"Removed Lilo": "Lilo kaldırıldı",
 		"Lilo could not read %@: add this server to it yourself: %@": "Lilo %@ dosyasını okuyamadı. Şu sunucuyu kendiniz ekleyin: %@",
 		"Stop Agents": "Ajanları Durdur",
 		"Delete %@ and its %d tabs?": {"one": "%@ ve içindeki %d sekme silinsin mi?", "other": "%@ ve içindeki %d sekme silinsin mi?"},

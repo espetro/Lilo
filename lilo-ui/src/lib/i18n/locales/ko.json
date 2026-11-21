@@ -166,6 +166,7 @@
 			"passwords": "암호",
 			"agentAccess": "Lilo를 사용하는 에이전트",
 			"agentClients": "Lilo를 사용할 수 있는 앱",
+			"agentActivity": "활동",
 			"lilo": "Lilo",
 			"tabsWindows": "탭 및 윈도우",
 			"sitePermissions": "사이트 권한",
@@ -211,16 +212,18 @@
 			"more": "{count}개 더 있습니다. 검색으로 목록을 좁혀 보세요."
 		},
 		"items": {
+			"agentInstances": {
+				"title": "에이전트",
+				"description": "질문 바가 제공하는 레지스트리 에이전트와 직접 만든 명령입니다. 끈 것은 선택기에서 사라집니다.",
+				"keywords": "에이전트 acp 레지스트리 사용자 지정 명령 제공자 인스턴스 활성화 비활성화 선택기"
+			},
 			"customAgent": {
-				"title": "사용자 지정 에이전트",
-				"description": "레지스트리의 에이전트 옆에 직접 만든 프로그램을 에이전트로 실행합니다.",
-				"keywords": "사용자 지정 에이전트 명령 acp 로컬 스크립트 환경 변수 인자",
 				"name": "이름",
 				"namePlaceholder": "내 에이전트",
 				"executable": "명령",
 				"arguments": "인자, 한 줄에 하나",
 				"environment": "환경, 한 줄에 NAME=값",
-				"note": "명령은 표준 입출력으로 Agent Client Protocol을 사용하는 실행 파일의 전체 경로입니다. 저장하면 에이전트 목록에 추가되고, 명령을 비우면 제거됩니다."
+				"note": "명령은 표준 입출력으로 Agent Client Protocol을 사용하는 실행 파일의 전체 경로입니다."
 			},
 			"commandBarLayout": {
 				"title": "명령 모음 레이아웃",
@@ -533,6 +536,11 @@
 				"title": "다른 에이전트",
 				"description": "Lilo의 설정을 사용하는 다른 모든 MCP 클라이언트."
 			},
+			"agentActivity": {
+				"title": "최근 에이전트 호출",
+				"description": "각 앱의 최근 호출을 최신순으로 보여 줍니다. 이 페이지를 열거나 새로 고칠 때 읽습니다.",
+				"keywords": "에이전트 로그 기록 감사 동작 최근 호출 활동"
+			},
 			"autoplay": {
 				"title": "자동 재생",
 				"description": "지금부터 여는 페이지에 적용됩니다.",
@@ -559,8 +567,8 @@
 				"keywords": "키보드 단축키 키 명령"
 			},
 			"holdToQuit": {
-				"title": "⌘Q를 길게 눌러 종료",
-				"description": "⌘Q를 누르면 안내가 표시되고, 키를 계속 누르고 있을 때만 Lilo가 종료됩니다.",
+				"title": "종료 단축키를 길게 눌러 종료",
+				"description": "종료 단축키를 누르면 안내가 표시되고, 키를 계속 누르고 있을 때만 Lilo가 종료됩니다.",
 				"keywords": "종료 끝내기 명령 q 실수 길게"
 			},
 			"newProfile": {
@@ -675,12 +683,34 @@
 				"claudeCode": "Claude Code",
 				"claudeDesktop": "Claude Desktop",
 				"codex": "Codex",
-				"cursor": "Cursor"
+				"cursor": "Cursor",
+				"zed": "Zed",
+				"vscode": "VS Code",
+				"opencode": "OpenCode",
+				"gemini": "Gemini CLI"
 			},
 			"connect": "연결",
 			"copy": "설정 복사",
 			"clientDescription": "이 클라이언트의 MCP 서버에 Lilo를 추가합니다.",
 			"revoke": "제거",
+			"repair": "복구",
+			"moreFor": "{client}에 대한 추가 동작",
+			"removeFrom": "{client}에서 Lilo 제거…",
+			"sheet": {
+				"addTitle": "{client}에 Lilo 추가",
+				"repairTitle": "{client}의 Lilo 복구",
+				"removeTitle": "{client}에서 Lilo 제거",
+				"diff": "Lilo는 이 줄만 변경합니다.",
+				"runs": "Lilo가 이 명령을 실행합니다.",
+				"unchanged": "이 파일은 변경되지 않습니다.",
+				"addedLine": "추가됨",
+				"removedLine": "제거됨",
+				"add": "Lilo 추가",
+				"repair": "복구",
+				"remove": "Lilo 제거",
+				"copy": "복사",
+				"copied": "복사됨"
+			},
 			"status": {
 				"acting": "작업 중",
 				"connected": "연결됨",
@@ -689,7 +719,32 @@
 				"ready": "설정됨"
 			},
 			"allowedSeen": "허용됨, 마지막 접속 {time}",
-			"readyLine": "구성됨. 처음 연결할 때 Lilo가 묻습니다."
+			"readyLine": "구성됨. 처음 연결할 때 Lilo가 묻습니다.",
+			"detectedLine": "이 Mac에서 찾았습니다. 아직 설정되지 않음.",
+			"moreApps": "더 많은 앱",
+			"permissions": {
+				"button": "권한",
+				"group": "{client} 권한",
+				"act": "페이지에서의 작업",
+				"actHint": "전송, 결제, 구매, 삭제 또는 게시하는 클릭과 요청입니다.",
+				"askingOff": "위 설정에서 모든 에이전트의 확인이 꺼져 있습니다.",
+				"ask": "매번 묻기",
+				"always": "항상 허용",
+				"sites": "이 사이트에서 허용됨",
+				"addSite": "사이트 추가",
+				"addSiteLabel": "{client}이(가) 묻지 않고 작업할 수 있는 사이트 추가",
+				"removeSite": "{site} 제거",
+				"floor": "로그인, 결제, 다른 사이트로의 데이터 전송은 항상 확인합니다."
+			}
+		},
+		"agentActivity": {
+			"refresh": "새로 고침",
+			"open": "동작 로그 열기",
+			"off": "동작 로그가 꺼져 있습니다",
+			"offDescription": "Lilo가 에이전트 호출을 기록하지 않습니다. 켜면 여기에 표시됩니다.",
+			"turnOn": "켜기",
+			"empty": "기록된 호출이 아직 없습니다.",
+			"failed": "실패"
 		},
 		"navGroups": {
 			"tools": "도구"
@@ -805,7 +860,27 @@
 			"sidebar": "사이드바에",
 			"floating": "플로팅 윈도우"
 		},
-		"terminalImportCaption": "iTerm2 색상 프리셋(.itermcolors), VS Code 색상 테마(.json), Ghostty 테마 파일을 가져올 수 있습니다."
+		"terminalImportCaption": "iTerm2 색상 프리셋(.itermcolors), VS Code 색상 테마(.json), Ghostty 테마 파일을 가져올 수 있습니다.",
+		"agentInstances": {
+			"registry": "레지스트리",
+			"command": "명령",
+			"add": "에이전트 추가",
+			"hint": "목록에 없는 레지스트리 에이전트도 선택기에 표시됩니다. 끄려면 여기에 추가하세요.",
+			"menu": "{name} 동작",
+			"edit": "편집"
+		},
+		"agentSheet": {
+			"addTitle": "에이전트 추가",
+			"editTitle": "에이전트 편집",
+			"registryTab": "레지스트리에서",
+			"commandTab": "사용자 지정 명령",
+			"sourceLabel": "에이전트 소스",
+			"searchPlaceholder": "에이전트 검색",
+			"add": "추가",
+			"added": "추가됨",
+			"loading": "레지스트리를 불러오는 중…",
+			"none": "일치하는 에이전트가 없습니다."
+		}
 	},
 	"nav": {
 		"navigationControls": "탐색 제어",
@@ -2407,6 +2482,11 @@
 		"Added Lilo to Claude Desktop: quit and reopen Claude to load it": "Claude Desktop에 Lilo가 추가되었습니다. Claude를 종료하고 다시 열면 로드됩니다",
 		"Added Lilo to Cursor": "Cursor에 Lilo 추가됨",
 		"Added Lilo to Codex": "Codex에 Lilo 추가됨",
+		"Added Lilo to Zed": "Zed에 Lilo 추가됨",
+		"Added Lilo to VS Code": "VS Code에 Lilo 추가됨",
+		"Added Lilo to OpenCode": "OpenCode에 Lilo 추가됨",
+		"Added Lilo to Gemini CLI": "Gemini CLI에 Lilo 추가됨",
+		"Removed Lilo": "Lilo 제거됨",
 		"Lilo could not read %@: add this server to it yourself: %@": "Lilo가 %@ 파일을 읽을 수 없습니다. 다음 서버를 직접 추가하세요: %@",
 		"Stop Agents": "에이전트 중단",
 		"Delete %@ and its %d tabs?": {"one": "%@ 및 탭 %d개를 삭제하겠습니까?", "other": "%@ 및 탭 %d개를 삭제하겠습니까?"},

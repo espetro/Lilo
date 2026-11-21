@@ -166,6 +166,7 @@
 			"passwords": "密碼",
 			"agentAccess": "使用 Lilo 的代理程式",
 			"agentClients": "可使用 Lilo 的 App",
+			"agentActivity": "活動",
 			"lilo": "Lilo",
 			"tabsWindows": "分頁與視窗",
 			"sitePermissions": "網站權限",
@@ -211,16 +212,18 @@
 			"more": "另有 {count} 項。請搜尋以縮小範圍。"
 		},
 		"items": {
+			"agentInstances": {
+				"title": "代理程式",
+				"description": "提問列提供的註冊表代理程式和自訂指令；關閉後將從選擇器中移除。",
+				"keywords": "代理程式 acp 註冊表 自訂 指令 提供者 執行個體 啟用 停用 選擇器"
+			},
 			"customAgent": {
-				"title": "自訂代理",
-				"description": "將你自己的程式作為代理啟動，與登錄庫中的代理並列。",
-				"keywords": "自訂 代理 指令 acp 本機 腳本 環境 變數 引數",
 				"name": "名稱",
 				"namePlaceholder": "我的代理",
 				"executable": "指令",
 				"arguments": "引數，每行一個",
 				"environment": "環境，每行 NAME=值",
-				"note": "指令是可執行檔的完整路徑，該檔案透過標準輸入輸出使用 Agent Client Protocol。儲存後它會加入代理清單；清空指令即可移除。"
+				"note": "指令是可執行檔的完整路徑，該檔案透過標準輸入輸出使用 Agent Client Protocol。"
 			},
 			"commandBarLayout": {
 				"title": "命令列配置",
@@ -533,6 +536,11 @@
 				"title": "其他代理程式",
 				"description": "使用 Lilo 設定的任何其他 MCP 用戶端。"
 			},
+			"agentActivity": {
+				"title": "最近的代理程式呼叫",
+				"description": "每個 App 最近的呼叫，最新的在前。開啟此頁面或重新整理時讀取。",
+				"keywords": "代理程式 日誌 記錄 稽核 操作 最近 呼叫 活動"
+			},
 			"autoplay": {
 				"title": "自動播放",
 				"description": "套用至從現在起開啟的網頁。",
@@ -559,8 +567,8 @@
 				"keywords": "鍵盤 快速鍵 按鍵 command"
 			},
 			"holdToQuit": {
-				"title": "按住 ⌘Q 以結束",
-				"description": "按下 ⌘Q 會顯示提示；只有按住按鍵不放時 Lilo 才會結束。",
+				"title": "按住結束快速鍵以結束",
+				"description": "按下結束快速鍵會顯示提示；只有按住按鍵不放時 Lilo 才會結束。",
 				"keywords": "結束 關閉 指令 q 誤觸 按住"
 			},
 			"newProfile": {
@@ -675,12 +683,34 @@
 				"claudeCode": "Claude Code",
 				"claudeDesktop": "Claude Desktop",
 				"codex": "Codex",
-				"cursor": "Cursor"
+				"cursor": "Cursor",
+				"zed": "Zed",
+				"vscode": "VS Code",
+				"opencode": "OpenCode",
+				"gemini": "Gemini CLI"
 			},
 			"connect": "連接",
 			"copy": "拷貝設定",
 			"clientDescription": "將 Lilo 加入其 MCP 伺服器。",
 			"revoke": "移除",
+			"repair": "修復",
+			"moreFor": "{client}的更多操作",
+			"removeFrom": "從{client}移除 Lilo…",
+			"sheet": {
+				"addTitle": "將 Lilo 加入{client}",
+				"repairTitle": "修復{client}中的 Lilo",
+				"removeTitle": "從{client}移除 Lilo",
+				"diff": "Lilo 只會更改這些行。",
+				"runs": "Lilo 將執行此指令。",
+				"unchanged": "此檔案不會有任何更改。",
+				"addedLine": "已加入",
+				"removedLine": "已移除",
+				"add": "加入 Lilo",
+				"repair": "修復",
+				"remove": "移除 Lilo",
+				"copy": "拷貝",
+				"copied": "已拷貝"
+			},
 			"status": {
 				"acting": "正在執行動作",
 				"connected": "已連接",
@@ -689,7 +719,32 @@
 				"ready": "已設定"
 			},
 			"allowedSeen": "已允許，上次連線 {time}",
-			"readyLine": "已設定。首次連線時 Lilo 會詢問你。"
+			"readyLine": "已設定。首次連線時 Lilo 會詢問你。",
+			"detectedLine": "在這台 Mac 上找到。尚未設定。",
+			"moreApps": "更多 App",
+			"permissions": {
+				"button": "權限",
+				"group": "{client}的權限",
+				"act": "在頁面上的操作",
+				"actHint": "傳送、付款、購買、刪除或發布的點按和要求。",
+				"askingOff": "在上方的設定中,所有代理的詢問均已關閉。",
+				"ask": "每次詢問",
+				"always": "一律允許",
+				"sites": "在這些網站上允許",
+				"addSite": "加入網站",
+				"addSiteLabel": "加入 {client} 無需詢問即可操作的網站",
+				"removeSite": "移除 {site}",
+				"floor": "登入、付款和向其他網站傳送資料一律會詢問。"
+			}
+		},
+		"agentActivity": {
+			"refresh": "重新整理",
+			"open": "打開操作日誌",
+			"off": "操作日誌已關閉",
+			"offDescription": "Lilo 沒有記錄代理程式的呼叫。開啟後會顯示在這裡。",
+			"turnOn": "開啟",
+			"empty": "尚無已記錄的呼叫。",
+			"failed": "失敗"
 		},
 		"navGroups": {
 			"tools": "工具"
@@ -805,7 +860,27 @@
 			"sidebar": "在側邊欄中",
 			"floating": "浮動視窗"
 		},
-		"terminalImportCaption": "可匯入 iTerm2 顏色預設 (.itermcolors)、VS Code 顏色主題 (.json) 或 Ghostty 主題檔案。"
+		"terminalImportCaption": "可匯入 iTerm2 顏色預設 (.itermcolors)、VS Code 顏色主題 (.json) 或 Ghostty 主題檔案。",
+		"agentInstances": {
+			"registry": "註冊表",
+			"command": "指令",
+			"add": "新增代理程式",
+			"hint": "清單未列出的註冊表代理程式仍會出現在選擇器中；在此新增即可將其關閉。",
+			"menu": "{name} 的操作",
+			"edit": "編輯"
+		},
+		"agentSheet": {
+			"addTitle": "新增代理程式",
+			"editTitle": "編輯代理程式",
+			"registryTab": "從註冊表",
+			"commandTab": "自訂指令",
+			"sourceLabel": "代理程式來源",
+			"searchPlaceholder": "搜尋代理程式",
+			"add": "新增",
+			"added": "已新增",
+			"loading": "正在載入註冊表…",
+			"none": "沒有符合的代理程式。"
+		}
 	},
 	"nav": {
 		"navigationControls": "導覽控制項",
@@ -2407,6 +2482,11 @@
 		"Added Lilo to Claude Desktop: quit and reopen Claude to load it": "已將 Lilo 加入 Claude Desktop：結束並重新開啟 Claude 即可載入",
 		"Added Lilo to Cursor": "已將 Lilo 加入 Cursor",
 		"Added Lilo to Codex": "已將 Lilo 加入 Codex",
+		"Added Lilo to Zed": "已將 Lilo 加入 Zed",
+		"Added Lilo to VS Code": "已將 Lilo 加入 VS Code",
+		"Added Lilo to OpenCode": "已將 Lilo 加入 OpenCode",
+		"Added Lilo to Gemini CLI": "已將 Lilo 加入 Gemini CLI",
+		"Removed Lilo": "已移除 Lilo",
 		"Lilo could not read %@: add this server to it yourself: %@": "Lilo 無法讀取 %@：請自行加入此伺服器：%@",
 		"Stop Agents": "停止代理程式",
 		"Delete %@ and its %d tabs?": {"one": "要刪除 %@ 及其 %d 個分頁嗎？", "other": "要刪除 %@ 及其 %d 個分頁嗎？"},

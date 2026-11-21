@@ -180,6 +180,11 @@ export interface BridgeAgentInfo {
 	icon?: string;
 	/** Offered first: one of Lilo's featured agents, or the user's custom command. */
 	featured?: boolean;
+	/** An agent the user added as a command in Settings rather than a registry entry. */
+	command?: boolean;
+	/** The repository and license the registry entry publishes. */
+	repository?: string;
+	license?: string;
 }
 
 export interface BridgeFolderLock {
@@ -849,6 +854,9 @@ export interface BridgeCommandPayloadMap {
 	showChanges: { tabId?: string };
 	importTerminalTheme: EmptyPayload;
 	connectAgentClient: { client: string };
+	/** Asks what Connect (or Remove) would write to the app's configuration: answered with `agentClientPreview`. */
+	previewAgentClient: { client: string; remove: boolean };
+	removeAgentClient: { client: string };
 	startConversation: {
 		agentId: string;
 		cwd: string;
@@ -885,6 +893,10 @@ export interface BridgeCommandPayloadMap {
 	previewConversationArtifact: { tabId: string; code: string; language: string };
 	getAgentClients: EmptyPayload;
 	revokeAgentClient: { name: string };
+	/** Asks for each agent's latest calls: answered with `agentActionLog`. */
+	getAgentActionLog: EmptyPayload;
+	/** Reveals the folder of the action log in Finder. */
+	openAgentActionLog: EmptyPayload;
 	getAppNames: { ids: string[] };
 	getUpdaterStatus: EmptyPayload;
 	checkForUpdates: EmptyPayload;
@@ -1208,6 +1220,8 @@ export interface BridgeEventPayloadMap {
 		moods: Record<string, BridgeAgentMood>;
 	};
 	agentClientsLoaded: BridgeAgentClientsSnapshot;
+	agentClientPreview: BridgeAgentClientPreview;
+	agentActionLog: BridgeAgentActionLog;
 	appNames: { names: Record<string, string> };
 	updaterStatus: BridgeUpdaterStatus;
 	/** The downloaded update waiting for a relaunch; null once dismissed. */
@@ -1359,10 +1373,37 @@ export interface BridgeRunningApp {
 	name: string;
 }
 
-/** Agent apps installed or naming Lilo in their configuration, and the agents the user let in. */
+/** What Connect or Remove writes to an agent app's configuration, before it does. Native sends only the lines that
+ * change: `number` is the line in the file as it is (`removed`) or as it will be. Claude Code has a `command` instead. */
+export interface BridgeAgentClientPreview {
+	client: string;
+	remove: boolean;
+	/** The file, with the home as `~`. */
+	path: string;
+	command: string | null;
+	lines: { number: number; removed: boolean; text: string }[];
+	/** What to paste by hand: the configuration, empty for a removal. */
+	snippet: string;
+	/** Why Lilo will not write the file; null when it can. */
+	blocked: string | null;
+}
+
+/** Each agent's latest calls from the action log: what the writer kept, never an argument. */
+export interface BridgeAgentActionLog {
+	/** Most recently active first. `name` is how people know the agent; `calls` run newest first. */
+	clients: {
+		name: string;
+		/** `time` is ISO 8601; `host` the page's host when the call named a tab; `code` the failure's, when it failed. */
+		calls: { time: string; tool: string; host: string | null; ok: boolean; code: string | null }[];
+	}[];
+}
+
+/** The catalog's agent apps, which are installed or name Lilo in their configuration, and the agents the user let in. */
 export interface BridgeAgentClientsSnapshot {
-	/** `icon` is a PNG data URL of the app (Terminal's for a command-line tool), null when it is not installed. */
-	clients: { id: string; configured: boolean; icon: string | null }[];
+	/** Every app of the catalog. `installed` is what the scan of the home found; `icon` is a PNG data URL of the app
+	 * (Terminal's for a command-line tool), null when it is not installed. `stale` is a configuration naming a
+	 * Lilo at another path, which Connect repoints. */
+	clients: { id: string; configured: boolean; installed: boolean; stale?: boolean; icon: string | null }[];
 	/** `name` is what the agent calls itself; `displayName` is how people know it ("Claude Code"); `client` the
 	 * entry of `clients` it is, null for an agent Lilo has no configuration for. */
 	allowed: { name: string; displayName: string; lastSeen: number | null; client: string | null }[];

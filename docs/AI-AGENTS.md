@@ -50,13 +50,13 @@ Unless you turn it off in Settings, Lilo asks before an agent:
   structure first, so it works in any language and for an icon-only button: submitting a form that
   holds a password, a card field or a one-time code, or that sends its data to another origin with a
   method other than GET. A short list of commit verbs (send, pay, buy, delete, publish and their
-  translations) is the fallback for buttons outside a form; a bare "order" is not on it, so "Save
-  order" goes through;
+  translations) is the fallback for buttons outside a form; "order" counts only as a whole label
+  ("Order") or in a phrase like "Place order", so "Save order" goes through;
 - sends a request other than GET or HEAD with the cookies of one of your profiles.
 
 The question opens in the window that holds the agent's page, and the agent's conversation row turns amber meanwhile; your other windows, and the site and extension prompts there, are not held up by it. It counts as a refusal when you decline; one nobody answers in 45 seconds is withdrawn, and the agent may ask once more; with no window open the agent is told to ask you to open one first.
 
-Sites you always allow are listed in Settings, where you can remove them. Whatever the setting,
+Sites you always allow are listed in Settings, where you can remove them. Each agent also has a Permissions row (the ... menu of its tile in Settings > Agents): leave it on Ask each time, or choose Always allow so that agent acts on ordinary buttons without asking, and list sites where only that agent acts unasked. Both leave out what the page's structure flags (a form with a password or card field, a post to another origin, a frame Lilo cannot read, a cross-origin request) and every file upload: those are asked of every agent. An agent you have not set follows the setting above, and removing an agent forgets its Permissions. Whatever the setting,
 Lilo always asks before an agent hands a page one of your files (`file_upload`, `upload_image`).
 
 Code an agent runs itself through `javascript_tool`, `run` or `devtools_command` is not covered:
@@ -116,8 +116,8 @@ Replay stops at the first step whose locator matches nothing (or whose element c
 recording) and reports `{failedStep, reason}` - it never picks a near match. The agent then owns the page
 again and can resume with `from`. A consent answer of `denied` or `expired` stops the run the same way.
 
-A conversation's first prompt carries a short skill describing these tools, the same way a tab or a selection
-is attached, so any ACP agent learns them without configuration.
+While agent control is on, a conversation's first prompt carries a short skill describing these tools, the
+same way a tab or a selection is attached, so any ACP agent learns them without configuration.
 
 ## The action log
 
