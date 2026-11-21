@@ -23,7 +23,8 @@ run_for_head() {
   gh run list --workflow "$workflow" --commit "$sha" --limit 1 --json databaseId --jq '.[0].databaseId // empty'
 }
 
-id=$(run_for_head)
+# A push or a pull request starts its run a few seconds late: give it that before dispatching another.
+for _ in 1 2 3; do id=$(run_for_head); [ -n "$id" ] && break; sleep 4; done
 if [ -z "$id" ]; then
   echo "ci-swift: no CI run for ${sha:0:8}: dispatching one on $ref" >&2
   gh workflow run "$workflow" --ref "$ref" -f ref="$sha" >&2 \
@@ -42,7 +43,7 @@ else
 fi
 
 summary=$(gh run view "$id" --json status,conclusion,jobs \
-  --jq '.jobs[] | select(.name | startswith("App Validate")) | [.name, (.conclusion // .status), (.startedAt // "-"), (.completedAt // "-")] | join("|")')
+  --jq '.jobs[] | select(.name | startswith("App Validate")) | [.name, (if (.conclusion // "") == "" then .status else .conclusion end), (.startedAt // "-"), (.completedAt // "-")] | join("|")')
 [ -n "$summary" ] || { echo "ci-swift: the run has no macOS Swift jobs (docs-only change?): nothing to report"; exit 0; }
 
 status=0
@@ -53,9 +54,10 @@ while IFS='|' read -r name result started completed; do
   fi
   printf '%-8s %s %s\n' "$result" "$name" "$secs"
   [ "$result" = success ] || status=1
+  [ "$result" = failure ] && failed=1
 done <<< "$summary"
 
-if [ "$status" -ne 0 ]; then
+if [ "${failed:-0}" -eq 1 ]; then
   dir=$(mktemp -d)
   # failing-tests-app-N.md: each failed test with its first failure line (uploaded by the job on a failure).
   if gh run download "$id" --pattern 'failing-tests-app-*' --dir "$dir" >/dev/null 2>&1; then
