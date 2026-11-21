@@ -116,11 +116,9 @@ test("grouped by project and type, what no project holds falls into its type's t
 	assert.deepEqual(rows.map((row) => row.tray), ["project:/r/acme", "project:/r/acme", "agent", "terminal", null]);
 });
 
-test("the pinned area folds only while nothing active and no drag needs it open", () => {
-	assert.equal(pinnedAreaCollapsed(false, false, false), false);
-	assert.equal(pinnedAreaCollapsed(true, false, false), true);
-	// A pinned active tab keeps the area open, so does a drag aiming into it.
-	assert.equal(pinnedAreaCollapsed(true, true, false), false);
-	assert.equal(pinnedAreaCollapsed(true, false, true), false);
-	assert.equal(pinnedAreaCollapsed(true, true, true), false);
+test("the pinned area folds unless a drag needs it open", () => {
+	assert.equal(pinnedAreaCollapsed(false, false), false);
+	assert.equal(pinnedAreaCollapsed(true, false), true);
+	// A drag aiming into the area opens it; a pinned active tab no longer does: the fold keeps its row.
+	assert.equal(pinnedAreaCollapsed(true, true), false);
 });
