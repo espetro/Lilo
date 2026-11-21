@@ -29,7 +29,10 @@ enum AgentWindowCapture {
             "sidebarWidths": ["type": "array", "items": ["type": ["number", "string"]],
                               "description": "Sidebar widths to capture, in points or \"rail\"."],
             "gif": AgentTools.prop("string", "Absolute path of a GIF of the sidebarWidths shots, 1 s a frame."),
-            "settleMs": AgentTools.prop("number", "Wait before each shot, 500 by default.")
+            "settleMs": AgentTools.prop("number", "Wait before each shot, 500 by default."),
+            "littleWindow": AgentTools.prop("boolean", "Capture a Little window instead: one is opened on the command bar, and closed again after the shot."),
+            "littleQuery": AgentTools.prop("string", "With littleWindow: text typed in its command bar before the shot."),
+            "littleUrl": AgentTools.prop("string", "With littleWindow: an http, https or file URL the command bar opens, so the shot is the page window.")
         ], required: ["path"])
 
     static func call(_ tool: String, arguments: [String: Any], control: AgentControl) async throws -> [AgentContent]? {
@@ -52,6 +55,9 @@ enum AgentWindowCapture {
             return (value as? NSNumber).map { String($0.intValue) }
         }
 
+        if arguments["littleWindow"] as? Bool == true {
+            return try await captureLittleWindow(to: path, arguments: arguments, controller: controller, settle: settle)
+        }
         let savedFrame = window.frame
         let savedWidth = controller.sidebarRail ? rail : String(Int(controller.sidebarExpandedWidth))
         window.setContentSize(size)
@@ -80,6 +86,28 @@ enum AgentWindowCapture {
             written.append(gifPath)
         }
         return [.text("Captured the window at \(Int(size.width))x\(Int(size.height)): " + written.joined(separator: ", "))]
+    }
+
+    /// A Little window opened for the shot: on the command bar, with `littleQuery` typed in it, or turned into the page
+    /// window by `littleUrl`. The window keeps its own size.
+    private static func captureLittleWindow(to path: String, arguments: [String: Any], controller: MainWindowController, settle: Duration) async throws -> [AgentContent]? {
+        guard let little = controller.openLittleWindow(url: nil) else { throw AgentToolError("A Little window could not be opened") }
+        defer { little.window.close() }
+        for _ in 0..<100 where !little.isChromeReady { try await Task.sleep(for: .milliseconds(50)) }
+        guard little.isChromeReady else { throw AgentToolError("The Little window's chrome did not load") }
+        if let query = arguments["littleQuery"] as? String {
+            _ = try await little.chromeView.callAsyncJavaScript("""
+                const input = document.querySelector('.command-bar-input');
+                input.focus();
+                input.value = query;
+                input.dispatchEvent(new InputEvent('input', { bubbles: true, inputType: 'insertText', data: query }));
+                """, arguments: ["query": query], contentWorld: .page)
+        }
+        if let address = arguments["littleUrl"] as? String, let url = URL(string: address) { little.navigate(to: url) }
+        try await Task.sleep(for: settle + .milliseconds(arguments["littleUrl"] == nil ? 0 : 1_500))
+        guard let image = await render(little.window) else { throw AgentToolError("The window could not be drawn") }
+        try write(image, to: path)
+        return [.text("Captured the Little window (\(little.mode == .page ? "page" : "start card")): \(path) (\(image.width)x\(image.height))")]
     }
 
     /// The window's frame view (titlebar and window buttons included) drawn by AppKit, then each web view over it

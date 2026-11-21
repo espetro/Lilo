@@ -27,7 +27,7 @@ final class LittleWindowController: NSObject, NSWindowDelegate {
     weak var owner: MainWindowController?
     private(set) var mode = Mode.start
     let chromeHost = LittleChromeHost()
-    private let chromeView: OverlayWebView
+    let chromeView: OverlayWebView
     private let bridgeRouter: BridgeRouter
     private let pageContainer = NSView()
     private var observations: [NSKeyValueObservation] = []

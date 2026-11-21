@@ -17,6 +17,16 @@ final class AgentWindowCaptureTests: AgentToolTestCase {
         XCTAssertGreaterThanOrEqual(image.pixelsHigh * 640, image.pixelsWide * 480, "the frame, titlebar included, is at least as tall as the content")
     }
 
+    func testTheToolCapturesALittleWindowAndClosesIt() async throws {
+        let png = FileManager.default.temporaryDirectory.appendingPathComponent("little-capture-\(UUID().uuidString).png")
+        defer { try? FileManager.default.removeItem(at: png) }
+        let reply = await client.callTool("window_capture", ["path": png.path, "littleWindow": true, "settleMs": 100])
+        XCTAssertFalse(reply.isError, reply.text)
+        let image = try XCTUnwrap(NSBitmapImageRep(data: try Data(contentsOf: png)))
+        XCTAssertGreaterThan(image.pixelsWide, 0)
+        XCTAssertTrue(window.littleWindows.isEmpty, "the capture closes the window it opened")
+    }
+
     func testTheToolRefusesARelativePath() async {
         let reply = await client.callTool("window_capture", ["path": "shot.png"])
         XCTAssertTrue(reply.isError)
