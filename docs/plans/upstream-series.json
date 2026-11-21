@@ -1,0 +1,537 @@
+[
+  {
+    "slug": "bookmark-tiles",
+    "title": "fix(sidebar): shrink the favorites tiles and let them rest on the sidebar",
+    "forkPRs": [
+      95
+    ],
+    "dependsOn": [],
+    "branch": "upstream/bookmark-tiles",
+    "status": "pr-open",
+    "needsMedia": true,
+    "upstreamPR": 415,
+    "userVisible": true
+  },
+  {
+    "slug": "split-pane-margin",
+    "title": "fix(splits): keep a margin between the panes and the window frame",
+    "forkPRs": [
+      99
+    ],
+    "dependsOn": [],
+    "branch": "upstream/split-pane-margin",
+    "status": "pr-open",
+    "needsMedia": true,
+    "upstreamPR": 416,
+    "userVisible": true
+  },
+  {
+    "slug": "agent-split-focus",
+    "title": "fix(split-panes): focus an agent pane when its conversation is clicked",
+    "forkPRs": [
+      103
+    ],
+    "dependsOn": [],
+    "branch": "upstream/agent-split-focus",
+    "status": "pr-open",
+    "needsMedia": false,
+    "upstreamPR": 417,
+    "userVisible": true
+  },
+  {
+    "slug": "pinned-fold-search",
+    "title": "feat(sidebar): search button and foldable pinned head in the divider",
+    "forkPRs": [
+      105
+    ],
+    "dependsOn": [],
+    "branch": "upstream/pinned-fold-search",
+    "status": "pr-open",
+    "needsMedia": true,
+    "upstreamPR": 418,
+    "userVisible": true
+  },
+  {
+    "slug": "tab-sleep-indicator",
+    "title": "feat(sidebar): show sleeping tabs dimmed with a dotted ring",
+    "forkPRs": [
+      106
+    ],
+    "dependsOn": [],
+    "branch": "upstream/tab-sleep-indicator",
+    "status": "pr-open",
+    "needsMedia": true,
+    "upstreamPR": 428,
+    "userVisible": true
+  },
+  {
+    "slug": "keep-loaded",
+    "title": "feat(tabs): Keep Loaded tab flag and site allowlist",
+    "forkPRs": [
+      109
+    ],
+    "dependsOn": [],
+    "branch": "upstream/keep-loaded",
+    "status": "pr-open",
+    "needsMedia": true,
+    "upstreamPR": 426,
+    "userVisible": true
+  },
+  {
+    "slug": "private-tab-isolation",
+    "title": "feat(private): per-tab ephemeral data stores in private spaces",
+    "forkPRs": [
+      110
+    ],
+    "dependsOn": [],
+    "branch": "upstream/private-tab-isolation",
+    "status": "pr-open",
+    "needsMedia": false,
+    "upstreamPR": 424,
+    "userVisible": true
+  },
+  {
+    "slug": "screenshot-element-picker",
+    "title": "feat(screenshots): pick a page element by hovering in Selected Area",
+    "forkPRs": [
+      108
+    ],
+    "dependsOn": [],
+    "branch": "upstream/screenshot-element-picker",
+    "status": "pr-open",
+    "needsMedia": true,
+    "upstreamPR": 422,
+    "userVisible": true
+  },
+  {
+    "slug": "agent-picker-layout",
+    "title": "fix(agents): keep agent picker rows from overlapping",
+    "forkPRs": [
+      114
+    ],
+    "dependsOn": [],
+    "branch": "upstream/agent-picker-layout",
+    "status": "branch-pushed",
+    "needsMedia": true,
+    "upstreamPR": null,
+    "userVisible": true
+  },
+  {
+    "slug": "tab-multiselect-ring",
+    "title": "fix(sidebar): pinned multi-select and kept-loaded ring",
+    "forkPRs": [
+      118
+    ],
+    "dependsOn": [
+      "keep-loaded",
+      "tab-sleep-indicator"
+    ],
+    "branch": "upstream/tab-multiselect-ring",
+    "status": "branch-pushed",
+    "needsMedia": true,
+    "upstreamPR": null,
+    "userVisible": true
+  },
+  {
+    "slug": "commandbar-scopes-row",
+    "title": "fix(commandbar): restore the scopes row and footer hints",
+    "forkPRs": [
+      120
+    ],
+    "dependsOn": [],
+    "branch": "upstream/commandbar-scopes-row",
+    "status": "branch-pushed",
+    "needsMedia": true,
+    "upstreamPR": null,
+    "userVisible": true
+  },
+  {
+    "slug": "split-view-fixes",
+    "title": "feat(splits): tell the user when the split view is full",
+    "forkPRs": [
+      115
+    ],
+    "dependsOn": [],
+    "branch": "upstream/split-view-fixes",
+    "status": "branch-pushed",
+    "needsMedia": true,
+    "upstreamPR": null,
+    "userVisible": true
+  },
+  {
+    "slug": "traffic-lights-live-resize",
+    "title": "fix(window): keep the traffic lights at their standard size and place through a live resize",
+    "forkPRs": [
+      119
+    ],
+    "dependsOn": [],
+    "branch": "upstream/traffic-lights-live-resize",
+    "status": "branch-pushed",
+    "needsMedia": false,
+    "upstreamPR": null,
+    "userVisible": true
+  },
+  {
+    "slug": "pip-gesture-forwarding",
+    "title": "fix(pip): keep trackpad gestures from moving or resizing the floating panels",
+    "forkPRs": [
+      121
+    ],
+    "dependsOn": [],
+    "branch": "upstream/pip-gesture-forwarding",
+    "status": "branch-pushed",
+    "needsMedia": false,
+    "upstreamPR": null,
+    "userVisible": true
+  },
+  {
+    "slug": "little-window-redesign",
+    "title": "feat(window): little window opens on the command bar and turns into a page window",
+    "forkPRs": [
+      122
+    ],
+    "dependsOn": [],
+    "branch": "upstream/little-window-redesign",
+    "status": "branch-pushed",
+    "needsMedia": true,
+    "upstreamPR": null,
+    "userVisible": true
+  },
+  {
+    "slug": "hold-cmdq-to-quit",
+    "title": "feat(app): hold the quit shortcut to quit",
+    "forkPRs": [
+      117
+    ],
+    "dependsOn": [],
+    "branch": "upstream/hold-cmdq-to-quit",
+    "status": "todo",
+    "needsMedia": true,
+    "upstreamPR": null,
+    "userVisible": true
+  },
+  {
+    "slug": "split-pane-controls",
+    "title": "feat(splits): per-pane close and maximize controls",
+    "forkPRs": [
+      63
+    ],
+    "dependsOn": [],
+    "branch": "upstream/split-pane-controls",
+    "status": "todo",
+    "needsMedia": true,
+    "upstreamPR": null,
+    "userVisible": true
+  },
+  {
+    "slug": "agent-split-pane-controls",
+    "title": "fix(splits): give agent split panes working close and maximize controls",
+    "forkPRs": [
+      103,
+      115
+    ],
+    "dependsOn": [
+      "split-pane-controls",
+      "agent-split-focus"
+    ],
+    "branch": "upstream/agent-split-pane-controls",
+    "status": "todo",
+    "needsMedia": true,
+    "upstreamPR": null,
+    "userVisible": true
+  },
+  {
+    "slug": "split-flat-corners",
+    "title": "fix(splits): flat outer corners for split panes",
+    "forkPRs": [
+      115
+    ],
+    "dependsOn": [
+      "split-pane-margin"
+    ],
+    "branch": "upstream/split-flat-corners",
+    "status": "todo",
+    "needsMedia": true,
+    "upstreamPR": null,
+    "userVisible": true
+  },
+  {
+    "slug": "split-shortcuts",
+    "title": "fix(shortcuts): give the split view actions their keys by default",
+    "forkPRs": [
+      75
+    ],
+    "dependsOn": [
+      "split-pane-controls"
+    ],
+    "branch": "upstream/split-shortcuts",
+    "status": "todo",
+    "needsMedia": false,
+    "upstreamPR": null,
+    "userVisible": true
+  },
+  {
+    "slug": "split-pane-drag-drop",
+    "title": "feat(split): drag a pane to swap or re-dock it, with menu moves",
+    "forkPRs": [
+      116,
+      125
+    ],
+    "dependsOn": [
+      "split-pane-controls",
+      "split-pane-margin"
+    ],
+    "branch": "upstream/split-pane-drag-drop",
+    "status": "todo",
+    "needsMedia": true,
+    "upstreamPR": null,
+    "userVisible": true
+  },
+  {
+    "slug": "sidebar-narrow-range",
+    "title": "feat(sidebar): continuous narrow range to the rail's width",
+    "forkPRs": [
+      88,
+      93
+    ],
+    "dependsOn": [],
+    "branch": "upstream/sidebar-narrow-range",
+    "status": "todo",
+    "needsMedia": true,
+    "upstreamPR": null,
+    "userVisible": true
+  },
+  {
+    "slug": "sidebar-newtab-row",
+    "title": "fix(sidebar): keep the New Tab row's buttons and step its label down",
+    "forkPRs": [
+      98
+    ],
+    "dependsOn": [
+      "sidebar-narrow-range"
+    ],
+    "branch": "upstream/sidebar-newtab-row",
+    "status": "todo",
+    "needsMedia": true,
+    "upstreamPR": null,
+    "userVisible": true
+  },
+  {
+    "slug": "traffic-lights-narrow-range",
+    "title": "fix(sidebar): keep the window buttons through the sidebar's narrow range",
+    "forkPRs": [
+      101
+    ],
+    "dependsOn": [
+      "sidebar-narrow-range",
+      "traffic-lights-live-resize"
+    ],
+    "branch": "upstream/traffic-lights-narrow-range",
+    "status": "todo",
+    "needsMedia": true,
+    "upstreamPR": null,
+    "userVisible": true
+  },
+  {
+    "slug": "agent-debug-harness",
+    "title": "feat(app): run the agent harness headless in Debug builds",
+    "forkPRs": [
+      27,
+      38
+    ],
+    "dependsOn": [],
+    "branch": "upstream/agent-debug-harness",
+    "status": "todo",
+    "needsMedia": false,
+    "upstreamPR": null,
+    "userVisible": false
+  },
+  {
+    "slug": "agent-gate-structure",
+    "title": "fix(agent): decide the approval gate from the page's structure",
+    "forkPRs": [
+      31
+    ],
+    "dependsOn": [],
+    "branch": "upstream/agent-gate-structure",
+    "status": "todo",
+    "needsMedia": false,
+    "upstreamPR": null,
+    "userVisible": true
+  },
+  {
+    "slug": "agent-native-html5-drag",
+    "title": "fix(agent): run the HTML5 drag session for a native drag",
+    "forkPRs": [
+      33
+    ],
+    "dependsOn": [],
+    "branch": "upstream/agent-native-html5-drag",
+    "status": "todo",
+    "needsMedia": false,
+    "upstreamPR": null,
+    "userVisible": true
+  },
+  {
+    "slug": "agent-read-deltas",
+    "title": "feat(agent): viewport-scoped reads and post-action page deltas",
+    "forkPRs": [
+      59
+    ],
+    "dependsOn": [
+      "agent-gate-structure"
+    ],
+    "branch": "upstream/agent-read-deltas",
+    "status": "todo",
+    "needsMedia": false,
+    "upstreamPR": null,
+    "userVisible": true
+  },
+  {
+    "slug": "agent-action-log",
+    "title": "feat(agent): log each tool call to a local JSONL file",
+    "forkPRs": [
+      55
+    ],
+    "dependsOn": [
+      "agent-debug-harness"
+    ],
+    "branch": "upstream/agent-action-log",
+    "status": "todo",
+    "needsMedia": false,
+    "upstreamPR": null,
+    "userVisible": true
+  },
+  {
+    "slug": "agent-acp-custom-command",
+    "title": "feat(conversations): run a custom ACP command as an agent",
+    "forkPRs": [
+      35,
+      45
+    ],
+    "dependsOn": [],
+    "branch": "upstream/agent-acp-custom-command",
+    "status": "todo",
+    "needsMedia": true,
+    "upstreamPR": null,
+    "userVisible": true
+  },
+  {
+    "slug": "agent-saved-flows",
+    "title": "feat(agent): saved flows - record once, replay deterministically",
+    "forkPRs": [
+      77,
+      81,
+      83,
+      102
+    ],
+    "dependsOn": [
+      "agent-action-log",
+      "agent-read-deltas"
+    ],
+    "branch": "upstream/agent-saved-flows",
+    "status": "todo",
+    "needsMedia": false,
+    "upstreamPR": null,
+    "userVisible": true
+  },
+  {
+    "slug": "agent-eval-suite",
+    "title": "test(agent): add fixture agent tasks graded in code",
+    "forkPRs": [
+      29,
+      85
+    ],
+    "dependsOn": [
+      "agent-debug-harness",
+      "agent-saved-flows"
+    ],
+    "branch": "upstream/agent-eval-suite",
+    "status": "todo",
+    "needsMedia": false,
+    "upstreamPR": null,
+    "userVisible": false
+  },
+  {
+    "slug": "build-validate-quiet-json",
+    "title": "build(validate): print one line per check and JSON=1 for agents",
+    "forkPRs": [
+      28
+    ],
+    "dependsOn": [],
+    "branch": "upstream/build-validate-quiet-json",
+    "status": "todo",
+    "needsMedia": false,
+    "upstreamPR": null,
+    "userVisible": false
+  },
+  {
+    "slug": "build-check-tiers",
+    "title": "feat(build): quick check tiers with pre-commit and pre-push hooks",
+    "forkPRs": [
+      57,
+      79,
+      86,
+      92
+    ],
+    "dependsOn": [
+      "build-validate-quiet-json"
+    ],
+    "branch": "upstream/build-check-tiers",
+    "status": "todo",
+    "needsMedia": false,
+    "upstreamPR": null,
+    "userVisible": false
+  },
+  {
+    "slug": "test-deflake",
+    "title": "test: widen the ACP exit wait and press Escape until the overlay shell closes",
+    "forkPRs": [
+      94,
+      104
+    ],
+    "dependsOn": [],
+    "branch": "upstream/test-deflake",
+    "status": "todo",
+    "needsMedia": false,
+    "upstreamPR": null,
+    "userVisible": false
+  },
+  {
+    "slug": "build-bootstrap-checks",
+    "title": "build(setup): check the whole environment before bootstrap installs anything",
+    "forkPRs": [
+      71
+    ],
+    "dependsOn": [],
+    "branch": "upstream/build-bootstrap-checks",
+    "status": "pr-open",
+    "needsMedia": false,
+    "upstreamPR": 382,
+    "userVisible": false
+  },
+  {
+    "slug": "build-linux-checks",
+    "title": "build: add linux-checks and a Linux SwiftLint for agents on Linux",
+    "forkPRs": [
+      73
+    ],
+    "dependsOn": [],
+    "branch": "upstream/build-linux-checks",
+    "status": "pr-open",
+    "needsMedia": false,
+    "upstreamPR": 383,
+    "userVisible": false
+  },
+  {
+    "slug": "build-pnpm-workspace",
+    "title": "build: move lilo-ui, site and docs-site to one pnpm workspace",
+    "forkPRs": [],
+    "dependsOn": [],
+    "branch": "upstream/build-pnpm-workspace",
+    "status": "pr-open",
+    "needsMedia": false,
+    "upstreamPR": 384,
+    "userVisible": false
+  }
+]
