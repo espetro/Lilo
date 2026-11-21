@@ -871,6 +871,7 @@
 		"dozing": "休眠中",
 		"dozingHint": "已休眠以节省内存,打开时唤醒。",
 		"keepLoaded": "已保持加载",
+		"keepLoadedHint": "不休眠，随时可用。",
 		"pinned": "已固定",
 		"loading": "正在载入",
 		"muted": "已静音",

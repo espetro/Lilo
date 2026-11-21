@@ -871,6 +871,7 @@
 		"dozing": "Uśpiona",
 		"dozingHint": "Uśpiona, by oszczędzać pamięć. Wybudzi się po otwarciu.",
 		"keepLoaded": "Pozostaje wczytana",
+		"keepLoadedHint": "Nigdy nie śpi i jest zawsze gotowa.",
 		"pinned": "Przypięta",
 		"loading": "Wczytywanie",
 		"muted": "Wyciszona",
