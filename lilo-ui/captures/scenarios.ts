@@ -368,19 +368,19 @@ const REMOVE_LINES = [
 ];
 const APP_ICON = "data:image/svg+xml;base64," + Buffer.from('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64"><rect width="64" height="64" rx="14" fill="#6b7280"/></svg>').toString("base64");
 
-async function receive(page: Page, event: Record<string, unknown>) {
+async function send(page: Page, event: Record<string, unknown>) {
 	await page.evaluate((payload) => window.__lilo!.receive(payload), event);
 }
 
 async function openAgents(page: Page, cursorConfigured: boolean) {
-	await receive(page, { event: "openSettings" });
-	await receive(page, { event: "settingsLoaded", settings: { agentControlEnabled: "true" } });
+	await send(page, { event: "openSettings" });
+	await send(page, { event: "settingsLoaded", settings: { agentControlEnabled: "true" } });
 	await agentClients(page, cursorConfigured);
 	await page.locator(".section-nav-button").filter({ hasText: "Agents" }).click();
 }
 
 async function agentClients(page: Page, cursorConfigured: boolean) {
-	await receive(page, {
+	await send(page, {
 		event: "agentClientsLoaded",
 		clients: [
 			{ id: "claudeCode", configured: true, stale: false, icon: null },
@@ -399,7 +399,7 @@ const cursorPreview = (remove: boolean) => ({
 async function agentsConnectSheet(page: Page) {
 	await openAgents(page, false);
 	await page.locator(".agent-tile").filter({ hasText: "Cursor" }).getByRole("button", { name: "Connect" }).click();
-	await receive(page, cursorPreview(false));
+	await send(page, cursorPreview(false));
 	await expect(page.locator('[data-modal="agent-config"]')).toBeVisible();
 	await page.waitForTimeout(300);
 }
@@ -409,21 +409,21 @@ async function agentsConnectFlow(page: Page) {
 	await page.waitForTimeout(600);
 	const cursor = page.locator(".agent-tile").filter({ hasText: "Cursor" });
 	await cursor.getByRole("button", { name: "Connect" }).click();
-	await receive(page, cursorPreview(false));
+	await send(page, cursorPreview(false));
 	await expect(page.locator('[data-modal="agent-config"]')).toBeVisible();
 	await page.waitForTimeout(1800);
 	await page.getByRole("button", { name: /Add Lilo/ }).click();
 	await agentClients(page, true);
-	await receive(page, { event: "settingsActionCompleted", action: "connectAgentClient", message: "Added Lilo to Cursor", level: "info" });
+	await send(page, { event: "settingsActionCompleted", action: "connectAgentClient", message: "Added Lilo to Cursor", level: "info" });
 	await page.waitForTimeout(1200);
 	await cursor.getByRole("button", { name: "More actions for Cursor" }).click();
 	await page.waitForTimeout(500);
 	await page.getByRole("menuitem", { name: "Remove Lilo from Cursor…" }).click();
-	await receive(page, cursorPreview(true));
+	await send(page, cursorPreview(true));
 	await expect(page.locator('[data-modal="agent-config"]')).toBeVisible();
 	await page.waitForTimeout(1800);
 	await page.getByRole("button", { name: /Remove Lilo/ }).click();
 	await agentClients(page, false);
-	await receive(page, { event: "settingsActionCompleted", action: "connectAgentClient", message: "Removed Lilo", level: "info" });
+	await send(page, { event: "settingsActionCompleted", action: "connectAgentClient", message: "Removed Lilo", level: "info" });
 	await page.waitForTimeout(1200);
 }
