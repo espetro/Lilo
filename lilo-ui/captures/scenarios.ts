@@ -56,6 +56,10 @@ export const scenarios: CaptureScenario[] = [
 	...(["light", "dark"] as const).map((colorScheme) => ({ name: `agents-connect-sheet-${colorScheme}`, colorScheme, run: agentsConnectSheet })),
 	// Settings > Agents: Connect shows what it will write, writes it, then Remove takes Lilo out again.
 	{ name: "agents-connect-flow", run: agentsConnectFlow },
+	// Settings > Agents: the apps found on this Mac come first, the rest wait under "More apps".
+	...(["light", "dark"] as const).map((colorScheme) => ({ name: `agents-discovery-${colorScheme}`, colorScheme, run: agentsDiscovery })),
+	// Zed is found, Connect shows the file it will change, Add writes it, the tile reads Configured.
+	{ name: "agents-discovery-flow", run: agentsDiscoveryFlow },
 	// The start card, a search, Enter, then the page window's strip: the card grows into the window natively.
 	{ name: "little-flow", viewport: { width: 900, height: 640 }, boot: bootLittle, run: littleFlow },
 ];
@@ -383,12 +387,68 @@ async function agentClients(page: Page, cursorConfigured: boolean) {
 	await send(page, {
 		event: "agentClientsLoaded",
 		clients: [
-			{ id: "claudeCode", configured: true, stale: false, icon: null },
-			{ id: "cursor", configured: cursorConfigured, stale: false, icon: APP_ICON },
-			{ id: "codex", configured: false, stale: false, icon: null },
+			{ id: "claudeCode", configured: true, installed: true, stale: false, icon: null },
+			{ id: "cursor", configured: cursorConfigured, installed: true, stale: false, icon: APP_ICON },
+			{ id: "codex", configured: false, installed: false, stale: false, icon: null },
 		],
 		allowed: [],
 	});
+}
+
+async function discoveredClients(page: Page, zedConfigured: boolean) {
+	await send(page, {
+		event: "agentClientsLoaded",
+		clients: [
+			{ id: "claudeCode", configured: true, installed: true, stale: false, icon: null },
+			{ id: "claudeDesktop", configured: false, installed: false, stale: false, icon: null },
+			{ id: "codex", configured: false, installed: false, stale: false, icon: null },
+			{ id: "cursor", configured: true, installed: true, stale: false, icon: APP_ICON },
+			{ id: "zed", configured: zedConfigured, installed: true, stale: false, icon: APP_ICON },
+			{ id: "vscode", configured: false, installed: false, stale: false, icon: null },
+			{ id: "opencode", configured: false, installed: true, stale: false, icon: null },
+			{ id: "gemini", configured: false, installed: false, stale: false, icon: null },
+		],
+		allowed: [],
+	});
+}
+
+async function openDiscovery(page: Page, zedConfigured: boolean) {
+	await send(page, { event: "openSettings" });
+	await send(page, { event: "settingsLoaded", settings: { agentControlEnabled: "true" } });
+	await discoveredClients(page, zedConfigured);
+	await page.locator(".section-nav-button").filter({ hasText: "Agents" }).click();
+}
+
+async function agentsDiscovery(page: Page) {
+	await openDiscovery(page, false);
+	await page.getByRole("button", { name: "More apps" }).click();
+	await page.waitForTimeout(400);
+}
+
+async function agentsDiscoveryFlow(page: Page) {
+	await openDiscovery(page, false);
+	await page.waitForTimeout(1200);
+	const zed = page.locator(".agent-tile").filter({ hasText: "Zed" });
+	await zed.getByRole("button", { name: "Connect" }).click();
+	await send(page, {
+		event: "agentClientPreview", client: "zed", remove: false, path: "~/.config/zed/settings.json", command: null,
+		snippet: "{}", blocked: null,
+		lines: [
+			{ number: 2, removed: false, text: '  "context_servers" : {' },
+			{ number: 3, removed: false, text: '    "lilo" : {' },
+			{ number: 4, removed: false, text: '      "command" : "/Applications/Lilo.app/Contents/MacOS/lilo-mcp"' },
+			{ number: 5, removed: false, text: "    }" },
+			{ number: 6, removed: false, text: "  }," },
+		],
+	});
+	await expect(page.locator('[data-modal="agent-config"]')).toBeVisible();
+	await page.waitForTimeout(1800);
+	await page.getByRole("button", { name: /Add Lilo/ }).click();
+	await discoveredClients(page, true);
+	await send(page, { event: "settingsActionCompleted", action: "connectAgentClient", message: "Added Lilo to Zed", level: "info" });
+	await page.waitForTimeout(1500);
+	await page.getByRole("button", { name: "More apps" }).click();
+	await page.waitForTimeout(1500);
 }
 
 const cursorPreview = (remove: boolean) => ({
