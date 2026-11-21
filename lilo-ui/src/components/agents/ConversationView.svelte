@@ -22,6 +22,7 @@
   import { onDestroy, untrack } from "svelte";
   import { cubicOut } from "svelte/easing";
   import { fade } from "svelte/transition";
+  import { tabActions } from "../../lib/bridge/actions";
   import { reportInteractiveZone } from "../../lib/actions/interactiveZone";
   import { conversationActions } from "./conversationActions";
   import { announce } from "../../lib/announce";
@@ -352,6 +353,18 @@
     return getSplitPanes().find((pane) => tabs.get(pane.tabId)?.kind === "web")?.tabId ?? null;
   });
 
+  // In a split, the corners of the pane that are corners of the whole group go flat against the
+  // chrome, as the native panes' do; the pane shares are rounded to 0.001 by the host.
+  const inSplit = $derived(getSplitPanes().some((pane) => pane.tabId === tabId));
+  const EDGE = 0.001;
+  const flatCorners = $derived.by(() => {
+    const none = { tl: false, tr: false, bl: false, br: false };
+    if (!inSplit) return none;
+    const left = frame.x < EDGE, right = frame.x + frame.width > 1 - EDGE;
+    const top = frame.y < EDGE, bottom = frame.y + frame.height > 1 - EDGE;
+    return { tl: left && top, tr: right && top, bl: left && bottom, br: right && bottom };
+  });
+
   $effect(() => {
     void turns;
     void composerHeight;
@@ -566,6 +579,10 @@
     style:top="{frame.y * 100}%"
     style:width="{frame.width * 100}%"
     style:height="{frame.height * 100}%"
+    style:border-top-left-radius={flatCorners.tl ? "0" : undefined}
+    style:border-top-right-radius={flatCorners.tr ? "0" : undefined}
+    style:border-bottom-left-radius={flatCorners.bl ? "0" : undefined}
+    style:border-bottom-right-radius={flatCorners.br ? "0" : undefined}
     aria-label={header.title}
     use:reportInteractiveZone={{ id: `conversation-${tabId}` }}
     onkeydown={(event) => {
@@ -644,6 +661,15 @@
           <span class="ring" class:high={usagePercent >= 80} style:--context-used="{usagePercent}%"></span>
           {usagePercent}%
         </span>
+      {/if}
+      {#if inSplit}
+        <!-- The native pane pill sits under this surface, so a conversation pane carries its own controls. -->
+        <button type="button" class="pane-control" aria-label={t("splitPane.maximize")} use:tooltip={t("splitPane.maximize")} onclick={() => tabActions.maximizeSplitPane(tabId)}>
+          <Icon name="maximize" size={12} />
+        </button>
+        <button type="button" class="pane-control" aria-label={t("splitPane.close")} use:tooltip={t("splitPane.close")} onclick={() => tabActions.unsplitTab(tabId)}>
+          <Icon name="close" size={12} />
+        </button>
       {/if}
     </header>
 
@@ -1049,6 +1075,29 @@
     font: inherit;
     font-variant-numeric: tabular-nums;
     cursor: pointer;
+  }
+
+  .pane-control {
+    flex: none;
+    display: grid;
+    place-items: center;
+    width: 22px;
+    height: 22px;
+    padding: 0;
+    border: 0;
+    border-radius: var(--radius-sm);
+    background: none;
+    color: var(--text-secondary);
+    cursor: pointer;
+  }
+
+  .pane-control:hover {
+    background: var(--bg-hover);
+    color: var(--text-primary);
+  }
+
+  .pane-control:focus-visible {
+    outline: var(--focus-outline);
   }
 
   .changes:hover {

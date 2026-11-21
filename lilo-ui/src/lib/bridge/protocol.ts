@@ -723,6 +723,8 @@ export interface BridgeCommandPayloadMap {
 	splitTab: { tabId: string; side: SplitDropSide; targetTabId?: string };
 	/** Takes a split pane's tab out of the split, back into the list; the tab stays open. */
 	unsplitTab: { tabId: string };
+	/** Leaves a split pane's tab as the split's only pane; the others return to the list. */
+	maximizeSplitPane: { tabId: string };
 	splitURL: { url: string; side: SplitDropSide; targetTabId?: string };
 	openDroppedLinks: { urls: string[] } & BridgeLinkDropTarget;
 	peekURL: { url: string };

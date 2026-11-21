@@ -162,3 +162,16 @@ test("tabActions.unsplitTab forwards the pane's tab id", async () => {
 		payload: { tabId: "tab-beta" },
 	});
 });
+
+test("tabActions.maximizeSplitPane forwards the pane's tab id", async () => {
+	postedMessages.length = 0;
+	installBridgeWindow();
+
+	const { tabActions } = await import("./bridge/actions");
+	tabActions.maximizeSplitPane("tab-beta");
+
+	assert.deepEqual(postedMessages.at(-1), {
+		action: "maximizeSplitPane",
+		payload: { tabId: "tab-beta" },
+	});
+});
