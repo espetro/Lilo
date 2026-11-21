@@ -1440,6 +1440,12 @@
 		"resetTitle": "Recursos alterados",
 		"reloadNote": "Recarregue uma página para a mudança valer"
 	},
+	"little": {
+		"openIn": "Abrir em {space}",
+		"openInMenu": "Abrir em outro Espaço",
+		"copyLink": "Copiar link",
+		"linkCopied": "Link copiado"
+	},
 	"urlToast": {
 		"pageActions": "Ações da página",
 		"reEnableBlocking": "Reativar bloqueio neste site",

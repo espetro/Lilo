@@ -53,6 +53,14 @@
 
   setTopLevelDomains(TOP_LEVEL_DOMAINS);
 
+  interface Props {
+    /** Escape on a bar in place (docked), once there is no scope or move left to leave: a window that is only the bar closes with it. */
+    onEscape?: () => void;
+    /** The scope chips offered; all of them by default. */
+    scopes?: CommandScope[];
+  }
+  let { onEscape, scopes }: Props = $props();
+
   const SCOPE_HINTS: Array<{
     prefix: string;
     labelKey: string;
@@ -67,7 +75,7 @@
     { prefix: "<", labelKey: "commandBar.scopeArchive", scope: "archive" },
   ];
   const scopeHints = $derived(
-    SCOPE_HINTS.filter((hint) => hint.scope !== "terminal" || getSetting("terminalEnabled", "true") !== "false").map(
+    SCOPE_HINTS.filter((hint) => scopes ? scopes.includes(hint.scope) : hint.scope !== "terminal" || getSetting("terminalEnabled", "true") !== "false").map(
       (hint) => ({ ...hint, label: t(hint.labelKey) }),
     ),
   );
@@ -286,6 +294,8 @@
         } else if (!docked) {
           closeCommandBar();
           postMessage("focusPage");
+        } else {
+          onEscape?.();
         }
         break;
       case "ArrowDown":
@@ -645,7 +655,7 @@
           <span>{t(key === "newTab" && activeScope === "terminal" ? "commandBar.hintSplit" : RESULT_KEY_HINTS[key].labelKey)}</span><kbd class="keycap">{formatShortcut(RESULT_KEY_HINTS[key].keys)}</kbd>
         </span>
       {/each}
-      {#if !docked || movingTab || escapeLeavesScope}
+      {#if !docked || movingTab || escapeLeavesScope || onEscape}
         <span class="key-hint"><span>{t(movingTab || escapeLeavesScope ? "common.back" : "common.close")}</span><kbd class="keycap">esc</kbd></span>
       {/if}
     </div>

@@ -1440,6 +1440,12 @@
 		"resetTitle": "Changed flags",
 		"reloadNote": "Reload a page for a change to take effect"
 	},
+	"little": {
+		"openIn": "Open in {space}",
+		"openInMenu": "Open in another Space",
+		"copyLink": "Copy link",
+		"linkCopied": "Link copied"
+	},
 	"urlToast": {
 		"pageActions": "Page actions",
 		"reEnableBlocking": "Re-enable blocking on this site",

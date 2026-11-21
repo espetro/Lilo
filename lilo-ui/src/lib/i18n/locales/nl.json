@@ -1440,6 +1440,12 @@
 		"resetTitle": "Gewijzigde vlaggen",
 		"reloadNote": "Herlaad een pagina om een wijziging toe te passen"
 	},
+	"little": {
+		"openIn": "Openen in {space}",
+		"openInMenu": "Openen in een andere Ruimte",
+		"copyLink": "Link kopiëren",
+		"linkCopied": "Link gekopieerd"
+	},
 	"urlToast": {
 		"pageActions": "Pagina-acties",
 		"reEnableBlocking": "Schakel blokkering op deze website weer in",

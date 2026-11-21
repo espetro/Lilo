@@ -1440,6 +1440,12 @@
 		"resetTitle": "変更したフラグ",
 		"reloadNote": "変更を反映するにはページを再読み込みしてください"
 	},
+	"little": {
+		"openIn": "{space}で開く",
+		"openInMenu": "別のスペースで開く",
+		"copyLink": "リンクをコピー",
+		"linkCopied": "リンクをコピーしました"
+	},
 	"urlToast": {
 		"pageActions": "ページのアクション",
 		"reEnableBlocking": "このサイトでブロックを再び有効にする",

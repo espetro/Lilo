@@ -1440,6 +1440,12 @@
 		"resetTitle": "변경된 플래그",
 		"reloadNote": "변경 사항을 적용하려면 페이지를 새로 고치세요"
 	},
+	"little": {
+		"openIn": "{space}에서 열기",
+		"openInMenu": "다른 스페이스에서 열기",
+		"copyLink": "링크 복사",
+		"linkCopied": "링크를 복사했습니다"
+	},
 	"urlToast": {
 		"pageActions": "페이지 동작",
 		"reEnableBlocking": "이 사이트에서 차단 다시 활성화",
