@@ -22,6 +22,10 @@ final class PagePopupController: NSObject, NSWindowDelegate {
     /// Set once the engine leaves for a tab or is torn down, so it is never torn down twice.
     private var isDetached = false
 
+    /// Tests set it so a popup's window never draws: transparent, click-through and without the order-in animation
+    /// (which the window server draws whatever the alpha) from its first frame. Layout and ordering stay as in production.
+    static var isQuiet = false
+
     /// The opener can take the popup as a split pane; the split button shows only then.
     var canOpenInSplit: Bool {
         get { header.showsSplitButton }
@@ -97,6 +101,11 @@ final class PagePopupController: NSObject, NSWindowDelegate {
         self.window = window
         // A child window stays above the browser window and follows it, in full screen too.
         parent?.addChildWindow(window, ordered: .above)
+        if Self.isQuiet {
+            window.animationBehavior = .none
+            window.alphaValue = 0
+            window.ignoresMouseEvents = true
+        }
         window.makeKeyAndOrderFront(nil)
         window.makeFirstResponder(engine.wkWebView)
     }

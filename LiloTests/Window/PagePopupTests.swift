@@ -12,6 +12,7 @@ final class PagePopupTests: XCTestCase {
 
     override func setUp() async throws {
         try await super.setUp()
+        PagePopupController.isQuiet = true
         browserContext = try await TemporaryBrowserContext()
         let context = browserContext.context
         let profileId = try context.profileManager!.createProfile(name: "P").id
@@ -27,6 +28,7 @@ final class PagePopupTests: XCTestCase {
         controller.pagePopups.values.forEach { $0.close() }
         browserContext.tearDown()
         browserContext = nil
+        PagePopupController.isQuiet = false
         super.tearDown()
     }
 
