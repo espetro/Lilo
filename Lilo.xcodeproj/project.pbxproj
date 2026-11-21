@@ -78,6 +78,7 @@
 		1CEC153E1E0A0B1296F05FA5 /* OnboardingBridgeHandler.swift in Sources */ = {isa = PBXBuildFile; fileRef = 21CBF2CECED5FF3B333E0F12 /* OnboardingBridgeHandler.swift */; };
 		1D282EE56062F8B5B3C61982 /* MainWindowController+ContextMenus.swift in Sources */ = {isa = PBXBuildFile; fileRef = A37F0047420C72EA77BB0C44 /* MainWindowController+ContextMenus.swift */; };
 		1D8306F9ED572414E6AFE833 /* TerminalCompletions.swift in Sources */ = {isa = PBXBuildFile; fileRef = C308A6487544F4E821759B91 /* TerminalCompletions.swift */; };
+		1DF33AA21C4E4CB33A1F0D4A /* PiPGesturePanel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9B0C75A8C5335AED40A7A52C /* PiPGesturePanel.swift */; };
 		1E8744E7EE12369E201FAFEA /* ManagementBridgeHandler.swift in Sources */ = {isa = PBXBuildFile; fileRef = F13AD66F688CF5229E923F2B /* ManagementBridgeHandler.swift */; };
 		1EA74A19A55E129FEA5DF2EA /* HoldToQuit.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6E1EE2064C2DB7CF5B53EE67 /* HoldToQuit.swift */; };
 		1EE31432557F6C48ECF47F1E /* ChromeUISchemeHandler.swift in Sources */ = {isa = PBXBuildFile; fileRef = 755E59CD12C3DF964183494A /* ChromeUISchemeHandler.swift */; };
@@ -148,6 +149,7 @@
 		34414D3C7093E9EEDBD716C8 /* GapEvents.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6FC4131C839D5564A7F9EEAA /* GapEvents.swift */; };
 		349D733F4E55536C3E513BE9 /* SearchBridgeHandler.swift in Sources */ = {isa = PBXBuildFile; fileRef = 17188329F1CF9C309918FE26 /* SearchBridgeHandler.swift */; };
 		34F6E3D8E230BA75040D0042 /* NotificationPolyfillTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 26FC433BB1995D1405AE72C7 /* NotificationPolyfillTests.swift */; };
+		354199D1BE0D156F29A0A0C8 /* PiPGesturePanelTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5395C37193BB8380A9B7805F /* PiPGesturePanelTests.swift */; };
 		359479FFF38FCD1BECB8765B /* WhatsNewState.swift in Sources */ = {isa = PBXBuildFile; fileRef = A73278F1D994555FC508B042 /* WhatsNewState.swift */; };
 		359B0303E864CAAD4BF2547F /* SettingsBrowsingDataTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8645B8F8EB009D2DAC91F097 /* SettingsBrowsingDataTests.swift */; };
 		35A7D121BD1830203D2DE226 /* ChromeEventRouter.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8A86C2389EAAC79694C75E7A /* ChromeEventRouter.swift */; };
@@ -1066,6 +1068,7 @@
 		5135E1934C469BB54C50A03D /* SidebarState.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SidebarState.swift; sourceTree = "<group>"; };
 		513EBD65646989BED9E5174A /* BrowserChangePresenterTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BrowserChangePresenterTests.swift; sourceTree = "<group>"; };
 		525B826141A01CE9CBD3F341 /* TinyHTTPServer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TinyHTTPServer.swift; sourceTree = "<group>"; };
+		5395C37193BB8380A9B7805F /* PiPGesturePanelTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PiPGesturePanelTests.swift; sourceTree = "<group>"; };
 		54606608AFEE53B274E62005 /* WebKitFork.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WebKitFork.swift; sourceTree = "<group>"; };
 		54C7AD05F320FDBFFBE9686D /* fr.arouillard.lilo.beta.power.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = fr.arouillard.lilo.beta.power.plist; sourceTree = "<group>"; };
 		552F286BB712D9077DE2C288 /* TabDockController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TabDockController.swift; sourceTree = "<group>"; };
@@ -1293,6 +1296,7 @@
 		9A6C133268E79C157E6C2D45 /* PerfSignposts.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PerfSignposts.swift; sourceTree = "<group>"; };
 		9AAEE5750731C25443F336A5 /* KeepAwakeStatusItem.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KeepAwakeStatusItem.swift; sourceTree = "<group>"; };
 		9AB8B9618FE85A3078DF27CE /* HistoryImportTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HistoryImportTests.swift; sourceTree = "<group>"; };
+		9B0C75A8C5335AED40A7A52C /* PiPGesturePanel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PiPGesturePanel.swift; sourceTree = "<group>"; };
 		9B1BD2C68BF3CDCF19C4F6B2 /* DebuggerBridgeHandler.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DebuggerBridgeHandler.swift; sourceTree = "<group>"; };
 		9B3396B3C0B786201D65762F /* Localizable.strings */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = Localizable.strings; path = "zh-Hant.lproj/Localizable.strings"; sourceTree = "<group>"; };
 		9B4A29B20C87F53245DEF9AE /* TabsBridgeHandler.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TabsBridgeHandler.swift; sourceTree = "<group>"; };
@@ -1704,6 +1708,7 @@
 				49FDF64515A5A6AA694D292F /* FloatingTabPanelController.swift */,
 				8313C9333B9A2BFADFF9DB18 /* MainWindowController+DocumentPiP.swift */,
 				6F6ED6D5C416BB6186B04F06 /* MainWindowController+TabDock.swift */,
+				9B0C75A8C5335AED40A7A52C /* PiPGesturePanel.swift */,
 				552F286BB712D9077DE2C288 /* TabDockController.swift */,
 			);
 			path = PictureInPicture;
@@ -1911,6 +1916,7 @@
 			children = (
 				B45064E061C0179A0E09E79D /* DocumentPiPControllerTests.swift */,
 				701C19D4AB3D4D44D9B3D841 /* FloatingTabPanelControllerTests.swift */,
+				5395C37193BB8380A9B7805F /* PiPGesturePanelTests.swift */,
 				3DB6014F5EBAD318EBFE4320 /* TabDockControllerTests.swift */,
 			);
 			path = PictureInPicture;
@@ -3425,6 +3431,7 @@
 				DFE84DF26A5EA74CC64BFFF0 /* PerfSignposts.swift in Sources */,
 				131FB963079F34383BD546A1 /* PermissionsBridgeHandler.swift in Sources */,
 				A03F4B7057F46522DB7AB633 /* PiPController.swift in Sources */,
+				1DF33AA21C4E4CB33A1F0D4A /* PiPGesturePanel.swift in Sources */,
 				C2A0D86EAD724AFDD2E45DEF /* PopupCloseScriptHandler.swift in Sources */,
 				4A95DA111D4E4775A954D9A6 /* PowerBridgeHandler.swift in Sources */,
 				2FFC247D82353835C6F12099 /* PowerHelperLink.swift in Sources */,
@@ -3740,6 +3747,7 @@
 				922031823FE499EB77C4FEC8 /* PermissionOriginKeyTests.swift in Sources */,
 				7D7988BEE1D150754F30CDF8 /* PermissionRequestQueueTests.swift in Sources */,
 				8E05C3D97CC6FCBF59160FE4 /* PiPControllerTests.swift in Sources */,
+				354199D1BE0D156F29A0A0C8 /* PiPGesturePanelTests.swift in Sources */,
 				7A3BF072BEE3BDACE54D4E50 /* PiPReturnToTabTests.swift in Sources */,
 				D56E2E6D89E2341C6EE235EB /* PolishLocalizationTests.swift in Sources */,
 				02362E91F2D579C8F5B3B0F1 /* PortBenchmarkTests.swift in Sources */,
