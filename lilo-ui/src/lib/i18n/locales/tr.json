@@ -950,6 +950,13 @@
 		"bottom": "Altta aç",
 		"replace": "Değiştir"
 	},
+	"paneMove": {
+		"left": "Sola taşı",
+		"right": "Sağa taşı",
+		"top": "Üste taşı",
+		"bottom": "Alta taşı",
+		"replace": "Yer değiştir"
+	},
 	"splitPane": {
 		"close": "Bölünmüş bölmeyi kapat",
 		"maximize": "Bölünmüş bölümü büyüt"
@@ -2140,6 +2147,10 @@
 		"Separate Split View": "Bölünmüş Görünümü Ayır",
 		"Close Split Pane": "Bölünmüş bölmeyi kapat",
 		"Maximize Split Pane": "Bölünmüş bölümü büyüt",
+		"Move Pane Left": "Bölünmüş bölmeyi sola taşı",
+		"Move Pane Right": "Bölünmüş bölmeyi sağa taşı",
+		"Move Pane Up": "Bölünmüş bölmeyi yukarı taşı",
+		"Move Pane Down": "Bölünmüş bölmeyi aşağı taşı",
 		"Open in Split View": "Bölünmüş Görünümde Aç",
 		"Split view is full (%lld panes)": "Bölünmüş görünüm dolu (%lld bölme)",
 		"Hide Element…": "Öğeyi Gizle…",
