@@ -434,8 +434,10 @@ is drawn by AppKit and each web view by WebKit's own snapshot, so vibrancy and t
    file with your code. Documentation, tests and build tooling usually need no fragment.
    `CHANGELOG.md` is updated when a maintainer prepares the release. CI warns on a pull request that
    changes `Lilo/` or `lilo-ui/src/` without a note.
-5. Open the pull request. The template asks what it does, how to test it, and for a screenshot or
-   recording of any UI change.
+5. Open the pull request. The template asks what it does, how to test it, and for before and after
+   captures (light and dark; a gif or short video for motion) of any UI change: see
+   [Capturing UI media](#capturing-ui-media) and [Capture the main window for a pull request](#capture-the-main-window-for-a-pull-request).
+   Review needs them: a reviewer cannot judge spacing, alignment or motion from a diff.
 
 Commit messages and pull request titles follow
 [Conventional Commits](https://www.conventionalcommits.org/en/v1.0.0/):
