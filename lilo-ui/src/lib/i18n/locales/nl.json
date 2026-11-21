@@ -1473,7 +1473,10 @@
 		"openIn": "Openen in {space}",
 		"openInMenu": "Openen in een andere Ruimte",
 		"copyLink": "Link kopiëren",
-		"linkCopied": "Link gekopieerd"
+		"linkCopied": "Link gekopieerd",
+		"placeholder": "Zoek of voer een URL in...",
+		"emptyTitle": "Zoek op het web of voer een URL in",
+		"emptySubtitle": "Typ / om bezochte pagina's te doorzoeken."
 	},
 	"urlToast": {
 		"pageActions": "Pagina-acties",

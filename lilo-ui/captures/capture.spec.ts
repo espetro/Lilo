@@ -16,15 +16,16 @@ for (const scenario of scenarios) {
 	test(`capture ${scenario.name}`, async ({ browser }, testInfo) => {
 		const browserDir = `${outDir}/${testInfo.project.name}`;
 		mkdirSync(browserDir, { recursive: true });
+		const viewport = scenario.viewport ?? { width: 1280, height: 800 };
 		const context = await browser.newContext({
-			viewport: { width: 1280, height: 800 },
+			viewport,
 			deviceScaleFactor: 2,
 			colorScheme: scenario.colorScheme ?? "light",
 			locale: scenario.locale ?? "en-US",
-			recordVideo: { dir: browserDir, size: { width: 1280, height: 800 } },
+			recordVideo: { dir: browserDir, size: viewport },
 		});
 		const page = await context.newPage();
-		await bootChrome(page, scenario.world ?? initialWorld());
+		await (scenario.boot ?? bootChrome)(page, scenario.world ?? initialWorld());
 		await scenario.run(page);
 		await page.screenshot({ path: `${browserDir}/${scenario.name}.png` });
 		const video = page.video();

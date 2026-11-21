@@ -1473,7 +1473,10 @@
 		"openIn": "Abrir en {space}",
 		"openInMenu": "Abrir en otro Espacio",
 		"copyLink": "Copiar enlace",
-		"linkCopied": "Enlace copiado"
+		"linkCopied": "Enlace copiado",
+		"placeholder": "Busca o introduce una URL...",
+		"emptyTitle": "Busca en la web o introduce una URL",
+		"emptySubtitle": "Escribe / para buscar en las páginas que visitaste."
 	},
 	"urlToast": {
 		"pageActions": "Acciones de la página",

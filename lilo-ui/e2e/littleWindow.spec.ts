@@ -27,6 +27,8 @@ test("the start view is the command bar in place, focused, with no tab, Space or
 	await expect(page.locator(".command-bar-backdrop.docked")).toBeVisible();
 	await expect(page.locator(".command-bar-input")).toBeFocused();
 	await expect(page.locator(".little-bar")).toHaveCount(0);
+	// Nothing about tabs or actions: the bar has none here.
+	await expect(page.locator(".command-bar-input")).toHaveAttribute("placeholder", "Search or enter URL...");
 	await page.locator(".command-bar-input").fill(":settings");
 	await expect(page.locator(".command-bar-section-title", { hasText: "Actions" })).toHaveCount(0);
 	// Chips for what a window without tabs can search: everything and history.

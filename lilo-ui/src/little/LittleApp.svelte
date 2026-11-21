@@ -60,7 +60,11 @@
   {:else}
     <LittleBar {little} />
   {/if}
-  <CommandBar onEscape={littleActions.close} scopes={["all", "history"]} />
+  <CommandBar
+    onEscape={littleActions.close}
+    scopes={["all", "history"]}
+    copy={{ placeholder: t("little.placeholder"), emptyTitle: t("little.emptyTitle"), emptySubtitle: t("little.emptySubtitle") }}
+  />
 </div>
 
 <style>

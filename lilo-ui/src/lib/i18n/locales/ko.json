@@ -1473,7 +1473,10 @@
 		"openIn": "{space}에서 열기",
 		"openInMenu": "다른 스페이스에서 열기",
 		"copyLink": "링크 복사",
-		"linkCopied": "링크를 복사했습니다"
+		"linkCopied": "링크를 복사했습니다",
+		"placeholder": "검색하거나 URL 입력...",
+		"emptyTitle": "웹을 검색하거나 URL을 입력하세요",
+		"emptySubtitle": "/ 를 입력하면 방문한 페이지를 검색합니다."
 	},
 	"urlToast": {
 		"pageActions": "페이지 동작",

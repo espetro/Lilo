@@ -1473,7 +1473,10 @@
 		"openIn": "在 {space} 中開啟",
 		"openInMenu": "在其他空間中開啟",
 		"copyLink": "拷貝連結",
-		"linkCopied": "連結已拷貝"
+		"linkCopied": "連結已拷貝",
+		"placeholder": "搜尋或輸入網址...",
+		"emptyTitle": "搜尋網頁或輸入網址",
+		"emptySubtitle": "輸入 / 可搜尋你造訪過的頁面。"
 	},
 	"urlToast": {
 		"pageActions": "頁面操作",

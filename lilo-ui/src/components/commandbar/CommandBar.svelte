@@ -62,8 +62,10 @@
     onEscape?: () => void;
     /** The scope chips offered; all of them by default. */
     scopes?: CommandScope[];
+    /** What the field and the empty list say before anything is typed, for a bar that does not search tabs and actions. */
+    copy?: { placeholder: string; emptyTitle: string; emptySubtitle: string };
   }
-  let { onEscape, scopes }: Props = $props();
+  let { onEscape, scopes, copy }: Props = $props();
 
   const SCOPE_HINTS: Array<{
     prefix: string;
@@ -536,7 +538,7 @@
       case "archive":
         return t("commandBar.placeholderArchive");
       case "all":
-        return t("commandBar.placeholderAll");
+        return copy?.placeholder ?? t("commandBar.placeholderAll");
     }
   }
 
@@ -559,7 +561,7 @@
       case "archive":
         return t("commandBar.emptyTitleArchive");
       case "all":
-        return t("commandBar.emptyTitleAll");
+        return copy?.emptyTitle ?? t("commandBar.emptyTitleAll");
     }
   }
 
@@ -582,7 +584,7 @@
       case "archive":
         return t("commandBar.emptySubtitleArchive");
       case "all":
-        return t("commandBar.emptySubtitleAll");
+        return copy?.emptySubtitle ?? t("commandBar.emptySubtitleAll");
     }
   }
 </script>

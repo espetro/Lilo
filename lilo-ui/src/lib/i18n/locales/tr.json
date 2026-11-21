@@ -1473,7 +1473,10 @@
 		"openIn": "{space} içinde aç",
 		"openInMenu": "Başka bir Alanda aç",
 		"copyLink": "Bağlantıyı kopyala",
-		"linkCopied": "Bağlantı kopyalandı"
+		"linkCopied": "Bağlantı kopyalandı",
+		"placeholder": "Ara veya URL gir...",
+		"emptyTitle": "Web'de ara veya bir URL gir",
+		"emptySubtitle": "Ziyaret ettiğin sayfalarda aramak için / yaz."
 	},
 	"urlToast": {
 		"pageActions": "Sayfa işlemleri",
