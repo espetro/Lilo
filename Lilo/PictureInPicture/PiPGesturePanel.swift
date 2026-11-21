@@ -42,7 +42,9 @@ class PiPGesturePanel: NSPanel {
             panMovesWindow = nil
             return
         }
-        if panMovesWindow == nil { panMovesWindow = shouldMoveWindow(for: event) }
+        if event.phase.contains(.began) || panMovesWindow == nil {
+            panMovesWindow = shouldMoveWindow(for: event)
+        }
         if panMovesWindow == true {
             // Natural scrolling reports the delta as the content's travel under the fingers:
             // adding it makes the window follow the fingers like a dragged sheet.
