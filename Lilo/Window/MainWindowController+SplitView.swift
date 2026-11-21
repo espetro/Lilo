@@ -345,6 +345,7 @@ final class SplitPaneHandleView: NSView {
     /// the 8pt gap between them).
     override func resetCursorRects() {
         super.resetCursorRects()
+        guard revealed else { return }
         let pill = pill.frame
         for (x, width) in [(CGFloat(0), CGFloat(5)), (29, 8), (61, 5)] {
             addCursorRect(NSRect(x: pill.minX + x, y: pill.minY, width: width, height: pill.height), cursor: .openHand)
@@ -370,6 +371,7 @@ final class SplitPaneHandleView: NSView {
     func setRevealed(_ revealed: Bool) {
         guard revealed != self.revealed else { return }
         self.revealed = revealed
+        unsafe window?.invalidateCursorRects(for: self)
         // A fade, so Reduce motion keeps it; a plain alphaValue set on a layer-backed view would not animate.
         NSAnimationContext.runAnimationGroup { context in
             context.duration = Self.fadeDuration
