@@ -50,6 +50,11 @@ CI retries once and reports the retried set; local runs fail on the first flake 
   (lilo-ui/e2e/largeSidebar.spec.ts:155) — failed once on a loaded Debian box at
   1381 ms (docs/LINUX-AGENTS.md measurements). A perf assertion inside a functional
   suite: it flakes under load and its budget is not adjustable.
+- Local `make e2e` on a loaded Mac: 749 passed, 4 failed twice in a row
+  (agentPicker row height, dnd favorites-grid columns, pinnedDivider command-bar
+  scope, sidebarTree arrow keys). Deterministic under load on this machine —
+  either timing-sensitive specs or real regressions on the tested base; the
+  flaky ledger below exists so this set gets measured instead of guessed.
 - 104 `Task.sleep`/`Thread.sleep` call sites across 42 Swift test files (heaviest:
   RealExtensionSmokeTests 10, ProfileExtensionRegistryTests 6, TerminalSessionTests 4).
 
