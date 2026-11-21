@@ -694,7 +694,8 @@ final class SplitPanesController {
             handle.removeFromSuperview()
             handles[tabId] = nil
         }
-        for (tabId, frame) in panes where tabManager.loadedContentView(forTabId: tabId) != nil {
+        // A conversation pane draws in the chrome, over any native pill: its header carries the controls.
+        for (tabId, frame) in panes where tabManager.loadedContentView(forTabId: tabId) != nil && tabManager.tab(for: tabId)?.kind != .agent {
             let handle = handles[tabId] ?? makeHandle(for: tabId)
             handle.frame = Self.handleFrame(in: frame)
             if unsafe handle.superview !== container {

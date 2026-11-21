@@ -135,6 +135,7 @@ final class TabBridgeHandler: BridgeHandler {
         "showChanges",
         "splitTab",
         "unsplitTab",
+        "maximizeSplitPane",
         "splitURL",
         "openDroppedLinks",
         "peekURL",
@@ -411,6 +412,9 @@ final class TabBridgeHandler: BridgeHandler {
 
         case "unsplitTab":
             if let tabId = message.uuid("tabId") { windowController?.unsplitTab(tabId) }
+
+        case "maximizeSplitPane":
+            if let tabId = message.uuid("tabId") { windowController?.maximizeSplitPane(tabId) }
 
         case "closeSplitView":
             windowController?.closeSplitView(nil)

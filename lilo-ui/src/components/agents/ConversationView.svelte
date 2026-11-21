@@ -22,6 +22,7 @@
   import { onDestroy, untrack } from "svelte";
   import { cubicOut } from "svelte/easing";
   import { fade } from "svelte/transition";
+  import { tabActions } from "../../lib/bridge/actions";
   import { reportInteractiveZone } from "../../lib/actions/interactiveZone";
   import { conversationActions } from "./conversationActions";
   import { announce } from "../../lib/announce";
@@ -661,6 +662,15 @@
           {usagePercent}%
         </span>
       {/if}
+      {#if inSplit}
+        <!-- The native pane pill sits under this surface, so a conversation pane carries its own controls. -->
+        <button type="button" class="pane-control" aria-label={t("splitPane.maximize")} use:tooltip={t("splitPane.maximize")} onclick={() => tabActions.maximizeSplitPane(tabId)}>
+          <Icon name="maximize" size={12} />
+        </button>
+        <button type="button" class="pane-control" aria-label={t("splitPane.close")} use:tooltip={t("splitPane.close")} onclick={() => tabActions.unsplitTab(tabId)}>
+          <Icon name="close" size={12} />
+        </button>
+      {/if}
     </header>
 
     <div
@@ -1065,6 +1075,29 @@
     font: inherit;
     font-variant-numeric: tabular-nums;
     cursor: pointer;
+  }
+
+  .pane-control {
+    flex: none;
+    display: grid;
+    place-items: center;
+    width: 22px;
+    height: 22px;
+    padding: 0;
+    border: 0;
+    border-radius: var(--radius-sm);
+    background: none;
+    color: var(--text-secondary);
+    cursor: pointer;
+  }
+
+  .pane-control:hover {
+    background: var(--bg-hover);
+    color: var(--text-primary);
+  }
+
+  .pane-control:focus-visible {
+    outline: var(--focus-outline);
   }
 
   .changes:hover {
