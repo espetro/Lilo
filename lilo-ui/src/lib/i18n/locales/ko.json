@@ -169,7 +169,8 @@
 			"profiles": "프로필",
 			"otherAppLinks": "다른 앱의 링크",
 			"blockerExceptions": "목록 및 예외",
-			"agentConversations": "대화"
+			"agentConversations": "대화",
+			"beta": "베타 모드"
 		},
 		"searchPlaceholder": "설정 검색",
 		"searchResultsTitle": "검색 결과",
@@ -218,7 +219,10 @@
 				"executable": "명령",
 				"arguments": "인자, 한 줄에 하나",
 				"environment": "환경, 한 줄에 NAME=값",
-				"note": "명령은 표준 입출력으로 Agent Client Protocol을 사용하는 실행 파일의 전체 경로입니다."
+				"note": "명령은 표준 입출력으로 Agent Client Protocol을 사용하는 실행 파일의 전체 경로입니다.",
+				"title": "사용자 지정 에이전트",
+				"description": "레지스트리의 에이전트 옆에 직접 만든 프로그램을 에이전트로 실행합니다.",
+				"keywords": "사용자 지정 에이전트 명령 acp 로컬 스크립트 환경 변수 인자"
 			},
 			"appIcon": {
 				"title": "앱 아이콘",
@@ -622,6 +626,25 @@
 				"reset": "기본값 복원",
 				"resetTitle": "Lilo 프롬프트를 복원할까요?",
 				"resetMessage": "변경 사항이 기본 프롬프트로 대체됩니다."
+			},
+			"tabSleepAllowlist": {
+				"title": "계속 로드할 사이트",
+				"description": "이 사이트(하위 도메인 포함)의 탭은 절대 동결되거나 언로드되지 않으므로 메모리와 배터리를 계속 사용합니다. 쉼표로 구분합니다.",
+				"keywords": "로드 유지 예외 허용 목록 절전 안 함 동결 언로드",
+				"placeholder": "mail.example.com, example.org"
+			},
+			"betaUpdateCheck": {
+				"title": "베타 업데이트",
+				"description": "이 베타는 시작할 때 한 번만 자체 빌드를 포크의 최신 릴리스와 비교합니다.",
+				"keywords": "베타 업데이트",
+				"check": "베타 확인",
+				"lastChecked": "{time}에 확인함",
+				"absent": "이 빌드에는 베타 피드가 없습니다."
+			},
+			"betaUpdateRelease": {
+				"title": "베타 {tag}가 나왔습니다",
+				"description": "릴리스 페이지에서 직접 내려받아 설치합니다. Lilo는 스스로를 교체하지 않습니다.",
+				"open": "릴리스 열기"
 			}
 		},
 		"devices": {
@@ -688,7 +711,9 @@
 			"status": {
 				"acting": "작업 중",
 				"connected": "연결됨",
-				"allowed": "허용됨"
+				"allowed": "허용됨",
+				"notInstalled": "설치되지 않음",
+				"ready": "설정됨"
 			},
 			"allowedSeen": "허용됨, 마지막 접속 {time}",
 			"foundLine": "이 Mac에 있음",
@@ -715,7 +740,8 @@
 				"removeSite": "{site} 제거",
 				"floor": "로그인, 결제, 구매, 삭제, 게시, 다른 사이트로의 데이터 전송은 모든 에이전트에 대해 항상 묻습니다.",
 				"floorOff": "질문이 꺼져 있습니다. 에이전트는 민감한 동작을 포함해 묻지 않고 동작합니다."
-			}
+			},
+			"readyLine": "구성됨. 처음 연결할 때 Lilo가 묻습니다."
 		},
 		"agentActivity": {
 			"refresh": "새로 고침",
@@ -1420,7 +1446,8 @@
 			"showChanges": "변경사항 보기",
 			"showChangesDesc": "활성 터미널에서 커밋하지 않은 Git 변경사항 검토"
 		},
-		"lockedFolderResults": "{name}의 결과"
+		"lockedFolderResults": "{name}의 결과",
+		"showDetails": "키보드 힌트 표시"
 	},
 	"diagnostics": {
 		"title": "진단",
@@ -2058,11 +2085,20 @@
 		"Conversation": "대화",
 		"No changes in this conversation": "이 대화에서 변경된 내용이 없습니다",
 		"The project is as it was at the conversation's first prompt.": "프로젝트가 대화의 첫 프롬프트 때와 같습니다.",
-		"%@ files": {"one": "파일 %@개", "other": "파일 %@개"},
+		"%@ files": {
+			"one": "파일 %@개",
+			"other": "파일 %@개"
+		},
 		"against %@ from %@, uncommitted included": "%@와 비교, %@ 기준, 커밋하지 않은 변경사항 포함",
 		"Binary file, not shown": "바이너리 파일, 표시되지 않음",
-		"%d lines folded. Click to show.": {"one": "%d줄이 접혀 있습니다. 클릭하여 표시하세요.", "other": "%d줄이 접혀 있습니다. 클릭하여 표시하세요."},
-		"Generated file, %d lines folded. Click to show.": {"one": "생성된 파일, %d줄이 접혀 있습니다. 클릭하여 표시하세요.", "other": "생성된 파일, %d줄이 접혀 있습니다. 클릭하여 표시하세요."},
+		"%d lines folded. Click to show.": {
+			"one": "%d줄이 접혀 있습니다. 클릭하여 표시하세요.",
+			"other": "%d줄이 접혀 있습니다. 클릭하여 표시하세요."
+		},
+		"Generated file, %d lines folded. Click to show.": {
+			"one": "생성된 파일, %d줄이 접혀 있습니다. 클릭하여 표시하세요.",
+			"other": "생성된 파일, %d줄이 접혀 있습니다. 클릭하여 표시하세요."
+		},
 		"renamed from %@": "이전 이름: %@",
 		"Open in Split": "분할 보기에서 열기",
 		"worktree": "작업 트리",
@@ -2299,16 +2335,34 @@
 		"Never Sleep": "잠자기 안 함",
 		"Commands kept the Mac awake for the maximum duration.": "명령이 최대 시간 동안 Mac의 잠자기를 방지했습니다.",
 		"While the lid was closed": "덮개가 닫혀 있는 동안",
-		"%d commands finished": {"one": "명령 %d개 완료", "other": "명령 %d개 완료"},
-		"%d wait for your answer, the oldest for %@": {"one": "%d개가 응답 대기 중, 가장 오래 기다린 시간 %@", "other": "%d개가 응답 대기 중, 가장 오래 기다린 시간 %@"},
+		"%d commands finished": {
+			"one": "명령 %d개 완료",
+			"other": "명령 %d개 완료"
+		},
+		"%d wait for your answer, the oldest for %@": {
+			"one": "%d개가 응답 대기 중, 가장 오래 기다린 시간 %@",
+			"other": "%d개가 응답 대기 중, 가장 오래 기다린 시간 %@"
+		},
 		"battery from %d%% to %d%%": "배터리 %d%%에서 %d%%로 변경",
 		"Show Next Waiting Terminal": "다음 대기 중인 터미널 보기",
 		"Downloads": "다운로드",
 		"Quit Lilo?": "Lilo를 종료하겠습니까?",
-		"%d terminals are still running a command. They will be stopped.": {"one": "터미널 %d개에서 아직 명령이 실행 중입니다. 명령이 중단됩니다.", "other": "터미널 %d개에서 아직 명령이 실행 중입니다. 명령이 중단됩니다."},
-		"%d terminals are still running a command (%@). They will be stopped.": {"one": "터미널 %d개에서 아직 명령이 실행 중입니다 (%@). 명령이 중단됩니다.", "other": "터미널 %d개에서 아직 명령이 실행 중입니다 (%@). 명령이 중단됩니다."},
-		"%@ and %d more": {"one": "%@ 외 %d개", "other": "%@ 외 %d개"},
-		"%d downloads are in progress and will be paused until Lilo opens again.": {"one": "다운로드 %d개가 진행 중이며 Lilo를 다시 열 때까지 일시 정지됩니다.", "other": "다운로드 %d개가 진행 중이며 Lilo를 다시 열 때까지 일시 정지됩니다."},
+		"%d terminals are still running a command. They will be stopped.": {
+			"one": "터미널 %d개에서 아직 명령이 실행 중입니다. 명령이 중단됩니다.",
+			"other": "터미널 %d개에서 아직 명령이 실행 중입니다. 명령이 중단됩니다."
+		},
+		"%d terminals are still running a command (%@). They will be stopped.": {
+			"one": "터미널 %d개에서 아직 명령이 실행 중입니다 (%@). 명령이 중단됩니다.",
+			"other": "터미널 %d개에서 아직 명령이 실행 중입니다 (%@). 명령이 중단됩니다."
+		},
+		"%@ and %d more": {
+			"one": "%@ 외 %d개",
+			"other": "%@ 외 %d개"
+		},
+		"%d downloads are in progress and will be paused until Lilo opens again.": {
+			"one": "다운로드 %d개가 진행 중이며 Lilo를 다시 열 때까지 일시 정지됩니다.",
+			"other": "다운로드 %d개가 진행 중이며 Lilo를 다시 열 때까지 일시 정지됩니다."
+		},
 		"Sign In": "로그인",
 		"Install": "설치",
 		"Install %@?": "%@ 항목을 설치하겠습니까?",
@@ -2322,11 +2376,23 @@
 		"A command is still running in it and will be stopped.": "아직 실행 중인 명령이 있으며 해당 명령이 중단됩니다.",
 		"Close": "닫기",
 		"New Terminal Tab": "새 터미널 탭",
-		"Close %d terminals?": {"one": "터미널 %d개를 닫겠습니까?", "other": "터미널 %d개를 닫겠습니까?"},
-		"Pin %d Tabs": {"one": "탭 %d개 고정", "other": "탭 %d개 고정"},
-		"Bookmark %d Tabs": {"one": "탭 %d개 책갈피 추가", "other": "탭 %d개 책갈피 추가"},
+		"Close %d terminals?": {
+			"one": "터미널 %d개를 닫겠습니까?",
+			"other": "터미널 %d개를 닫겠습니까?"
+		},
+		"Pin %d Tabs": {
+			"one": "탭 %d개 고정",
+			"other": "탭 %d개 고정"
+		},
+		"Bookmark %d Tabs": {
+			"one": "탭 %d개 책갈피 추가",
+			"other": "탭 %d개 책갈피 추가"
+		},
 		"Move Tabs to Space": "탭을 스페이스로 이동",
-		"Close %d Tabs": {"one": "탭 %d개 닫기", "other": "탭 %d개 닫기"},
+		"Close %d Tabs": {
+			"one": "탭 %d개 닫기",
+			"other": "탭 %d개 닫기"
+		},
 		"Commands are still running in them and will be stopped.": "아직 실행 중인 명령이 있으며 해당 명령이 중단됩니다.",
 		"The terminal could not start.": "터미널을 시작할 수 없습니다.",
 		"Close the tab and try again.": "탭을 닫고 다시 시도하세요.",
@@ -2456,7 +2522,10 @@
 		"Removed Lilo": "Lilo 제거됨",
 		"Lilo could not read %@: add this server to it yourself: %@": "Lilo가 %@ 파일을 읽을 수 없습니다. 다음 서버를 직접 추가하세요: %@",
 		"Stop Agents": "에이전트 중단",
-		"Delete %@ and its %d tabs?": {"one": "%@ 및 탭 %d개를 삭제하겠습니까?", "other": "%@ 및 탭 %d개를 삭제하겠습니까?"},
+		"Delete %@ and its %d tabs?": {
+			"one": "%@ 및 탭 %d개를 삭제하겠습니까?",
+			"other": "%@ 및 탭 %d개를 삭제하겠습니까?"
+		},
 		"This cannot be undone.": "이 작업은 취소할 수 없습니다.",
 		"Its tabs stay in the sidebar.": "탭은 사이드바에 유지됩니다.",
 		"Agent": "에이전트",
@@ -2546,7 +2615,8 @@
 		"Hide Pages": "페이지 숨기기",
 		"Close Conversation": "대화 닫기",
 		"Pasted image": "붙여넣은 이미지",
-		"Copied Lilo's entry": "Lilo 항목을 복사했습니다"
+		"Copied Lilo's entry": "Lilo 항목을 복사했습니다",
+		"Keep Loaded": "계속 로드 유지"
 	},
 	"whatsNew": {
 		"version": "Lilo {version}",

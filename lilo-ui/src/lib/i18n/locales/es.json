@@ -169,7 +169,8 @@
 			"profiles": "Perfiles",
 			"otherAppLinks": "Enlaces desde otras apps",
 			"blockerExceptions": "Listas y excepciones",
-			"agentConversations": "Conversaciones"
+			"agentConversations": "Conversaciones",
+			"beta": "Modo beta"
 		},
 		"searchPlaceholder": "Buscar en los ajustes",
 		"searchResultsTitle": "Resultados de búsqueda",
@@ -218,7 +219,10 @@
 				"executable": "Comando",
 				"arguments": "Argumentos, uno por línea",
 				"environment": "Entorno, NOMBRE=valor por línea",
-				"note": "El comando es la ruta completa de un archivo ejecutable que habla el Agent Client Protocol por la entrada y la salida estándar."
+				"note": "El comando es la ruta completa de un archivo ejecutable que habla el Agent Client Protocol por la entrada y la salida estándar.",
+				"title": "Agente personalizado",
+				"description": "Inicia un programa propio como agente, junto a los del registro.",
+				"keywords": "agente personalizado comando acp local script entorno variables argumentos"
 			},
 			"appIcon": {
 				"title": "Icono de la app",
@@ -622,6 +626,25 @@
 				"reset": "Restaurar",
 				"resetTitle": "¿Restaurar el prompt de Lilo?",
 				"resetMessage": "Tus cambios se sustituirán por el prompt predeterminado."
+			},
+			"tabSleepAllowlist": {
+				"title": "Sitios que se mantienen cargados",
+				"description": "Las pestañas de estos sitios, subdominios incluidos, nunca se congelan ni se descargan, así que siguen gastando memoria y batería. Separados por comas.",
+				"keywords": "mantener cargada excepción lista permitida nunca suspender congelar descargar",
+				"placeholder": "mail.example.com, example.org"
+			},
+			"betaUpdateCheck": {
+				"title": "Actualizaciones beta",
+				"description": "Esta beta compara su compilación con la publicación más nueva del fork una vez, al arrancar.",
+				"keywords": "Actualizaciones beta",
+				"check": "Buscar betas",
+				"lastChecked": "Comprobado {time}",
+				"absent": "Esta compilación no tiene fuente beta."
+			},
+			"betaUpdateRelease": {
+				"title": "Sale la beta {tag}",
+				"description": "Se descarga de la página de la publicación y se instala a mano; Lilo nunca se reemplaza a sí mismo.",
+				"open": "Abrir publicación"
 			}
 		},
 		"devices": {
@@ -688,7 +711,9 @@
 			"status": {
 				"acting": "Actuando ahora",
 				"connected": "Conectado",
-				"allowed": "Permitido"
+				"allowed": "Permitido",
+				"notInstalled": "Sin instalar",
+				"ready": "Configurado"
 			},
 			"allowedSeen": "Permitido, visto por última vez {time}",
 			"foundLine": "En este Mac",
@@ -715,7 +740,8 @@
 				"removeSite": "Quitar {site}",
 				"floor": "Iniciar sesión, pagar, comprar, eliminar, publicar y enviar datos a otro sitio siempre preguntan, para todo agente.",
 				"floorOff": "Las preguntas están desactivadas: los agentes actúan sin preguntar, incluso en acciones sensibles."
-			}
+			},
+			"readyLine": "Configurado. Lilo te pregunta la primera vez que se conecta."
 		},
 		"agentActivity": {
 			"refresh": "Actualizar",
@@ -1420,7 +1446,8 @@
 			"showChanges": "Mostrar cambios",
 			"showChangesDesc": "Revisar los cambios de git sin confirmar del terminal activo"
 		},
-		"lockedFolderResults": "Resultados en {name}"
+		"lockedFolderResults": "Resultados en {name}",
+		"showDetails": "Mostrar atajos de teclado"
 	},
 	"diagnostics": {
 		"title": "Diagnóstico",
@@ -2058,11 +2085,20 @@
 		"Conversation": "Conversación",
 		"No changes in this conversation": "No hay cambios en esta conversación",
 		"The project is as it was at the conversation's first prompt.": "El proyecto está como en el primer prompt de la conversación.",
-		"%@ files": {"one": "%@ archivo", "other": "%@ archivos"},
+		"%@ files": {
+			"one": "%@ archivo",
+			"other": "%@ archivos"
+		},
 		"against %@ from %@, uncommitted included": "respecto a %@ desde %@, incluidos los cambios sin confirmar",
 		"Binary file, not shown": "Archivo binario, no se muestra",
-		"%d lines folded. Click to show.": {"one": "%d línea contraída. Haz clic para mostrarla.", "other": "%d líneas contraídas. Haz clic para mostrarlas."},
-		"Generated file, %d lines folded. Click to show.": {"one": "Archivo generado, %d línea contraída. Haz clic para mostrarla.", "other": "Archivo generado, %d líneas contraídas. Haz clic para mostrarlas."},
+		"%d lines folded. Click to show.": {
+			"one": "%d línea contraída. Haz clic para mostrarla.",
+			"other": "%d líneas contraídas. Haz clic para mostrarlas."
+		},
+		"Generated file, %d lines folded. Click to show.": {
+			"one": "Archivo generado, %d línea contraída. Haz clic para mostrarla.",
+			"other": "Archivo generado, %d líneas contraídas. Haz clic para mostrarlas."
+		},
 		"renamed from %@": "antes llamado %@",
 		"Open in Split": "Abrir en vista dividida",
 		"worktree": "árbol de trabajo",
@@ -2299,16 +2335,34 @@
 		"Never Sleep": "No poner nunca en reposo",
 		"Commands kept the Mac awake for the maximum duration.": "Los comandos han mantenido el Mac activo durante el tiempo máximo.",
 		"While the lid was closed": "Mientras la tapa estaba cerrada",
-		"%d commands finished": {"one": "%d comando finalizado", "other": "%d comandos finalizados"},
-		"%d wait for your answer, the oldest for %@": {"one": "%d espera tu respuesta desde hace %@", "other": "%d esperan tu respuesta, el más antiguo desde hace %@"},
+		"%d commands finished": {
+			"one": "%d comando finalizado",
+			"other": "%d comandos finalizados"
+		},
+		"%d wait for your answer, the oldest for %@": {
+			"one": "%d espera tu respuesta desde hace %@",
+			"other": "%d esperan tu respuesta, el más antiguo desde hace %@"
+		},
 		"battery from %d%% to %d%%": "batería del %d%% al %d%%",
 		"Show Next Waiting Terminal": "Mostrar siguiente terminal en espera",
 		"Downloads": "Descargas",
 		"Quit Lilo?": "¿Salir de Lilo?",
-		"%d terminals are still running a command. They will be stopped.": {"one": "%d terminal sigue ejecutando un comando. Se detendrá.", "other": "%d terminales siguen ejecutando un comando. Se detendrán."},
-		"%d terminals are still running a command (%@). They will be stopped.": {"one": "%d terminal sigue ejecutando un comando (%@). Se detendrá.", "other": "%d terminales siguen ejecutando un comando (%@). Se detendrán."},
-		"%@ and %d more": {"one": "%@ y %d más", "other": "%@ y %d más"},
-		"%d downloads are in progress and will be paused until Lilo opens again.": {"one": "Hay %d descarga en curso que se pausará hasta que vuelvas a abrir Lilo.", "other": "Hay %d descargas en curso que se pausarán hasta que vuelvas a abrir Lilo."},
+		"%d terminals are still running a command. They will be stopped.": {
+			"one": "%d terminal sigue ejecutando un comando. Se detendrá.",
+			"other": "%d terminales siguen ejecutando un comando. Se detendrán."
+		},
+		"%d terminals are still running a command (%@). They will be stopped.": {
+			"one": "%d terminal sigue ejecutando un comando (%@). Se detendrá.",
+			"other": "%d terminales siguen ejecutando un comando (%@). Se detendrán."
+		},
+		"%@ and %d more": {
+			"one": "%@ y %d más",
+			"other": "%@ y %d más"
+		},
+		"%d downloads are in progress and will be paused until Lilo opens again.": {
+			"one": "Hay %d descarga en curso que se pausará hasta que vuelvas a abrir Lilo.",
+			"other": "Hay %d descargas en curso que se pausarán hasta que vuelvas a abrir Lilo."
+		},
 		"Sign In": "Iniciar sesión",
 		"Install": "Instalar",
 		"Install %@?": "¿Instalar %@?",
@@ -2322,11 +2376,23 @@
 		"A command is still running in it and will be stopped.": "Se está ejecutando un comando que se detendrá.",
 		"Close": "Cerrar",
 		"New Terminal Tab": "Nueva pestaña de terminal",
-		"Pin %d Tabs": {"one": "Fijar %d pestaña", "other": "Fijar %d pestañas"},
-		"Bookmark %d Tabs": {"one": "Guardar %d pestaña en marcadores", "other": "Guardar %d pestañas en marcadores"},
+		"Pin %d Tabs": {
+			"one": "Fijar %d pestaña",
+			"other": "Fijar %d pestañas"
+		},
+		"Bookmark %d Tabs": {
+			"one": "Guardar %d pestaña en marcadores",
+			"other": "Guardar %d pestañas en marcadores"
+		},
 		"Move Tabs to Space": "Mover pestañas a un Espacio",
-		"Close %d Tabs": {"one": "Cerrar %d pestaña", "other": "Cerrar %d pestañas"},
-		"Close %d terminals?": {"one": "¿Cerrar %d terminal?", "other": "¿Cerrar %d terminales?"},
+		"Close %d Tabs": {
+			"one": "Cerrar %d pestaña",
+			"other": "Cerrar %d pestañas"
+		},
+		"Close %d terminals?": {
+			"one": "¿Cerrar %d terminal?",
+			"other": "¿Cerrar %d terminales?"
+		},
 		"Commands are still running in them and will be stopped.": "Se están ejecutando comandos que se detendrán.",
 		"The terminal could not start.": "No se ha podido iniciar el terminal.",
 		"Close the tab and try again.": "Cierra la pestaña e inténtalo de nuevo.",
@@ -2456,7 +2522,10 @@
 		"Removed Lilo": "Lilo quitado",
 		"Lilo could not read %@: add this server to it yourself: %@": "Lilo no ha podido leer %@: añade este servidor manualmente: %@",
 		"Stop Agents": "Detener agentes",
-		"Delete %@ and its %d tabs?": {"one": "¿Eliminar %@ y su %d pestaña?", "other": "¿Eliminar %@ y sus %d pestañas?"},
+		"Delete %@ and its %d tabs?": {
+			"one": "¿Eliminar %@ y su %d pestaña?",
+			"other": "¿Eliminar %@ y sus %d pestañas?"
+		},
 		"This cannot be undone.": "Esta acción no se puede deshacer.",
 		"Its tabs stay in the sidebar.": "Sus pestañas permanecen en la barra lateral.",
 		"Agent": "Agente",
@@ -2546,7 +2615,8 @@
 		"Hide Pages": "Ocultar páginas",
 		"Close Conversation": "Cerrar conversación",
 		"Pasted image": "Imagen pegada",
-		"Copied Lilo's entry": "Entrada de Lilo copiada"
+		"Copied Lilo's entry": "Entrada de Lilo copiada",
+		"Keep Loaded": "Mantener cargada"
 	},
 	"whatsNew": {
 		"version": "Lilo {version}",

@@ -169,7 +169,8 @@
 			"profiles": "个人资料",
 			"otherAppLinks": "其他 App 中的链接",
 			"blockerExceptions": "列表与例外",
-			"agentConversations": "对话"
+			"agentConversations": "对话",
+			"beta": "Beta 模式"
 		},
 		"searchPlaceholder": "搜索设置",
 		"searchResultsTitle": "搜索结果",
@@ -218,7 +219,10 @@
 				"executable": "命令",
 				"arguments": "参数，每行一个",
 				"environment": "环境，每行 NAME=值",
-				"note": "命令是可执行文件的完整路径，该文件通过标准输入输出使用 Agent Client Protocol。"
+				"note": "命令是可执行文件的完整路径，该文件通过标准输入输出使用 Agent Client Protocol。",
+				"title": "自定义代理",
+				"description": "把你自己的程序作为代理启动，与注册表中的代理并列。",
+				"keywords": "自定义 代理 命令 acp 本地 脚本 环境 变量 参数"
 			},
 			"appIcon": {
 				"title": "App 图标",
@@ -622,6 +626,25 @@
 				"reset": "恢复默认",
 				"resetTitle": "要恢复 Lilo 提示词吗？",
 				"resetMessage": "你的更改将被默认提示词替换。"
+			},
+			"tabSleepAllowlist": {
+				"title": "保持加载的网站",
+				"description": "这些网站(包括子域名)的标签页不会被冻结或卸载,因此会持续占用内存和电量。以逗号分隔。",
+				"keywords": "保持加载 例外 允许列表 永不休眠 冻结 卸载",
+				"placeholder": "mail.example.com, example.org"
+			},
+			"betaUpdateCheck": {
+				"title": "Beta 更新",
+				"description": "此 Beta 在启动时自动将自身构建与分支的最新发布比较一次。",
+				"keywords": "Beta 更新",
+				"check": "检查 Beta",
+				"lastChecked": "已于 {time} 检查",
+				"absent": "此构建没有 Beta 更新源。"
+			},
+			"betaUpdateRelease": {
+				"title": "Beta {tag} 已发布",
+				"description": "从发布页面手动下载并安装；Lilo 从不自行替换。",
+				"open": "打开发布页"
 			}
 		},
 		"devices": {
@@ -688,7 +711,9 @@
 			"status": {
 				"acting": "正在操作",
 				"connected": "已连接",
-				"allowed": "已允许"
+				"allowed": "已允许",
+				"notInstalled": "未安装",
+				"ready": "已配置"
 			},
 			"allowedSeen": "已允许，上次连接 {time}",
 			"foundLine": "在此 Mac 上",
@@ -715,7 +740,8 @@
 				"removeSite": "移除 {site}",
 				"floor": "登录、付款、购买、删除、发布以及向其他网站发送数据时，所有智能体都会先询问。",
 				"floorOff": "询问已关闭：智能体会直接操作，敏感操作也不例外。"
-			}
+			},
+			"readyLine": "已配置。首次连接时 Lilo 会询问你。"
 		},
 		"agentActivity": {
 			"refresh": "刷新",
@@ -1420,7 +1446,8 @@
 			"showChanges": "显示更改",
 			"showChangesDesc": "检查当前终端中尚未提交的 Git 更改"
 		},
-		"lockedFolderResults": "“{name}”中的结果"
+		"lockedFolderResults": "“{name}”中的结果",
+		"showDetails": "显示键盘提示"
 	},
 	"diagnostics": {
 		"title": "诊断",
@@ -2058,11 +2085,20 @@
 		"Conversation": "对话",
 		"No changes in this conversation": "此对话中没有更改",
 		"The project is as it was at the conversation's first prompt.": "项目与对话第一条提示时相同。",
-		"%@ files": {"one": "%@ 个文件", "other": "%@ 个文件"},
+		"%@ files": {
+			"one": "%@ 个文件",
+			"other": "%@ 个文件"
+		},
 		"against %@ from %@, uncommitted included": "与 %@（来自 %@）比较，包含未提交的更改",
 		"Binary file, not shown": "二进制文件，未显示",
-		"%d lines folded. Click to show.": {"one": "已折叠 %d 行。点按以显示。", "other": "已折叠 %d 行。点按以显示。"},
-		"Generated file, %d lines folded. Click to show.": {"one": "生成的文件，已折叠 %d 行。点按以显示。", "other": "生成的文件，已折叠 %d 行。点按以显示。"},
+		"%d lines folded. Click to show.": {
+			"one": "已折叠 %d 行。点按以显示。",
+			"other": "已折叠 %d 行。点按以显示。"
+		},
+		"Generated file, %d lines folded. Click to show.": {
+			"one": "生成的文件，已折叠 %d 行。点按以显示。",
+			"other": "生成的文件，已折叠 %d 行。点按以显示。"
+		},
 		"renamed from %@": "原名称为 %@",
 		"Open in Split": "在分屏中打开",
 		"worktree": "工作树",
@@ -2299,16 +2335,34 @@
 		"Never Sleep": "永不休眠",
 		"Commands kept the Mac awake for the maximum duration.": "命令保持 Mac 唤醒的时间已达上限。",
 		"While the lid was closed": "合上屏幕期间",
-		"%d commands finished": {"one": "%d 条命令已完成", "other": "%d 条命令已完成"},
-		"%d wait for your answer, the oldest for %@": {"one": "%d 条命令等待你的答复，最长已等待 %@", "other": "%d 条命令等待你的答复，最长已等待 %@"},
+		"%d commands finished": {
+			"one": "%d 条命令已完成",
+			"other": "%d 条命令已完成"
+		},
+		"%d wait for your answer, the oldest for %@": {
+			"one": "%d 条命令等待你的答复，最长已等待 %@",
+			"other": "%d 条命令等待你的答复，最长已等待 %@"
+		},
 		"battery from %d%% to %d%%": "电池电量从 %d%% 变为 %d%%",
 		"Show Next Waiting Terminal": "显示下一个等待中的终端",
 		"Downloads": "下载",
 		"Quit Lilo?": "退出 Lilo？",
-		"%d terminals are still running a command. They will be stopped.": {"one": "有 %d 个终端仍在运行命令。它将被停止。", "other": "有 %d 个终端仍在运行命令。命令将被停止。"},
-		"%d terminals are still running a command (%@). They will be stopped.": {"one": "有 %d 个终端仍在运行命令（%@）。它将被停止。", "other": "有 %d 个终端仍在运行命令（%@）。命令将被停止。"},
-		"%@ and %d more": {"one": "%@，另有 %d 项", "other": "%@，另有 %d 项"},
-		"%d downloads are in progress and will be paused until Lilo opens again.": {"one": "有 %d 项下载正在进行，将暂停直到再次打开 Lilo。", "other": "有 %d 项下载正在进行，将暂停直到再次打开 Lilo。"},
+		"%d terminals are still running a command. They will be stopped.": {
+			"one": "有 %d 个终端仍在运行命令。它将被停止。",
+			"other": "有 %d 个终端仍在运行命令。命令将被停止。"
+		},
+		"%d terminals are still running a command (%@). They will be stopped.": {
+			"one": "有 %d 个终端仍在运行命令（%@）。它将被停止。",
+			"other": "有 %d 个终端仍在运行命令（%@）。命令将被停止。"
+		},
+		"%@ and %d more": {
+			"one": "%@，另有 %d 项",
+			"other": "%@，另有 %d 项"
+		},
+		"%d downloads are in progress and will be paused until Lilo opens again.": {
+			"one": "有 %d 项下载正在进行，将暂停直到再次打开 Lilo。",
+			"other": "有 %d 项下载正在进行，将暂停直到再次打开 Lilo。"
+		},
 		"Sign In": "登录",
 		"Install": "安装",
 		"Install %@?": "安装 %@？",
@@ -2322,11 +2376,23 @@
 		"A command is still running in it and will be stopped.": "其中仍有命令在运行，将被停止。",
 		"Close": "关闭",
 		"New Terminal Tab": "新建终端标签页",
-		"Close %d terminals?": {"one": "关闭 %d 个终端？", "other": "关闭 %d 个终端？"},
-		"Pin %d Tabs": {"one": "固定 %d 个标签页", "other": "固定 %d 个标签页"},
-		"Bookmark %d Tabs": {"one": "为 %d 个标签页添加书签", "other": "为 %d 个标签页添加书签"},
+		"Close %d terminals?": {
+			"one": "关闭 %d 个终端？",
+			"other": "关闭 %d 个终端？"
+		},
+		"Pin %d Tabs": {
+			"one": "固定 %d 个标签页",
+			"other": "固定 %d 个标签页"
+		},
+		"Bookmark %d Tabs": {
+			"one": "为 %d 个标签页添加书签",
+			"other": "为 %d 个标签页添加书签"
+		},
 		"Move Tabs to Space": "将标签页移至空间",
-		"Close %d Tabs": {"one": "关闭 %d 个标签页", "other": "关闭 %d 个标签页"},
+		"Close %d Tabs": {
+			"one": "关闭 %d 个标签页",
+			"other": "关闭 %d 个标签页"
+		},
 		"Commands are still running in them and will be stopped.": "其中仍有命令在运行，将被停止。",
 		"The terminal could not start.": "终端无法启动。",
 		"Close the tab and try again.": "请关闭标签页，然后重试。",
@@ -2456,7 +2522,10 @@
 		"Removed Lilo": "已移除 Lilo",
 		"Lilo could not read %@: add this server to it yourself: %@": "Lilo 无法读取 %@：请自行添加此服务器：%@",
 		"Stop Agents": "停止智能体",
-		"Delete %@ and its %d tabs?": {"one": "删除 %@ 及其 %d 个标签页？", "other": "删除 %@ 及其 %d 个标签页？"},
+		"Delete %@ and its %d tabs?": {
+			"one": "删除 %@ 及其 %d 个标签页？",
+			"other": "删除 %@ 及其 %d 个标签页？"
+		},
 		"This cannot be undone.": "此操作无法撤销。",
 		"Its tabs stay in the sidebar.": "其中的标签页会保留在侧边栏中。",
 		"Agent": "智能体",
@@ -2546,7 +2615,8 @@
 		"Hide Pages": "隐藏页面",
 		"Close Conversation": "关闭对话",
 		"Pasted image": "粘贴的图片",
-		"Copied Lilo's entry": "已拷贝 Lilo 的条目"
+		"Copied Lilo's entry": "已拷贝 Lilo 的条目",
+		"Keep Loaded": "保持加载"
 	},
 	"whatsNew": {
 		"version": "Lilo {version}",

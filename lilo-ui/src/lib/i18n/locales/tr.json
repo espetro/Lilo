@@ -169,7 +169,8 @@
 			"profiles": "Profiller",
 			"otherAppLinks": "Diğer uygulamalardan gelen bağlantılar",
 			"blockerExceptions": "Listeler ve istisnalar",
-			"agentConversations": "Sohbetler"
+			"agentConversations": "Sohbetler",
+			"beta": "Beta modu"
 		},
 		"searchPlaceholder": "Ayarlarda ara",
 		"searchResultsTitle": "Arama sonuçları",
@@ -218,7 +219,10 @@
 				"executable": "Komut",
 				"arguments": "Argümanlar, her satırda bir tane",
 				"environment": "Ortam, her satırda AD=değer",
-				"note": "Komut, Agent Client Protocol'ü standart girdi ve çıktı üzerinden konuşan çalıştırılabilir bir dosyanın tam yoludur."
+				"note": "Komut, Agent Client Protocol'ü standart girdi ve çıktı üzerinden konuşan çalıştırılabilir bir dosyanın tam yoludur.",
+				"title": "Özel ajan",
+				"description": "Kayıt defterindekilerin yanında, kendi programınızı ajan olarak başlatın.",
+				"keywords": "özel ajan komut acp yerel betik ortam değişkenler argümanlar"
 			},
 			"appIcon": {
 				"title": "Uygulama simgesi",
@@ -622,6 +626,25 @@
 				"reset": "Varsayılana dön",
 				"resetTitle": "Lilo istemi geri yüklensin mi?",
 				"resetMessage": "Değişiklikleriniz varsayılan istemle değiştirilecek."
+			},
+			"tabSleepAllowlist": {
+				"title": "Yüklü tutulan siteler",
+				"description": "Bu sitelerin sekmeleri, alt alan adları dahil, asla dondurulmaz veya bellekten çıkarılmaz; bellek ve pil kullanmaya devam eder. Virgülle ayırın.",
+				"keywords": "yüklü tut istisna izin listesi asla uyutma dondurma boşaltma",
+				"placeholder": "mail.example.com, example.org"
+			},
+			"betaUpdateCheck": {
+				"title": "Beta güncellemeleri",
+				"description": "Bu beta, başlangıçta bir kez kendi yapısını fork'un en yeni sürümüyle karşılaştırır.",
+				"keywords": "Beta güncellemeleri",
+				"check": "Beta sürümlerini denetle",
+				"lastChecked": "Denetlendi: {time}",
+				"absent": "Bu yapının beta akışı yok."
+			},
+			"betaUpdateRelease": {
+				"title": "{tag} betası çıktı",
+				"description": "Sürüm sayfasından elle indirilir ve kurulur; Lilo kendini asla değiştirmez.",
+				"open": "Sürümü aç"
 			}
 		},
 		"devices": {
@@ -688,7 +711,9 @@
 			"status": {
 				"acting": "İşlem yapıyor",
 				"connected": "Bağlı",
-				"allowed": "İzin verildi"
+				"allowed": "İzin verildi",
+				"notInstalled": "Yüklü değil",
+				"ready": "Yapılandırıldı"
 			},
 			"allowedSeen": "İzin verildi, son görülme {time}",
 			"foundLine": "Bu Mac'te",
@@ -715,7 +740,8 @@
 				"removeSite": "{site} sitesini kaldır",
 				"floor": "Oturum açma, ödeme, satın alma, silme, yayımlama ve başka bir siteye veri gönderme her ajan için her zaman sorulur.",
 				"floorOff": "Sorular kapalı: ajanlar hassas işlemler dahil sormadan işlem yapar."
-			}
+			},
+			"readyLine": "Yapılandırıldı. Lilo ilk bağlantıda size sorar."
 		},
 		"agentActivity": {
 			"refresh": "Yenile",
@@ -1420,7 +1446,8 @@
 			"showChanges": "Değişiklikleri Göster",
 			"showChangesDesc": "Etkin terminalin commit edilmemiş Git değişikliklerini incele"
 		},
-		"lockedFolderResults": "{name} içindeki sonuçlar"
+		"lockedFolderResults": "{name} içindeki sonuçlar",
+		"showDetails": "Klavye ipuçlarını göster"
 	},
 	"diagnostics": {
 		"title": "Tanılama",
@@ -2058,11 +2085,20 @@
 		"Conversation": "Sohbet",
 		"No changes in this conversation": "Bu sohbette değişiklik yok",
 		"The project is as it was at the conversation's first prompt.": "Proje, sohbetin ilk isteminde olduğu gibi.",
-		"%@ files": {"one": "%@ dosya", "other": "%@ dosya"},
+		"%@ files": {
+			"one": "%@ dosya",
+			"other": "%@ dosya"
+		},
 		"against %@ from %@, uncommitted included": "%@ ile karşılaştırma, %@ başlangıcından, commit edilmemişler dahil",
 		"Binary file, not shown": "İkili dosya, gösterilmiyor",
-		"%d lines folded. Click to show.": {"one": "%d satır daraltıldı. Göstermek için tıklayın.", "other": "%d satır daraltıldı. Göstermek için tıklayın."},
-		"Generated file, %d lines folded. Click to show.": {"one": "Oluşturulan dosya, %d satır daraltıldı. Göstermek için tıklayın.", "other": "Oluşturulan dosya, %d satır daraltıldı. Göstermek için tıklayın."},
+		"%d lines folded. Click to show.": {
+			"one": "%d satır daraltıldı. Göstermek için tıklayın.",
+			"other": "%d satır daraltıldı. Göstermek için tıklayın."
+		},
+		"Generated file, %d lines folded. Click to show.": {
+			"one": "Oluşturulan dosya, %d satır daraltıldı. Göstermek için tıklayın.",
+			"other": "Oluşturulan dosya, %d satır daraltıldı. Göstermek için tıklayın."
+		},
 		"renamed from %@": "önceki adı: %@",
 		"Open in Split": "Bölünmüş Görünümde Aç",
 		"worktree": "çalışma ağacı",
@@ -2299,16 +2335,34 @@
 		"Never Sleep": "Asla Uyutma",
 		"Commands kept the Mac awake for the maximum duration.": "Komutlar Mac'i izin verilen en uzun süre boyunca uyanık tuttu.",
 		"While the lid was closed": "Kapak kapalıyken",
-		"%d commands finished": {"one": "%d komut tamamlandı", "other": "%d komut tamamlandı"},
-		"%d wait for your answer, the oldest for %@": {"one": "%d komut yanıtınızı bekliyor, %@ süredir", "other": "%d komut yanıtınızı bekliyor, en eskisi %@ süredir"},
+		"%d commands finished": {
+			"one": "%d komut tamamlandı",
+			"other": "%d komut tamamlandı"
+		},
+		"%d wait for your answer, the oldest for %@": {
+			"one": "%d komut yanıtınızı bekliyor, %@ süredir",
+			"other": "%d komut yanıtınızı bekliyor, en eskisi %@ süredir"
+		},
 		"battery from %d%% to %d%%": "pil %d%% düzeyinden %d%% düzeyine",
 		"Show Next Waiting Terminal": "Sonraki Bekleyen Terminali Göster",
 		"Downloads": "İndirilenler",
 		"Quit Lilo?": "Lilo'dan çıkılsın mı?",
-		"%d terminals are still running a command. They will be stopped.": {"one": "%d terminal hâlâ komut çalıştırıyor. Komut durdurulacak.", "other": "%d terminal hâlâ komut çalıştırıyor. Komutlar durdurulacak."},
-		"%d terminals are still running a command (%@). They will be stopped.": {"one": "%d terminal hâlâ komut çalıştırıyor (%@). Komut durdurulacak.", "other": "%d terminal hâlâ komut çalıştırıyor (%@). Komutlar durdurulacak."},
-		"%@ and %d more": {"one": "%@ ve %d tane daha", "other": "%@ ve %d tane daha"},
-		"%d downloads are in progress and will be paused until Lilo opens again.": {"one": "%d indirme devam ediyor. Lilo yeniden açılana kadar duraklatılacak.", "other": "%d indirme devam ediyor. Lilo yeniden açılana kadar duraklatılacak."},
+		"%d terminals are still running a command. They will be stopped.": {
+			"one": "%d terminal hâlâ komut çalıştırıyor. Komut durdurulacak.",
+			"other": "%d terminal hâlâ komut çalıştırıyor. Komutlar durdurulacak."
+		},
+		"%d terminals are still running a command (%@). They will be stopped.": {
+			"one": "%d terminal hâlâ komut çalıştırıyor (%@). Komut durdurulacak.",
+			"other": "%d terminal hâlâ komut çalıştırıyor (%@). Komutlar durdurulacak."
+		},
+		"%@ and %d more": {
+			"one": "%@ ve %d tane daha",
+			"other": "%@ ve %d tane daha"
+		},
+		"%d downloads are in progress and will be paused until Lilo opens again.": {
+			"one": "%d indirme devam ediyor. Lilo yeniden açılana kadar duraklatılacak.",
+			"other": "%d indirme devam ediyor. Lilo yeniden açılana kadar duraklatılacak."
+		},
 		"Sign In": "Giriş Yap",
 		"Install": "Yükle",
 		"Install %@?": "%@ yüklensin mi?",
@@ -2322,11 +2376,23 @@
 		"A command is still running in it and will be stopped.": "İçinde bir komut hâlâ çalışıyor ve durdurulacak.",
 		"Close": "Kapat",
 		"New Terminal Tab": "Yeni Terminal Sekmesi",
-		"Close %d terminals?": {"one": "%d terminal kapatılsın mı?", "other": "%d terminal kapatılsın mı?"},
-		"Pin %d Tabs": {"one": "%d sekmeyi sabitle", "other": "%d sekmeyi sabitle"},
-		"Bookmark %d Tabs": {"one": "%d sekmeye yer imi ekle", "other": "%d sekmeye yer imi ekle"},
+		"Close %d terminals?": {
+			"one": "%d terminal kapatılsın mı?",
+			"other": "%d terminal kapatılsın mı?"
+		},
+		"Pin %d Tabs": {
+			"one": "%d sekmeyi sabitle",
+			"other": "%d sekmeyi sabitle"
+		},
+		"Bookmark %d Tabs": {
+			"one": "%d sekmeye yer imi ekle",
+			"other": "%d sekmeye yer imi ekle"
+		},
 		"Move Tabs to Space": "Sekmeleri Alana Taşı",
-		"Close %d Tabs": {"one": "%d sekmeyi kapat", "other": "%d sekmeyi kapat"},
+		"Close %d Tabs": {
+			"one": "%d sekmeyi kapat",
+			"other": "%d sekmeyi kapat"
+		},
 		"Commands are still running in them and will be stopped.": "İçlerinde komutlar hâlâ çalışıyor ve durdurulacak.",
 		"The terminal could not start.": "Terminal başlatılamadı.",
 		"Close the tab and try again.": "Sekmeyi kapatıp yeniden deneyin.",
@@ -2456,7 +2522,10 @@
 		"Removed Lilo": "Lilo kaldırıldı",
 		"Lilo could not read %@: add this server to it yourself: %@": "Lilo %@ dosyasını okuyamadı. Şu sunucuyu kendiniz ekleyin: %@",
 		"Stop Agents": "Ajanları Durdur",
-		"Delete %@ and its %d tabs?": {"one": "%@ ve içindeki %d sekme silinsin mi?", "other": "%@ ve içindeki %d sekme silinsin mi?"},
+		"Delete %@ and its %d tabs?": {
+			"one": "%@ ve içindeki %d sekme silinsin mi?",
+			"other": "%@ ve içindeki %d sekme silinsin mi?"
+		},
 		"This cannot be undone.": "Bu işlem geri alınamaz.",
 		"Its tabs stay in the sidebar.": "Sekmeleri kenar çubuğunda kalır.",
 		"Agent": "Ajan",
@@ -2546,7 +2615,8 @@
 		"Hide Pages": "Sayfaları gizle",
 		"Close Conversation": "Sohbeti kapat",
 		"Pasted image": "Yapıştırılan görsel",
-		"Copied Lilo's entry": "Lilo'nun girdisi kopyalandı"
+		"Copied Lilo's entry": "Lilo'nun girdisi kopyalandı",
+		"Keep Loaded": "Yüklü Tut"
 	},
 	"whatsNew": {
 		"version": "Lilo {version}",

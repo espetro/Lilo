@@ -169,7 +169,8 @@
 			"profiles": "Profiles",
 			"otherAppLinks": "Links from other apps",
 			"blockerExceptions": "Lists and exceptions",
-			"agentConversations": "Conversations"
+			"agentConversations": "Conversations",
+			"beta": "Beta mode"
 		},
 		"searchPlaceholder": "Search settings",
 		"searchResultsTitle": "Search results",
@@ -218,7 +219,10 @@
 				"executable": "Command",
 				"arguments": "Arguments, one per line",
 				"environment": "Environment, NAME=value per line",
-				"note": "The command is the full path of an executable file that speaks the Agent Client Protocol over standard input and output."
+				"note": "The command is the full path of an executable file that speaks the Agent Client Protocol over standard input and output.",
+				"title": "Custom agent",
+				"description": "Start a program of your own as an agent, next to the registry's.",
+				"keywords": "custom agent command acp local script harness environment variables arguments"
 			},
 			"appIcon": {
 				"title": "App icon",
@@ -622,6 +626,25 @@
 				"reset": "Restore Default",
 				"resetTitle": "Restore Lilo's prompt?",
 				"resetMessage": "Your changes are replaced by the default prompt."
+			},
+			"tabSleepAllowlist": {
+				"title": "Sites kept loaded",
+				"description": "Tabs on these sites, subdomains included, are never frozen or unloaded, so they keep using memory and battery. Separated by commas.",
+				"keywords": "keep loaded allowlist whitelist exception never sleep freeze unload discard",
+				"placeholder": "mail.example.com, example.org"
+			},
+			"betaUpdateCheck": {
+				"title": "Beta updates",
+				"description": "This beta compares its build with the fork's newest release page on its own once, on launch.",
+				"keywords": "beta update release fork",
+				"check": "Check for Betas",
+				"lastChecked": "Checked {time}",
+				"absent": "This build has no beta feed."
+			},
+			"betaUpdateRelease": {
+				"title": "Beta {tag} is out",
+				"description": "Downloaded from the release page and installed by hand; Lilo never replaces itself.",
+				"open": "Open Release"
 			}
 		},
 		"devices": {
@@ -688,7 +711,9 @@
 			"status": {
 				"acting": "Acting now",
 				"connected": "Connected",
-				"allowed": "Allowed"
+				"allowed": "Allowed",
+				"notInstalled": "Not installed",
+				"ready": "Configured"
 			},
 			"allowedSeen": "Allowed, last seen {time}",
 			"foundLine": "On this Mac",
@@ -715,7 +740,8 @@
 				"removeSite": "Remove {site}",
 				"floor": "Signing in, paying, buying, deleting, publishing and sending data to another site always ask, for every agent.",
 				"floorOff": "Questions are off: agents act without asking, sensitive actions included."
-			}
+			},
+			"readyLine": "Configured. Lilo asks you the first time it connects."
 		},
 		"agentActivity": {
 			"refresh": "Refresh",
@@ -1420,7 +1446,8 @@
 			"showChanges": "Show Changes",
 			"showChangesDesc": "Review the active terminal's uncommitted git changes"
 		},
-		"lockedFolderResults": "Results in {name}"
+		"lockedFolderResults": "Results in {name}",
+		"showDetails": "Show keyboard hints"
 	},
 	"diagnostics": {
 		"title": "Diagnostics",
@@ -2058,11 +2085,20 @@
 		"Conversation": "Conversation",
 		"No changes in this conversation": "No changes in this conversation",
 		"The project is as it was at the conversation's first prompt.": "The project is as it was at the conversation's first prompt.",
-		"%@ files": {"one": "%@ file", "other": "%@ files"},
+		"%@ files": {
+			"one": "%@ file",
+			"other": "%@ files"
+		},
 		"against %@ from %@, uncommitted included": "against %@ from %@, uncommitted included",
 		"Binary file, not shown": "Binary file, not shown",
-		"%d lines folded. Click to show.": {"one": "%d line folded. Click to show.", "other": "%d lines folded. Click to show."},
-		"Generated file, %d lines folded. Click to show.": {"one": "Generated file, %d line folded. Click to show.", "other": "Generated file, %d lines folded. Click to show."},
+		"%d lines folded. Click to show.": {
+			"one": "%d line folded. Click to show.",
+			"other": "%d lines folded. Click to show."
+		},
+		"Generated file, %d lines folded. Click to show.": {
+			"one": "Generated file, %d line folded. Click to show.",
+			"other": "Generated file, %d lines folded. Click to show."
+		},
 		"renamed from %@": "renamed from %@",
 		"Open in Split": "Open in Split",
 		"worktree": "worktree",
@@ -2299,16 +2335,34 @@
 		"Never Sleep": "Never Sleep",
 		"Commands kept the Mac awake for the maximum duration.": "Commands kept the Mac awake for the maximum duration.",
 		"While the lid was closed": "While the lid was closed",
-		"%d commands finished": {"one": "%d command finished", "other": "%d commands finished"},
-		"%d wait for your answer, the oldest for %@": {"one": "%d waits for your answer, for %@", "other": "%d wait for your answer, the oldest for %@"},
+		"%d commands finished": {
+			"one": "%d command finished",
+			"other": "%d commands finished"
+		},
+		"%d wait for your answer, the oldest for %@": {
+			"one": "%d waits for your answer, for %@",
+			"other": "%d wait for your answer, the oldest for %@"
+		},
 		"battery from %d%% to %d%%": "battery from %d%% to %d%%",
 		"Show Next Waiting Terminal": "Show Next Waiting Terminal",
 		"Downloads": "Downloads",
 		"Quit Lilo?": "Quit Lilo?",
-		"%d terminals are still running a command. They will be stopped.": {"one": "%d terminal is still running a command. It will be stopped.", "other": "%d terminals are still running a command. They will be stopped."},
-		"%d terminals are still running a command (%@). They will be stopped.": {"one": "%d terminal is still running a command (%@). It will be stopped.", "other": "%d terminals are still running a command (%@). They will be stopped."},
-		"%@ and %d more": {"one": "%@ and %d more", "other": "%@ and %d more"},
-		"%d downloads are in progress and will be paused until Lilo opens again.": {"one": "%d download is in progress and will be paused until Lilo opens again.", "other": "%d downloads are in progress and will be paused until Lilo opens again."},
+		"%d terminals are still running a command. They will be stopped.": {
+			"one": "%d terminal is still running a command. It will be stopped.",
+			"other": "%d terminals are still running a command. They will be stopped."
+		},
+		"%d terminals are still running a command (%@). They will be stopped.": {
+			"one": "%d terminal is still running a command (%@). It will be stopped.",
+			"other": "%d terminals are still running a command (%@). They will be stopped."
+		},
+		"%@ and %d more": {
+			"one": "%@ and %d more",
+			"other": "%@ and %d more"
+		},
+		"%d downloads are in progress and will be paused until Lilo opens again.": {
+			"one": "%d download is in progress and will be paused until Lilo opens again.",
+			"other": "%d downloads are in progress and will be paused until Lilo opens again."
+		},
 		"Sign In": "Sign In",
 		"Install": "Install",
 		"Install %@?": "Install %@?",
@@ -2322,11 +2376,23 @@
 		"A command is still running in it and will be stopped.": "A command is still running in it and will be stopped.",
 		"Close": "Close",
 		"New Terminal Tab": "New Terminal Tab",
-		"Close %d terminals?": {"one": "Close %d terminal?", "other": "Close %d terminals?"},
-		"Pin %d Tabs": {"one": "Pin %d Tab", "other": "Pin %d Tabs"},
-		"Bookmark %d Tabs": {"one": "Bookmark %d Tab", "other": "Bookmark %d Tabs"},
+		"Close %d terminals?": {
+			"one": "Close %d terminal?",
+			"other": "Close %d terminals?"
+		},
+		"Pin %d Tabs": {
+			"one": "Pin %d Tab",
+			"other": "Pin %d Tabs"
+		},
+		"Bookmark %d Tabs": {
+			"one": "Bookmark %d Tab",
+			"other": "Bookmark %d Tabs"
+		},
 		"Move Tabs to Space": "Move Tabs to Space",
-		"Close %d Tabs": {"one": "Close %d Tab", "other": "Close %d Tabs"},
+		"Close %d Tabs": {
+			"one": "Close %d Tab",
+			"other": "Close %d Tabs"
+		},
 		"Commands are still running in them and will be stopped.": "Commands are still running in them and will be stopped.",
 		"The terminal could not start.": "The terminal could not start.",
 		"Close the tab and try again.": "Close the tab and try again.",
@@ -2456,7 +2522,10 @@
 		"Removed Lilo": "Removed Lilo",
 		"Lilo could not read %@: add this server to it yourself: %@": "Lilo could not read %@: add this server to it yourself: %@",
 		"Stop Agents": "Stop Agents",
-		"Delete %@ and its %d tabs?": {"one": "Delete %@ and its %d tab?", "other": "Delete %@ and its %d tabs?"},
+		"Delete %@ and its %d tabs?": {
+			"one": "Delete %@ and its %d tab?",
+			"other": "Delete %@ and its %d tabs?"
+		},
 		"This cannot be undone.": "This cannot be undone.",
 		"Its tabs stay in the sidebar.": "Its tabs stay in the sidebar.",
 		"Agent": "Agent",
@@ -2546,7 +2615,8 @@
 		"Hide Pages": "Hide Pages",
 		"Close Conversation": "Close Conversation",
 		"Pasted image": "Pasted image",
-		"Copied Lilo's entry": "Copied Lilo's entry"
+		"Copied Lilo's entry": "Copied Lilo's entry",
+		"Keep Loaded": "Keep Loaded"
 	},
 	"whatsNew": {
 		"version": "Lilo {version}",
@@ -2558,8 +2628,16 @@
 		"unavailable": "Release notes aren't available in this build.",
 		"reopen": "Always here in Help > What's New.",
 		"continue": "Back to Browsing",
-		"kinds": { "Breaking": "Breaking changes", "Added": "Added", "Changed": "Improvements", "Fixed": "Fixes" },
-		"art": { "inbox": "Inbox", "chat": "Team chat" },
+		"kinds": {
+			"Breaking": "Breaking changes",
+			"Added": "Added",
+			"Changed": "Improvements",
+			"Fixed": "Fixes"
+		},
+		"art": {
+			"inbox": "Inbox",
+			"chat": "Team chat"
+		},
 		"releases": {
 			"v0210": {
 				"headline": "Pages in your language.",

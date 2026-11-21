@@ -169,7 +169,8 @@
 			"profiles": "個人檔案",
 			"otherAppLinks": "來自其他 App 的連結",
 			"blockerExceptions": "清單與例外",
-			"agentConversations": "對話"
+			"agentConversations": "對話",
+			"beta": "Beta 模式"
 		},
 		"searchPlaceholder": "搜尋設定",
 		"searchResultsTitle": "搜尋結果",
@@ -218,7 +219,10 @@
 				"executable": "指令",
 				"arguments": "引數，每行一個",
 				"environment": "環境，每行 NAME=值",
-				"note": "指令是可執行檔的完整路徑，該檔案透過標準輸入輸出使用 Agent Client Protocol。"
+				"note": "指令是可執行檔的完整路徑，該檔案透過標準輸入輸出使用 Agent Client Protocol。",
+				"title": "自訂代理",
+				"description": "將你自己的程式作為代理啟動，與登錄庫中的代理並列。",
+				"keywords": "自訂 代理 指令 acp 本機 腳本 環境 變數 引數"
 			},
 			"appIcon": {
 				"title": "App 圖像",
@@ -622,6 +626,25 @@
 				"reset": "回復預設值",
 				"resetTitle": "要回復 Lilo 提示詞嗎？",
 				"resetMessage": "你的變更將被預設提示詞取代。"
+			},
+			"tabSleepAllowlist": {
+				"title": "保持載入的網站",
+				"description": "這些網站(包括子網域)的分頁不會被凍結或卸載,因此會持續佔用記憶體與電力。以逗號分隔。",
+				"keywords": "保持載入 例外 允許清單 永不休眠 凍結 卸載",
+				"placeholder": "mail.example.com, example.org"
+			},
+			"betaUpdateCheck": {
+				"title": "Beta 更新",
+				"description": "此 Beta 於啟動時自動將自身建置與分支的最新發布比較一次。",
+				"keywords": "Beta 更新",
+				"check": "檢查 Beta",
+				"lastChecked": "已於 {time} 檢查",
+				"absent": "此建置沒有 Beta 更新來源。"
+			},
+			"betaUpdateRelease": {
+				"title": "Beta {tag} 已發布",
+				"description": "從發布頁面手動下載並安裝；Lilo 從不自行替換。",
+				"open": "開啟發布頁"
 			}
 		},
 		"devices": {
@@ -688,7 +711,9 @@
 			"status": {
 				"acting": "正在執行動作",
 				"connected": "已連接",
-				"allowed": "已允許"
+				"allowed": "已允許",
+				"notInstalled": "未安裝",
+				"ready": "已設定"
 			},
 			"allowedSeen": "已允許，上次連線 {time}",
 			"foundLine": "在這部 Mac 上",
@@ -715,7 +740,8 @@
 				"removeSite": "移除 {site}",
 				"floor": "登入、付款、購買、刪除、發佈以及向其他網站傳送資料時，所有代理程式都會先詢問。",
 				"floorOff": "詢問已關閉：代理程式會直接操作，敏感操作也不例外。"
-			}
+			},
+			"readyLine": "已設定。首次連線時 Lilo 會詢問你。"
 		},
 		"agentActivity": {
 			"refresh": "重新整理",
@@ -1420,7 +1446,8 @@
 			"showChanges": "顯示變更",
 			"showChangesDesc": "檢閱目前終端機尚未提交的 git 變更"
 		},
-		"lockedFolderResults": "{name} 中的結果"
+		"lockedFolderResults": "{name} 中的結果",
+		"showDetails": "顯示鍵盤提示"
 	},
 	"diagnostics": {
 		"title": "診斷",
@@ -2058,11 +2085,20 @@
 		"Conversation": "對話",
 		"No changes in this conversation": "此對話中沒有變更",
 		"The project is as it was at the conversation's first prompt.": "專案與對話第一則提示時相同。",
-		"%@ files": {"one": "%@ 個檔案", "other": "%@ 個檔案"},
+		"%@ files": {
+			"one": "%@ 個檔案",
+			"other": "%@ 個檔案"
+		},
 		"against %@ from %@, uncommitted included": "與 %@（來自 %@）比較，包含尚未提交的變更",
 		"Binary file, not shown": "二進位檔案，不予顯示",
-		"%d lines folded. Click to show.": {"one": "已摺疊 %d 行。點按以顯示。", "other": "已摺疊 %d 行。點按以顯示。"},
-		"Generated file, %d lines folded. Click to show.": {"one": "產生的檔案，已摺疊 %d 行。點按以顯示。", "other": "產生的檔案，已摺疊 %d 行。點按以顯示。"},
+		"%d lines folded. Click to show.": {
+			"one": "已摺疊 %d 行。點按以顯示。",
+			"other": "已摺疊 %d 行。點按以顯示。"
+		},
+		"Generated file, %d lines folded. Click to show.": {
+			"one": "產生的檔案，已摺疊 %d 行。點按以顯示。",
+			"other": "產生的檔案，已摺疊 %d 行。點按以顯示。"
+		},
 		"renamed from %@": "重新命名自 %@",
 		"Open in Split": "以分割顯示開啟",
 		"worktree": "工作樹",
@@ -2299,16 +2335,34 @@
 		"Never Sleep": "永不睡眠",
 		"Commands kept the Mac awake for the maximum duration.": "指令已讓 Mac 保持喚醒達最長時間。",
 		"While the lid was closed": "上蓋闔上期間",
-		"%d commands finished": {"one": "%d 個指令已完成", "other": "%d 個指令已完成"},
-		"%d wait for your answer, the oldest for %@": {"one": "%d 個正在等待你的回應，最早一個已等待 %@", "other": "%d 個正在等待你的回應，最早一個已等待 %@"},
+		"%d commands finished": {
+			"one": "%d 個指令已完成",
+			"other": "%d 個指令已完成"
+		},
+		"%d wait for your answer, the oldest for %@": {
+			"one": "%d 個正在等待你的回應，最早一個已等待 %@",
+			"other": "%d 個正在等待你的回應，最早一個已等待 %@"
+		},
 		"battery from %d%% to %d%%": "電池電量從 %d%% 變成 %d%%",
 		"Show Next Waiting Terminal": "顯示下一個等待中的終端機",
 		"Downloads": "下載項目",
 		"Quit Lilo?": "要結束 Lilo 嗎？",
-		"%d terminals are still running a command. They will be stopped.": {"one": "%d 個終端機仍在執行指令。該指令將會停止。", "other": "%d 個終端機仍在執行指令。指令將會停止。"},
-		"%d terminals are still running a command (%@). They will be stopped.": {"one": "%d 個終端機仍在執行指令（%@）。該指令將會停止。", "other": "%d 個終端機仍在執行指令（%@）。指令將會停止。"},
-		"%@ and %d more": {"one": "%@ 以及其他 %d 個", "other": "%@ 以及其他 %d 個"},
-		"%d downloads are in progress and will be paused until Lilo opens again.": {"one": "%d 個下載項目正在進行，將暫停直到 Lilo 再次開啟。", "other": "%d 個下載項目正在進行，將暫停直到 Lilo 再次開啟。"},
+		"%d terminals are still running a command. They will be stopped.": {
+			"one": "%d 個終端機仍在執行指令。該指令將會停止。",
+			"other": "%d 個終端機仍在執行指令。指令將會停止。"
+		},
+		"%d terminals are still running a command (%@). They will be stopped.": {
+			"one": "%d 個終端機仍在執行指令（%@）。該指令將會停止。",
+			"other": "%d 個終端機仍在執行指令（%@）。指令將會停止。"
+		},
+		"%@ and %d more": {
+			"one": "%@ 以及其他 %d 個",
+			"other": "%@ 以及其他 %d 個"
+		},
+		"%d downloads are in progress and will be paused until Lilo opens again.": {
+			"one": "%d 個下載項目正在進行，將暫停直到 Lilo 再次開啟。",
+			"other": "%d 個下載項目正在進行，將暫停直到 Lilo 再次開啟。"
+		},
 		"Sign In": "登入",
 		"Install": "安裝",
 		"Install %@?": "要安裝 %@ 嗎？",
@@ -2322,11 +2376,23 @@
 		"A command is still running in it and will be stopped.": "其中仍有指令正在執行，將會停止。",
 		"Close": "關閉",
 		"New Terminal Tab": "新增終端機分頁",
-		"Close %d terminals?": {"one": "要關閉 %d 個終端機嗎？", "other": "要關閉 %d 個終端機嗎？"},
-		"Pin %d Tabs": {"one": "釘選 %d 個分頁", "other": "釘選 %d 個分頁"},
-		"Bookmark %d Tabs": {"one": "將 %d 個分頁加入書籤", "other": "將 %d 個分頁加入書籤"},
+		"Close %d terminals?": {
+			"one": "要關閉 %d 個終端機嗎？",
+			"other": "要關閉 %d 個終端機嗎？"
+		},
+		"Pin %d Tabs": {
+			"one": "釘選 %d 個分頁",
+			"other": "釘選 %d 個分頁"
+		},
+		"Bookmark %d Tabs": {
+			"one": "將 %d 個分頁加入書籤",
+			"other": "將 %d 個分頁加入書籤"
+		},
 		"Move Tabs to Space": "將分頁移至空間",
-		"Close %d Tabs": {"one": "關閉 %d 個分頁", "other": "關閉 %d 個分頁"},
+		"Close %d Tabs": {
+			"one": "關閉 %d 個分頁",
+			"other": "關閉 %d 個分頁"
+		},
 		"Commands are still running in them and will be stopped.": "其中仍有指令正在執行，將會停止。",
 		"The terminal could not start.": "無法啟動終端機。",
 		"Close the tab and try again.": "請關閉分頁後再試一次。",
@@ -2456,7 +2522,10 @@
 		"Removed Lilo": "已移除 Lilo",
 		"Lilo could not read %@: add this server to it yourself: %@": "Lilo 無法讀取 %@：請自行加入此伺服器：%@",
 		"Stop Agents": "停止代理程式",
-		"Delete %@ and its %d tabs?": {"one": "要刪除 %@ 及其 %d 個分頁嗎？", "other": "要刪除 %@ 及其 %d 個分頁嗎？"},
+		"Delete %@ and its %d tabs?": {
+			"one": "要刪除 %@ 及其 %d 個分頁嗎？",
+			"other": "要刪除 %@ 及其 %d 個分頁嗎？"
+		},
 		"This cannot be undone.": "此動作無法還原。",
 		"Its tabs stay in the sidebar.": "其分頁會保留在側邊欄中。",
 		"Agent": "代理程式",
@@ -2546,7 +2615,8 @@
 		"Hide Pages": "隱藏頁面",
 		"Close Conversation": "關閉對話",
 		"Pasted image": "貼上的圖片",
-		"Copied Lilo's entry": "已拷貝 Lilo 的項目"
+		"Copied Lilo's entry": "已拷貝 Lilo 的項目",
+		"Keep Loaded": "保持載入"
 	},
 	"whatsNew": {
 		"version": "Lilo {version}",

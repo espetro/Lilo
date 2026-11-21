@@ -169,7 +169,8 @@
 			"profiles": "プロファイル",
 			"otherAppLinks": "ほかのアプリからのリンク",
 			"blockerExceptions": "リストと例外",
-			"agentConversations": "会話"
+			"agentConversations": "会話",
+			"beta": "ベータモード"
 		},
 		"searchPlaceholder": "設定を検索",
 		"searchResultsTitle": "検索結果",
@@ -218,7 +219,10 @@
 				"executable": "コマンド",
 				"arguments": "引数（1行に1つ）",
 				"environment": "環境（1行に NAME=値）",
-				"note": "コマンドは、標準入出力で Agent Client Protocol を話す実行可能ファイルのフルパスです。"
+				"note": "コマンドは、標準入出力で Agent Client Protocol を話す実行可能ファイルのフルパスです。",
+				"title": "カスタムエージェント",
+				"description": "レジストリのエージェントと並べて、自分のプログラムをエージェントとして起動します。",
+				"keywords": "カスタム エージェント コマンド acp ローカル スクリプト 環境 変数 引数"
 			},
 			"appIcon": {
 				"title": "アプリアイコン",
@@ -622,6 +626,25 @@
 				"reset": "デフォルトに戻す",
 				"resetTitle": "Lilo のプロンプトを戻しますか？",
 				"resetMessage": "変更内容はデフォルトのプロンプトに置き換えられます。"
+			},
+			"tabSleepAllowlist": {
+				"title": "読み込んだままにするサイト",
+				"description": "これらのサイト(サブドメインを含む)のタブは凍結も解放もされないため、メモリとバッテリーを使い続けます。カンマで区切ります。",
+				"keywords": "読み込んだまま 例外 許可リスト スリープしない 凍結 解放",
+				"placeholder": "mail.example.com, example.org"
+			},
+			"betaUpdateCheck": {
+				"title": "ベータの更新",
+				"description": "このベータは起動時に一度だけ、自分のビルドをフォークの最新リリースと比べます。",
+				"keywords": "ベータの更新",
+				"check": "ベータを確認",
+				"lastChecked": "{time} に確認",
+				"absent": "このビルドにはベータフィードがありません。"
+			},
+			"betaUpdateRelease": {
+				"title": "ベータ {tag} が公開されました",
+				"description": "リリースページから手動でダウンロードしてインストールします。Lilo が自分を置き換えることはありません。",
+				"open": "リリースを開く"
 			}
 		},
 		"devices": {
@@ -688,7 +711,9 @@
 			"status": {
 				"acting": "操作中",
 				"connected": "接続済み",
-				"allowed": "許可済み"
+				"allowed": "許可済み",
+				"notInstalled": "未インストール",
+				"ready": "構成済み"
 			},
 			"allowedSeen": "許可済み、最終接続 {time}",
 			"foundLine": "このMac上",
@@ -715,7 +740,8 @@
 				"removeSite": "{site}を削除",
 				"floor": "サインイン、支払い、購入、削除、公開、他のサイトへのデータ送信は、どのエージェントでも必ず確認します。",
 				"floorOff": "確認はオフです。エージェントは重要な操作も含め、確認せずに操作します。"
-			}
+			},
+			"readyLine": "設定済み。初回接続時に Lilo が確認します。"
 		},
 		"agentActivity": {
 			"refresh": "更新",
@@ -1420,7 +1446,8 @@
 			"showChanges": "変更を表示",
 			"showChangesDesc": "現在のターミナルの未コミットの Git 変更を確認する"
 		},
-		"lockedFolderResults": "{name}内の結果"
+		"lockedFolderResults": "{name}内の結果",
+		"showDetails": "キーボードヒントを表示"
 	},
 	"diagnostics": {
 		"title": "診断",
@@ -2058,11 +2085,20 @@
 		"Conversation": "会話",
 		"No changes in this conversation": "この会話での変更はありません",
 		"The project is as it was at the conversation's first prompt.": "プロジェクトは会話の最初のプロンプト時点のままです。",
-		"%@ files": {"one": "%@個のファイル", "other": "%@個のファイル"},
+		"%@ files": {
+			"one": "%@個のファイル",
+			"other": "%@個のファイル"
+		},
 		"against %@ from %@, uncommitted included": "比較先 %@、起点 %@、未コミットを含む",
 		"Binary file, not shown": "バイナリファイルは表示できません",
-		"%d lines folded. Click to show.": {"one": "%d行を折りたたみました。クリックして表示。", "other": "%d行を折りたたみました。クリックして表示。"},
-		"Generated file, %d lines folded. Click to show.": {"one": "生成ファイルの%d行を折りたたみました。クリックして表示。", "other": "生成ファイルの%d行を折りたたみました。クリックして表示。"},
+		"%d lines folded. Click to show.": {
+			"one": "%d行を折りたたみました。クリックして表示。",
+			"other": "%d行を折りたたみました。クリックして表示。"
+		},
+		"Generated file, %d lines folded. Click to show.": {
+			"one": "生成ファイルの%d行を折りたたみました。クリックして表示。",
+			"other": "生成ファイルの%d行を折りたたみました。クリックして表示。"
+		},
 		"renamed from %@": "変更前の名前：%@",
 		"Open in Split": "分割表示で開く",
 		"worktree": "ワークツリー",
@@ -2299,16 +2335,34 @@
 		"Never Sleep": "スリープしない",
 		"Commands kept the Mac awake for the maximum duration.": "コマンドによるスリープ防止が上限時間に達しました。",
 		"While the lid was closed": "蓋を閉じている間",
-		"%d commands finished": {"one": "%d個のコマンドが完了しました", "other": "%d個のコマンドが完了しました"},
-		"%d wait for your answer, the oldest for %@": {"one": "%d個が回答を待機中、最も長いもので %@", "other": "%d個が回答を待機中、最も長いもので %@"},
+		"%d commands finished": {
+			"one": "%d個のコマンドが完了しました",
+			"other": "%d個のコマンドが完了しました"
+		},
+		"%d wait for your answer, the oldest for %@": {
+			"one": "%d個が回答を待機中、最も長いもので %@",
+			"other": "%d個が回答を待機中、最も長いもので %@"
+		},
 		"battery from %d%% to %d%%": "バッテリー残量：%d%% から %d%%",
 		"Show Next Waiting Terminal": "次の待機中ターミナルを表示",
 		"Downloads": "ダウンロード",
 		"Quit Lilo?": "Lilo を終了しますか？",
-		"%d terminals are still running a command. They will be stopped.": {"one": "%d個のターミナルでコマンドを実行中です。停止されます。", "other": "%d個のターミナルでコマンドを実行中です。停止されます。"},
-		"%d terminals are still running a command (%@). They will be stopped.": {"one": "%d個のターミナルでコマンドを実行中です（%@）。停止されます。", "other": "%d個のターミナルでコマンドを実行中です（%@）。停止されます。"},
-		"%@ and %d more": {"one": "%@、ほか%d個", "other": "%@、ほか%d個"},
-		"%d downloads are in progress and will be paused until Lilo opens again.": {"one": "進行中の%d件のダウンロードは、次に Lilo を開くまで一時停止します。", "other": "進行中の%d件のダウンロードは、次に Lilo を開くまで一時停止します。"},
+		"%d terminals are still running a command. They will be stopped.": {
+			"one": "%d個のターミナルでコマンドを実行中です。停止されます。",
+			"other": "%d個のターミナルでコマンドを実行中です。停止されます。"
+		},
+		"%d terminals are still running a command (%@). They will be stopped.": {
+			"one": "%d個のターミナルでコマンドを実行中です（%@）。停止されます。",
+			"other": "%d個のターミナルでコマンドを実行中です（%@）。停止されます。"
+		},
+		"%@ and %d more": {
+			"one": "%@、ほか%d個",
+			"other": "%@、ほか%d個"
+		},
+		"%d downloads are in progress and will be paused until Lilo opens again.": {
+			"one": "進行中の%d件のダウンロードは、次に Lilo を開くまで一時停止します。",
+			"other": "進行中の%d件のダウンロードは、次に Lilo を開くまで一時停止します。"
+		},
 		"Sign In": "サインイン",
 		"Install": "インストール",
 		"Install %@?": "%@ をインストールしますか？",
@@ -2322,11 +2376,23 @@
 		"A command is still running in it and will be stopped.": "実行中のコマンドは停止されます。",
 		"Close": "閉じる",
 		"New Terminal Tab": "新規ターミナルタブ",
-		"Close %d terminals?": {"one": "%d個のターミナルを閉じますか？", "other": "%d個のターミナルを閉じますか？"},
-		"Pin %d Tabs": {"one": "%d個のタブを固定", "other": "%d個のタブを固定"},
-		"Bookmark %d Tabs": {"one": "%d個のタブをブックマーク", "other": "%d個のタブをブックマーク"},
+		"Close %d terminals?": {
+			"one": "%d個のターミナルを閉じますか？",
+			"other": "%d個のターミナルを閉じますか？"
+		},
+		"Pin %d Tabs": {
+			"one": "%d個のタブを固定",
+			"other": "%d個のタブを固定"
+		},
+		"Bookmark %d Tabs": {
+			"one": "%d個のタブをブックマーク",
+			"other": "%d個のタブをブックマーク"
+		},
 		"Move Tabs to Space": "タブをスペースに移動",
-		"Close %d Tabs": {"one": "%d個のタブを閉じる", "other": "%d個のタブを閉じる"},
+		"Close %d Tabs": {
+			"one": "%d個のタブを閉じる",
+			"other": "%d個のタブを閉じる"
+		},
 		"Commands are still running in them and will be stopped.": "実行中のコマンドはすべて停止されます。",
 		"The terminal could not start.": "ターミナルを起動できませんでした。",
 		"Close the tab and try again.": "タブを閉じて、もう一度お試しください。",
@@ -2456,7 +2522,10 @@
 		"Removed Lilo": "Lilo を削除しました",
 		"Lilo could not read %@: add this server to it yourself: %@": "Lilo は %@ を読み取れませんでした。このサーバを手動で追加してください：%@",
 		"Stop Agents": "エージェントを停止",
-		"Delete %@ and its %d tabs?": {"one": "%@ とその%d個のタブを削除しますか？", "other": "%@ とその%d個のタブを削除しますか？"},
+		"Delete %@ and its %d tabs?": {
+			"one": "%@ とその%d個のタブを削除しますか？",
+			"other": "%@ とその%d個のタブを削除しますか？"
+		},
 		"This cannot be undone.": "この操作は取り消せません。",
 		"Its tabs stay in the sidebar.": "タブはサイドバーに残ります。",
 		"Agent": "エージェント",
@@ -2546,7 +2615,8 @@
 		"Hide Pages": "ページを隠す",
 		"Close Conversation": "会話を閉じる",
 		"Pasted image": "貼り付けた画像",
-		"Copied Lilo's entry": "Liloの項目をコピーしました"
+		"Copied Lilo's entry": "Liloの項目をコピーしました",
+		"Keep Loaded": "読み込んだままにする"
 	},
 	"whatsNew": {
 		"version": "Lilo {version}",

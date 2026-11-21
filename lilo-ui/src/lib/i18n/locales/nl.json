@@ -169,7 +169,8 @@
 			"profiles": "Profielen",
 			"otherAppLinks": "Links uit andere apps",
 			"blockerExceptions": "Lijsten en uitzonderingen",
-			"agentConversations": "Gesprekken"
+			"agentConversations": "Gesprekken",
+			"beta": "Bètamodus"
 		},
 		"searchPlaceholder": "Zoek in instellingen",
 		"searchResultsTitle": "Zoekresultaten",
@@ -218,7 +219,10 @@
 				"executable": "Opdracht",
 				"arguments": "Argumenten, één per regel",
 				"environment": "Omgeving, NAAM=waarde per regel",
-				"note": "De opdracht is het volledige pad van een uitvoerbaar bestand dat het Agent Client Protocol spreekt via standaardinvoer en -uitvoer."
+				"note": "De opdracht is het volledige pad van een uitvoerbaar bestand dat het Agent Client Protocol spreekt via standaardinvoer en -uitvoer.",
+				"title": "Eigen agent",
+				"description": "Start een eigen programma als agent, naast die van het register.",
+				"keywords": "eigen agent opdracht acp lokaal script omgeving variabelen argumenten"
 			},
 			"appIcon": {
 				"title": "Appsymbool",
@@ -622,6 +626,25 @@
 				"reset": "Herstel standaard",
 				"resetTitle": "Prompt van Lilo herstellen?",
 				"resetMessage": "Je wijzigingen worden vervangen door de standaardprompt."
+			},
+			"tabSleepAllowlist": {
+				"title": "Sites die geladen blijven",
+				"description": "Tabbladen van deze sites, subdomeinen inbegrepen, worden nooit bevroren of ontladen en blijven geheugen en accu gebruiken. Gescheiden door komma's.",
+				"keywords": "geladen houden uitzondering toegestane lijst nooit slapen bevriezen ontladen",
+				"placeholder": "mail.example.com, example.org"
+			},
+			"betaUpdateCheck": {
+				"title": "Bèta-updates",
+				"description": "Deze bèta vergelijkt zijn build bij het starten één keer met de nieuwste release van de fork.",
+				"keywords": "Bèta-updates",
+				"check": "Zoek naar bèta's",
+				"lastChecked": "Gecontroleerd {time}",
+				"absent": "Deze build heeft geen bètafeed."
+			},
+			"betaUpdateRelease": {
+				"title": "Bèta {tag} is uit",
+				"description": "Handmatig gedownload van de releasepagina en geïnstalleerd; Lilo vervangt nooit zichzelf.",
+				"open": "Release openen"
 			}
 		},
 		"devices": {
@@ -688,7 +711,9 @@
 			"status": {
 				"acting": "Nu bezig",
 				"connected": "Verbonden",
-				"allowed": "Toegestaan"
+				"allowed": "Toegestaan",
+				"notInstalled": "Niet geïnstalleerd",
+				"ready": "Geconfigureerd"
 			},
 			"allowedSeen": "Toegestaan, laatst gezien {time}",
 			"foundLine": "Op deze Mac",
@@ -715,7 +740,8 @@
 				"removeSite": "{site} verwijderen",
 				"floor": "Inloggen, betalen, kopen, verwijderen, publiceren en gegevens naar een andere site sturen vragen altijd, voor elke agent.",
 				"floorOff": "Vragen staan uit: agents handelen zonder te vragen, ook bij gevoelige acties."
-			}
+			},
+			"readyLine": "Ingesteld. Lilo vraagt het je bij de eerste verbinding."
 		},
 		"agentActivity": {
 			"refresh": "Ververs",
@@ -1420,7 +1446,8 @@
 			"showChanges": "Toon wijzigingen",
 			"showChangesDesc": "Bekijk de niet-vastgelegde git-wijzigingen van de actieve terminal"
 		},
-		"lockedFolderResults": "Resultaten in {name}"
+		"lockedFolderResults": "Resultaten in {name}",
+		"showDetails": "Sneltoetsen tonen"
 	},
 	"diagnostics": {
 		"title": "Diagnostiek",
@@ -2058,11 +2085,20 @@
 		"Conversation": "Gesprek",
 		"No changes in this conversation": "Geen wijzigingen in dit gesprek",
 		"The project is as it was at the conversation's first prompt.": "Het project is zoals bij de eerste prompt van het gesprek.",
-		"%@ files": {"one": "%@ bestand", "other": "%@ bestanden"},
+		"%@ files": {
+			"one": "%@ bestand",
+			"other": "%@ bestanden"
+		},
 		"against %@ from %@, uncommitted included": "tegenover %@ uit %@, inclusief niet-vastgelegde wijzigingen",
 		"Binary file, not shown": "Binair bestand, niet getoond",
-		"%d lines folded. Click to show.": {"one": "%d regel samengevouwen. Klik om te tonen.", "other": "%d regels samengevouwen. Klik om te tonen."},
-		"Generated file, %d lines folded. Click to show.": {"one": "Gegenereerd bestand, %d regel samengevouwen. Klik om te tonen.", "other": "Gegenereerd bestand, %d regels samengevouwen. Klik om te tonen."},
+		"%d lines folded. Click to show.": {
+			"one": "%d regel samengevouwen. Klik om te tonen.",
+			"other": "%d regels samengevouwen. Klik om te tonen."
+		},
+		"Generated file, %d lines folded. Click to show.": {
+			"one": "Gegenereerd bestand, %d regel samengevouwen. Klik om te tonen.",
+			"other": "Gegenereerd bestand, %d regels samengevouwen. Klik om te tonen."
+		},
 		"renamed from %@": "naam gewijzigd van %@",
 		"Open in Split": "Open in gesplitste weergave",
 		"worktree": "worktree",
@@ -2299,16 +2335,34 @@
 		"Never Sleep": "Nooit laten sluimeren",
 		"Commands kept the Mac awake for the maximum duration.": "Commando's hebben de Mac gedurende de maximale tijd wakker gehouden.",
 		"While the lid was closed": "Terwijl de klep gesloten was",
-		"%d commands finished": {"one": "%d commando voltooid", "other": "%d commando's voltooid"},
-		"%d wait for your answer, the oldest for %@": {"one": "%d wacht op je antwoord, al %@", "other": "%d wachten op je antwoord, het oudste al %@"},
+		"%d commands finished": {
+			"one": "%d commando voltooid",
+			"other": "%d commando's voltooid"
+		},
+		"%d wait for your answer, the oldest for %@": {
+			"one": "%d wacht op je antwoord, al %@",
+			"other": "%d wachten op je antwoord, het oudste al %@"
+		},
 		"battery from %d%% to %d%%": "batterij van %d%% naar %d%%",
 		"Show Next Waiting Terminal": "Toon volgende wachtende terminal",
 		"Downloads": "Downloads",
 		"Quit Lilo?": "Lilo stoppen?",
-		"%d terminals are still running a command. They will be stopped.": {"one": "%d terminal voert nog een commando uit. Het wordt gestopt.", "other": "%d terminals voeren nog een commando uit. Ze worden gestopt."},
-		"%d terminals are still running a command (%@). They will be stopped.": {"one": "%d terminal voert nog een commando uit (%@). Het wordt gestopt.", "other": "%d terminals voeren nog een commando uit (%@). Ze worden gestopt."},
-		"%@ and %d more": {"one": "%@ en nog %d", "other": "%@ en nog %d"},
-		"%d downloads are in progress and will be paused until Lilo opens again.": {"one": "%d download is bezig en wordt gepauzeerd totdat Lilo weer opent.", "other": "%d downloads zijn bezig en worden gepauzeerd totdat Lilo weer opent."},
+		"%d terminals are still running a command. They will be stopped.": {
+			"one": "%d terminal voert nog een commando uit. Het wordt gestopt.",
+			"other": "%d terminals voeren nog een commando uit. Ze worden gestopt."
+		},
+		"%d terminals are still running a command (%@). They will be stopped.": {
+			"one": "%d terminal voert nog een commando uit (%@). Het wordt gestopt.",
+			"other": "%d terminals voeren nog een commando uit (%@). Ze worden gestopt."
+		},
+		"%@ and %d more": {
+			"one": "%@ en nog %d",
+			"other": "%@ en nog %d"
+		},
+		"%d downloads are in progress and will be paused until Lilo opens again.": {
+			"one": "%d download is bezig en wordt gepauzeerd totdat Lilo weer opent.",
+			"other": "%d downloads zijn bezig en worden gepauzeerd totdat Lilo weer opent."
+		},
 		"Sign In": "Log in",
 		"Install": "Installeer",
 		"Install %@?": "%@ installeren?",
@@ -2322,11 +2376,23 @@
 		"A command is still running in it and will be stopped.": "Er is nog een commando actief dat wordt gestopt.",
 		"Close": "Sluit",
 		"New Terminal Tab": "Nieuw terminaltabblad",
-		"Close %d terminals?": {"one": "%d terminal sluiten?", "other": "%d terminals sluiten?"},
-		"Pin %d Tabs": {"one": "Maak %d tabblad vast", "other": "Maak %d tabbladen vast"},
-		"Bookmark %d Tabs": {"one": "Maak bladwijzer van %d tabblad", "other": "Maak bladwijzer van %d tabbladen"},
+		"Close %d terminals?": {
+			"one": "%d terminal sluiten?",
+			"other": "%d terminals sluiten?"
+		},
+		"Pin %d Tabs": {
+			"one": "Maak %d tabblad vast",
+			"other": "Maak %d tabbladen vast"
+		},
+		"Bookmark %d Tabs": {
+			"one": "Maak bladwijzer van %d tabblad",
+			"other": "Maak bladwijzer van %d tabbladen"
+		},
 		"Move Tabs to Space": "Verplaats tabbladen naar ruimte",
-		"Close %d Tabs": {"one": "Sluit %d tabblad", "other": "Sluit %d tabbladen"},
+		"Close %d Tabs": {
+			"one": "Sluit %d tabblad",
+			"other": "Sluit %d tabbladen"
+		},
 		"Commands are still running in them and will be stopped.": "Er zijn nog commando's actief die worden gestopt.",
 		"The terminal could not start.": "De terminal kon niet starten.",
 		"Close the tab and try again.": "Sluit het tabblad en probeer het opnieuw.",
@@ -2456,7 +2522,10 @@
 		"Removed Lilo": "Lilo verwijderd",
 		"Lilo could not read %@: add this server to it yourself: %@": "Lilo kon %@ niet lezen: voeg deze server zelf toe: %@",
 		"Stop Agents": "Stop agents",
-		"Delete %@ and its %d tabs?": {"one": "%@ en %d tabblad verwijderen?", "other": "%@ en %d tabbladen verwijderen?"},
+		"Delete %@ and its %d tabs?": {
+			"one": "%@ en %d tabblad verwijderen?",
+			"other": "%@ en %d tabbladen verwijderen?"
+		},
 		"This cannot be undone.": "Dit kan niet ongedaan worden gemaakt.",
 		"Its tabs stay in the sidebar.": "De tabbladen blijven in de navigatiekolom staan.",
 		"Agent": "Agent",
@@ -2546,7 +2615,8 @@
 		"Hide Pages": "Pagina's verbergen",
 		"Close Conversation": "Gesprek sluiten",
 		"Pasted image": "Geplakte afbeelding",
-		"Copied Lilo's entry": "Vermelding van Lilo gekopieerd"
+		"Copied Lilo's entry": "Vermelding van Lilo gekopieerd",
+		"Keep Loaded": "Geladen houden"
 	},
 	"whatsNew": {
 		"version": "Lilo {version}",

@@ -169,7 +169,8 @@
 			"profiles": "Profile",
 			"otherAppLinks": "Łącza z innych aplikacji",
 			"blockerExceptions": "Listy i wyjątki",
-			"agentConversations": "Rozmowy"
+			"agentConversations": "Rozmowy",
+			"beta": "Tryb beta"
 		},
 		"searchPlaceholder": "Szukaj w ustawieniach",
 		"searchResultsTitle": "Wyniki wyszukiwania",
@@ -218,7 +219,10 @@
 				"executable": "Polecenie",
 				"arguments": "Argumenty, po jednym w wierszu",
 				"environment": "Środowisko, NAZWA=wartość w wierszu",
-				"note": "Polecenie to pełna ścieżka pliku wykonywalnego, który porozumiewa się przez Agent Client Protocol na standardowym wejściu i wyjściu."
+				"note": "Polecenie to pełna ścieżka pliku wykonywalnego, który porozumiewa się przez Agent Client Protocol na standardowym wejściu i wyjściu.",
+				"title": "Własny agent",
+				"description": "Uruchom własny program jako agenta, obok agentów z rejestru.",
+				"keywords": "własny agent polecenie acp lokalny skrypt środowisko zmienne argumenty"
 			},
 			"appIcon": {
 				"title": "Ikona aplikacji",
@@ -622,6 +626,25 @@
 				"reset": "Przywróć domyślny",
 				"resetTitle": "Przywrócić prompt Lilo?",
 				"resetMessage": "Twoje zmiany zostaną zastąpione domyślnym promptem."
+			},
+			"tabSleepAllowlist": {
+				"title": "Witryny zostające wczytane",
+				"description": "Karty tych witryn, łącznie z subdomenami, nigdy nie są zamrażane ani zwalniane, więc nadal zużywają pamięć i baterię. Oddzielone przecinkami.",
+				"keywords": "zostaw wczytaną wyjątek lista dozwolonych nigdy nie usypiaj zamrażanie zwalnianie",
+				"placeholder": "mail.example.com, example.org"
+			},
+			"betaUpdateCheck": {
+				"title": "Aktualizacje beta",
+				"description": "To beta przy starcie raz porównuje swoją kompilację z najnowszym wydaniem forka.",
+				"keywords": "Aktualizacje beta",
+				"check": "Sprawdź bety",
+				"lastChecked": "Sprawdzono {time}",
+				"absent": "Ta kompilacja nie ma źródła beta."
+			},
+			"betaUpdateRelease": {
+				"title": "Beta {tag} jest dostępna",
+				"description": "Pobierana ręcznie ze strony wydania i instalowana ręcznie; Lilo nigdy nie zastępuje samej siebie.",
+				"open": "Otwórz wydanie"
 			}
 		},
 		"devices": {
@@ -688,7 +711,9 @@
 			"status": {
 				"acting": "Działa teraz",
 				"connected": "Połączony",
-				"allowed": "Dozwolony"
+				"allowed": "Dozwolony",
+				"notInstalled": "Niezainstalowany",
+				"ready": "Skonfigurowany"
 			},
 			"allowedSeen": "Dozwolony, ostatnio {time}",
 			"foundLine": "Na tym Macu",
@@ -715,7 +740,8 @@
 				"removeSite": "Usuń {site}",
 				"floor": "Logowanie, płacenie, kupowanie, usuwanie, publikowanie i wysyłanie danych do innej witryny zawsze wymagają pytania, dla każdego agenta.",
 				"floorOff": "Pytania są wyłączone: agenci działają bez pytania, także przy działaniach wrażliwych."
-			}
+			},
+			"readyLine": "Skonfigurowano. Lilo zapyta przy pierwszym połączeniu."
 		},
 		"agentActivity": {
 			"refresh": "Odśwież",
@@ -1420,7 +1446,8 @@
 			"showChanges": "Pokaż zmiany",
 			"showChangesDesc": "Przejrzyj niezatwierdzone zmiany Git aktywnego terminala"
 		},
-		"lockedFolderResults": "Wyniki w {name}"
+		"lockedFolderResults": "Wyniki w {name}",
+		"showDetails": "Pokaż skróty klawiszowe"
 	},
 	"diagnostics": {
 		"title": "Diagnostyka",
@@ -2058,11 +2085,26 @@
 		"Conversation": "Rozmowa",
 		"No changes in this conversation": "Brak zmian w tej rozmowie",
 		"The project is as it was at the conversation's first prompt.": "Projekt jest taki jak przy pierwszym prompcie rozmowy.",
-		"%@ files": {"one": "%@ plik", "few": "%@ pliki", "many": "%@ plików", "other": "%@ pliku"},
+		"%@ files": {
+			"one": "%@ plik",
+			"few": "%@ pliki",
+			"many": "%@ plików",
+			"other": "%@ pliku"
+		},
 		"against %@ from %@, uncommitted included": "względem %@ od %@, z niezatwierdzonymi zmianami",
 		"Binary file, not shown": "Plik binarny, brak podglądu",
-		"%d lines folded. Click to show.": {"one": "Zwinięto %d wiersz. Kliknij, aby pokazać.", "few": "Zwinięto %d wiersze. Kliknij, aby pokazać.", "many": "Zwinięto %d wierszy. Kliknij, aby pokazać.", "other": "Zwinięto %d wiersza. Kliknij, aby pokazać."},
-		"Generated file, %d lines folded. Click to show.": {"one": "Plik wygenerowany, zwinięto %d wiersz. Kliknij, aby pokazać.", "few": "Plik wygenerowany, zwinięto %d wiersze. Kliknij, aby pokazać.", "many": "Plik wygenerowany, zwinięto %d wierszy. Kliknij, aby pokazać.", "other": "Plik wygenerowany, zwinięto %d wiersza. Kliknij, aby pokazać."},
+		"%d lines folded. Click to show.": {
+			"one": "Zwinięto %d wiersz. Kliknij, aby pokazać.",
+			"few": "Zwinięto %d wiersze. Kliknij, aby pokazać.",
+			"many": "Zwinięto %d wierszy. Kliknij, aby pokazać.",
+			"other": "Zwinięto %d wiersza. Kliknij, aby pokazać."
+		},
+		"Generated file, %d lines folded. Click to show.": {
+			"one": "Plik wygenerowany, zwinięto %d wiersz. Kliknij, aby pokazać.",
+			"few": "Plik wygenerowany, zwinięto %d wiersze. Kliknij, aby pokazać.",
+			"many": "Plik wygenerowany, zwinięto %d wierszy. Kliknij, aby pokazać.",
+			"other": "Plik wygenerowany, zwinięto %d wiersza. Kliknij, aby pokazać."
+		},
 		"renamed from %@": "poprzednia nazwa: %@",
 		"Open in Split": "Otwórz w widoku podzielonym",
 		"worktree": "drzewo robocze",
@@ -2299,16 +2341,46 @@
 		"Never Sleep": "Nigdy nie usypiaj",
 		"Commands kept the Mac awake for the maximum duration.": "Polecenia zapobiegały usypianiu Maca przez maksymalny czas.",
 		"While the lid was closed": "Gdy pokrywa była zamknięta",
-		"%d commands finished": {"one": "Zakończono %d polecenie", "few": "Zakończono %d polecenia", "many": "Zakończono %d poleceń", "other": "Zakończono %d polecenia"},
-		"%d wait for your answer, the oldest for %@": {"one": "%d polecenie czeka na odpowiedź od %@", "few": "%d polecenia czekają na odpowiedź, najstarsze od %@", "many": "%d poleceń czeka na odpowiedź, najstarsze od %@", "other": "%d polecenia czeka na odpowiedź, najstarsze od %@"},
+		"%d commands finished": {
+			"one": "Zakończono %d polecenie",
+			"few": "Zakończono %d polecenia",
+			"many": "Zakończono %d poleceń",
+			"other": "Zakończono %d polecenia"
+		},
+		"%d wait for your answer, the oldest for %@": {
+			"one": "%d polecenie czeka na odpowiedź od %@",
+			"few": "%d polecenia czekają na odpowiedź, najstarsze od %@",
+			"many": "%d poleceń czeka na odpowiedź, najstarsze od %@",
+			"other": "%d polecenia czeka na odpowiedź, najstarsze od %@"
+		},
 		"battery from %d%% to %d%%": "bateria od %d%% do %d%%",
 		"Show Next Waiting Terminal": "Pokaż następny oczekujący terminal",
 		"Downloads": "Pobrane",
 		"Quit Lilo?": "Zakończyć Lilo?",
-		"%d terminals are still running a command. They will be stopped.": {"one": "%d terminal nadal wykonuje polecenie. Zostanie ono zatrzymane.", "few": "%d terminale nadal wykonują polecenia. Zostaną one zatrzymane.", "many": "%d terminali nadal wykonuje polecenia. Zostaną one zatrzymane.", "other": "%d terminala nadal wykonuje polecenia. Zostaną one zatrzymane."},
-		"%d terminals are still running a command (%@). They will be stopped.": {"one": "%d terminal nadal wykonuje polecenie (%@). Zostanie ono zatrzymane.", "few": "%d terminale nadal wykonują polecenia (%@). Zostaną one zatrzymane.", "many": "%d terminali nadal wykonuje polecenia (%@). Zostaną one zatrzymane.", "other": "%d terminala nadal wykonuje polecenia (%@). Zostaną one zatrzymane."},
-		"%@ and %d more": {"one": "%@ i jeszcze %d", "few": "%@ i jeszcze %d", "many": "%@ i jeszcze %d", "other": "%@ i jeszcze %d"},
-		"%d downloads are in progress and will be paused until Lilo opens again.": {"one": "%d pobieranie jest w toku i zostanie wstrzymane do ponownego otwarcia Lilo.", "few": "%d pobierania są w toku i zostaną wstrzymane do ponownego otwarcia Lilo.", "many": "%d pobierań jest w toku i zostanie wstrzymanych do ponownego otwarcia Lilo.", "other": "%d pobierania jest w toku i zostanie wstrzymane do ponownego otwarcia Lilo."},
+		"%d terminals are still running a command. They will be stopped.": {
+			"one": "%d terminal nadal wykonuje polecenie. Zostanie ono zatrzymane.",
+			"few": "%d terminale nadal wykonują polecenia. Zostaną one zatrzymane.",
+			"many": "%d terminali nadal wykonuje polecenia. Zostaną one zatrzymane.",
+			"other": "%d terminala nadal wykonuje polecenia. Zostaną one zatrzymane."
+		},
+		"%d terminals are still running a command (%@). They will be stopped.": {
+			"one": "%d terminal nadal wykonuje polecenie (%@). Zostanie ono zatrzymane.",
+			"few": "%d terminale nadal wykonują polecenia (%@). Zostaną one zatrzymane.",
+			"many": "%d terminali nadal wykonuje polecenia (%@). Zostaną one zatrzymane.",
+			"other": "%d terminala nadal wykonuje polecenia (%@). Zostaną one zatrzymane."
+		},
+		"%@ and %d more": {
+			"one": "%@ i jeszcze %d",
+			"few": "%@ i jeszcze %d",
+			"many": "%@ i jeszcze %d",
+			"other": "%@ i jeszcze %d"
+		},
+		"%d downloads are in progress and will be paused until Lilo opens again.": {
+			"one": "%d pobieranie jest w toku i zostanie wstrzymane do ponownego otwarcia Lilo.",
+			"few": "%d pobierania są w toku i zostaną wstrzymane do ponownego otwarcia Lilo.",
+			"many": "%d pobierań jest w toku i zostanie wstrzymanych do ponownego otwarcia Lilo.",
+			"other": "%d pobierania jest w toku i zostanie wstrzymane do ponownego otwarcia Lilo."
+		},
 		"Sign In": "Zaloguj się",
 		"Install": "Zainstaluj",
 		"Install %@?": "Zainstalować %@?",
@@ -2322,11 +2394,31 @@
 		"A command is still running in it and will be stopped.": "Nadal działa w nim polecenie, które zostanie zatrzymane.",
 		"Close": "Zamknij",
 		"New Terminal Tab": "Nowa karta terminala",
-		"Close %d terminals?": {"one": "Zamknąć %d terminal?", "few": "Zamknąć %d terminale?", "many": "Zamknąć %d terminali?", "other": "Zamknąć %d terminala?"},
-		"Pin %d Tabs": {"one": "Przypnij %d kartę", "few": "Przypnij %d karty", "many": "Przypnij %d kart", "other": "Przypnij %d karty"},
-		"Bookmark %d Tabs": {"one": "Dodaj %d kartę do zakładek", "few": "Dodaj %d karty do zakładek", "many": "Dodaj %d kart do zakładek", "other": "Dodaj %d karty do zakładek"},
+		"Close %d terminals?": {
+			"one": "Zamknąć %d terminal?",
+			"few": "Zamknąć %d terminale?",
+			"many": "Zamknąć %d terminali?",
+			"other": "Zamknąć %d terminala?"
+		},
+		"Pin %d Tabs": {
+			"one": "Przypnij %d kartę",
+			"few": "Przypnij %d karty",
+			"many": "Przypnij %d kart",
+			"other": "Przypnij %d karty"
+		},
+		"Bookmark %d Tabs": {
+			"one": "Dodaj %d kartę do zakładek",
+			"few": "Dodaj %d karty do zakładek",
+			"many": "Dodaj %d kart do zakładek",
+			"other": "Dodaj %d karty do zakładek"
+		},
 		"Move Tabs to Space": "Przenieś karty do przestrzeni",
-		"Close %d Tabs": {"one": "Zamknij %d kartę", "few": "Zamknij %d karty", "many": "Zamknij %d kart", "other": "Zamknij %d karty"},
+		"Close %d Tabs": {
+			"one": "Zamknij %d kartę",
+			"few": "Zamknij %d karty",
+			"many": "Zamknij %d kart",
+			"other": "Zamknij %d karty"
+		},
 		"Commands are still running in them and will be stopped.": "Nadal działają w nich polecenia, które zostaną zatrzymane.",
 		"The terminal could not start.": "Nie udało się uruchomić terminala.",
 		"Close the tab and try again.": "Zamknij kartę i spróbuj ponownie.",
@@ -2456,7 +2548,12 @@
 		"Removed Lilo": "Usunięto Lilo",
 		"Lilo could not read %@: add this server to it yourself: %@": "Nie udało się odczytać %@: dodaj do niego ten serwer samodzielnie: %@",
 		"Stop Agents": "Zatrzymaj agentów",
-		"Delete %@ and its %d tabs?": {"one": "Usunąć %@ i %d kartę?", "few": "Usunąć %@ i %d karty?", "many": "Usunąć %@ i %d kart?", "other": "Usunąć %@ i %d karty?"},
+		"Delete %@ and its %d tabs?": {
+			"one": "Usunąć %@ i %d kartę?",
+			"few": "Usunąć %@ i %d karty?",
+			"many": "Usunąć %@ i %d kart?",
+			"other": "Usunąć %@ i %d karty?"
+		},
 		"This cannot be undone.": "Tej czynności nie można cofnąć.",
 		"Its tabs stay in the sidebar.": "Jego karty pozostaną w pasku bocznym.",
 		"Agent": "Agent",
@@ -2546,7 +2643,8 @@
 		"Hide Pages": "Ukryj strony",
 		"Close Conversation": "Zamknij rozmowę",
 		"Pasted image": "Wklejony obraz",
-		"Copied Lilo's entry": "Skopiowano wpis Lilo"
+		"Copied Lilo's entry": "Skopiowano wpis Lilo",
+		"Keep Loaded": "Zostaw wczytaną"
 	},
 	"whatsNew": {
 		"version": "Lilo {version}",
