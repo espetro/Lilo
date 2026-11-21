@@ -156,6 +156,7 @@ TEST_WORKERS = $(shell cores=$$(sysctl -n hw.perflevel0.physicalcpu 2>/dev/null 
 	run-ui-dev release release-notarize release-archive dmg dmg-background bridge-gen vt-build vt-build-source vt-zip webkit-fork bootstrap ui-preview check-commits startup-bench ext-bench energy-sample energy-compare energy-browsers perf-summary perf-compare perf-summary-test retried-tests-test lockf-test agent-call \
 	run-ui-dev release release-notarize release-archive dmg dmg-background bridge-gen vt-build vt-build-source vt-zip webkit-fork bootstrap bootstrap-test ui-preview check-commits startup-bench ext-bench energy-sample energy-compare energy-browsers perf-summary perf-compare perf-summary-test retried-tests-test lockf-test slot-test scope-test tier-test metrics metrics-on metrics-off metrics-test ci-metrics ci-metrics-test check-summary-test agent-app agent-call agent-eval agent-eval-test \
 	run-ui-dev release release-notarize release-archive dmg dmg-background bridge-gen vt-build vt-build-source vt-zip webkit-fork bootstrap bootstrap-test ui-preview check-commits startup-bench ext-bench energy-sample energy-compare energy-browsers perf-summary perf-compare perf-summary-test retried-tests-test lockf-test slot-test scope-test tier-test metrics metrics-on metrics-off metrics-test ci-metrics ci-metrics-test check-summary-test agent-app agent-call window-capture agent-eval agent-eval-test \
+	run-ui-dev release release-notarize release-archive dmg dmg-background bridge-gen vt-build vt-build-source vt-zip webkit-fork bootstrap bootstrap-test ui-preview check-commits worktree-new worktree-gc worktree-gc-test startup-bench ext-bench energy-sample energy-compare energy-browsers perf-summary perf-compare perf-summary-test retried-tests-test lockf-test slot-test scope-test tier-test metrics metrics-on metrics-off metrics-test ci-metrics ci-metrics-test check-summary-test agent-app agent-call window-capture agent-eval agent-eval-test \
 	logs logs-stream site-dev site-dev-stop site-preview site-native-preview site-generate site-check site-fix site-test site-e2e site-release-capture site-capture-server site-capture-deps site-lock site-audit site-add-svelte site-playground-deps site-demo-icons site-deploy site-deploy-check emoji-data password-manager-icons \
 	docs-dev docs-build docs-check docs-test docs-preview docs-deploy-check docs-deploy docs-translate docs-eval docs-lock \
 	hooks-install hooks-install-checks hooks-install-push-checks quick-deps hooks-test lint-commit-message lint-commits \
@@ -301,6 +302,7 @@ validate-ui: ui-lint ui-test ui-build
 ## Run every check that needs no Xcode: UI, website, docs, bridge, hooks, release and Swift lint (what Linux can run)
 linux-checks: ui-lint ui-test site-check site-test docs-check docs-test hooks-test perf-summary-test lockf-test ext-bridge-test swiftlint release-status
 linux-checks: ui-lint ui-test site-check site-test docs-check docs-test hooks-test perf-summary-test retried-tests-test scope-test tier-test metrics-test ci-metrics-test check-summary-test lockf-test ext-bridge-test swiftlint release-status
+linux-checks: ui-lint ui-test site-check site-test docs-check docs-test hooks-test perf-summary-test retried-tests-test scope-test tier-test metrics-test ci-metrics-test check-summary-test lockf-test ext-bridge-test swiftlint release-status worktree-gc-test
 
 ## Run Swift lint only
 swiftlint: $(SWIFTLINT)
@@ -826,6 +828,22 @@ vt-zip: vt-build-source
 ## Build every commit of BASE..HEAD with SwiftPM in a throwaway worktree (BASE=origin/main)
 check-commits:
 	@scripts/check_commits.sh $(BASE)
+
+## Create a worktree at $(WORKTREE_ROOT)/NAME, seeded by clonefile from a warm checkout (NAME=ticket/keywords BASE=origin/develop SEED=<main checkout> DERIVED=1 SITES=1)
+worktree-new:
+	@LILO_WORKTREE_ROOT="$(or $(WORKTREE_ROOT),$(HOME)/.worktrees)" LILO_WORKTREE_SEED="$(SEED)" \
+		LILO_WORKTREE_BRANCH="$(BRANCH)" LILO_WORKTREE_MAX=$(or $(MAX_WORKTREES),10) \
+		LILO_WORKTREE_FORCE=$(or $(FORCE),0) LILO_WORKTREE_DERIVED=$(or $(DERIVED),0) \
+		LILO_WORKTREE_SITES=$(or $(SITES),0) LILO_WORKTREE_BRIDGE=$(or $(BRIDGE),1) \
+		scripts/worktree_new.sh "$(NAME)" "$(or $(BASE),origin/develop)"
+
+## List worktrees whose PR is merged or closed and that are safe to remove (APPLY=1 removes them)
+worktree-gc:
+	@scripts/worktree_gc.sh $(if $(APPLY),--apply)
+
+## Test the worktree-gc selection logic in a throwaway repository
+worktree-gc-test:
+	@scripts/worktree_gc.test.sh
 
 ## Time launches of a Release build against a throwaway profile (RUNS=10 TABS=0; APP=path times that app, unbuilt)
 startup-bench:

@@ -212,6 +212,45 @@ The Swift tests run in CI by default: `make swift-test`, `make swift-test-slow` 
   is the official build, and `swift run` lacks the app's Info.plist: use `make run-ui-dev` to launch
   a real bundle.
 
+### Worktrees
+
+A worktree's checkout is about 60 MB; what makes one heavy is all regenerable: `node_modules`
+(~1.1 GB in `du` terms, but pnpm clonefiles each file from the shared store, so it costs almost
+nothing on disk), `Vendor/` (45 MB), the tool folders under `build/` (~50 MB) and, once built,
+`.derived.noindex/` (~1 GB). `make worktree-new` creates one already warm:
+
+```bash
+make worktree-new NAME=91/acp-flake          # ~/.worktrees/91/acp-flake, branch 91/acp-flake, off origin/develop
+make worktree-new NAME=spike/x BASE=origin/main BRANCH=feat/x SITES=1
+```
+
+It `git worktree add`s under `$WORKTREE_ROOT` (`~/.worktrees` by default), then clonefile-copies
+(`cp -c`, APFS: instant, shares storage with the seed until either side writes) `Vendor/`, the
+git-ignored files of `Lilo/Generated/` and the tool folders of `build/` from a seed checkout
+(`SEED=`, the main checkout by default), and installs dependencies — pnpm re-clones from the
+shared store in about a second, so `node_modules` is installed rather than copied. A fresh
+worktree is ready in ~3 s instead of paying the libghostty-vt and tool downloads again; a
+`df`-measured `cp -c` of `Vendor/` costs 0 MB where `cp -R` costs 34 MB. `DERIVED=1` also clones
+`.derived.noindex` for a warm incremental build — Xcode tolerates moved derived data and rebuilds
+whatever the shared compilation cache does not cover, so it is off by default.
+`MAX_WORKTREES` (default 10) caps how many worktrees may exist before `worktree-new` refuses;
+`FORCE=1` overrides when the count is legitimately higher.
+
+`make worktree-gc` lists the worktrees that are done — their PR on espetro/Lilo or Alexays/Lilo
+is merged or closed (an `upstream/<slug>` branch maps to the upstream PR head `<slug>`), the
+checkout is clean, HEAD sits on a remote-tracking branch and no process works inside it — with
+their `du` size, and `make worktree-gc APPLY=1` removes them with plain `git worktree remove`
+(never `--force`), so anything the checks miss is still refused. The main checkout is never a
+candidate. Delete your own worktree when its PR is merged rather than letting them accumulate;
+a `git fetch --prune` beforehand makes the remote-tracking check accurate. `worktree-gc` needs
+`gh` signed in and network for the PR lookup.
+
+Derived data stays per worktree on purpose: two `xcodebuild`s sharing one `DerivedData` race on
+its build products and index stores, and not every build path takes the `/tmp/tsc.lock` lock.
+What is shared instead is content-addressed and safe: the compilation CAS at `~/.cache/lilo/xcc`
+(capped at 10 GB) and the SwiftPM package checkouts at `~/.cache/lilo/spm-<hash>`, so a cold
+`.derived.noindex` in a new worktree rebuilds in tens of seconds, not minutes.
+
 ## Tests and validation
 
 `make validate` is the gate: UI lint, type checks, tests and build; the extension bridge build and
