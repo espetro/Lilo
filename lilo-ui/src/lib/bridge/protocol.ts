@@ -893,6 +893,10 @@ export interface BridgeCommandPayloadMap {
 	previewConversationArtifact: { tabId: string; code: string; language: string };
 	getAgentClients: EmptyPayload;
 	revokeAgentClient: { name: string };
+	/** Asks for each agent's latest calls: answered with `agentActionLog`. */
+	getAgentActionLog: EmptyPayload;
+	/** Reveals the folder of the action log in Finder. */
+	openAgentActionLog: EmptyPayload;
 	getAppNames: { ids: string[] };
 	getUpdaterStatus: EmptyPayload;
 	checkForUpdates: EmptyPayload;
@@ -1217,6 +1221,7 @@ export interface BridgeEventPayloadMap {
 	};
 	agentClientsLoaded: BridgeAgentClientsSnapshot;
 	agentClientPreview: BridgeAgentClientPreview;
+	agentActionLog: BridgeAgentActionLog;
 	appNames: { names: Record<string, string> };
 	updaterStatus: BridgeUpdaterStatus;
 	/** The downloaded update waiting for a relaunch; null once dismissed. */
@@ -1381,6 +1386,16 @@ export interface BridgeAgentClientPreview {
 	snippet: string;
 	/** Why Lilo will not write the file; null when it can. */
 	blocked: string | null;
+}
+
+/** Each agent's latest calls from the action log: what the writer kept, never an argument. */
+export interface BridgeAgentActionLog {
+	/** Most recently active first. `name` is how people know the agent; `calls` run newest first. */
+	clients: {
+		name: string;
+		/** `time` is ISO 8601; `host` the page's host when the call named a tab; `code` the failure's, when it failed. */
+		calls: { time: string; tool: string; host: string | null; ok: boolean; code: string | null }[];
+	}[];
 }
 
 /** The catalog's agent apps, which are installed or name Lilo in their configuration, and the agents the user let in. */
