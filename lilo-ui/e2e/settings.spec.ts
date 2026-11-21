@@ -747,7 +747,7 @@ test("the activity list asks for the log once when it opens, shows each agent's 
 	await expect(claude.locator("li").first()).toContainText("form_input");
 	await expect(claude.locator("li").first()).toContainText("example.com");
 	await expect(claude.locator("li").first().locator(".badge")).toHaveText("Failed");
-	await expect(claude.locator("li").last().locator(".badge")).toHaveCount(0);
+	await expect(claude.locator("li").last().locator(".badge")).toHaveText("");
 	await expect(activity.getByRole("group", { name: "Codex" }).locator("li")).toHaveCount(1);
 	expect(await asked()).toBe(1);
 

@@ -51,7 +51,7 @@
               <time datetime={call.time}>{when(call.time)}</time>
               <span class="tool">{call.tool}</span>
               <span class="host">{call.host ?? ""}</span>
-              {#if !call.ok}<span class="badge" title={call.code ?? ""}>{t("settings.agentActivity.failed")}</span>{/if}
+              <span class="badge" title={call.code ?? ""}>{call.ok ? "" : t("settings.agentActivity.failed")}</span>
             </li>
           {/each}
         </ol>
@@ -90,7 +90,7 @@
 
   li {
     display: grid;
-    grid-template-columns: minmax(110px, auto) minmax(0, 1fr) minmax(0, 1fr) auto;
+    grid-template-columns: 170px minmax(0, 1fr) minmax(0, 1fr) 110px;
     align-items: baseline;
     gap: var(--space-12);
     padding: 3px 0;
@@ -98,7 +98,9 @@
   }
 
   time {
+    overflow: hidden;
     font-variant-numeric: tabular-nums;
+    text-overflow: ellipsis;
     white-space: nowrap;
   }
 
@@ -117,6 +119,7 @@
   }
 
   .badge {
+    text-align: right;
     color: var(--danger-text);
     font-weight: var(--font-weight-medium);
   }
