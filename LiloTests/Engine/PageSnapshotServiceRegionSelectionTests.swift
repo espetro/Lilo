@@ -236,8 +236,7 @@ final class PageSnapshotServiceRegionSelectionTests: XCTestCase {
         let tab = existing ?? WKWebViewTab(configuration: WKWebViewConfiguration())
         let window = NSWindow(contentRect: NSRect(x: -20000, y: -20000, width: 400, height: 300), styleMask: [.borderless], backing: .buffered, defer: false)
         window.isReleasedWhenClosed = false
-        window.alphaValue = 0
-        window.orderFrontRegardless()
+        window.orderFrontOffscreen()
         windows.append(window)
         tab.view.frame = NSRect(x: 0, y: 0, width: 400, height: 300)
         window.contentView?.addSubview(tab.view)

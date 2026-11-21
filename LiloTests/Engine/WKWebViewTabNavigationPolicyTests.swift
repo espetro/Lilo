@@ -195,9 +195,8 @@ final class WKWebViewTabNavigationPolicyTests: XCTestCase {
         tab.delegate = spy
         let window = NSWindow(contentRect: NSRect(x: -20000, y: -20000, width: 400, height: 300), styleMask: [.titled], backing: .buffered, defer: false)
         window.isReleasedWhenClosed = false
-        window.alphaValue = 0
         window.contentView = tab.wkWebView
-        window.orderFrontRegardless()
+        window.orderFrontOffscreen()
         tab.loadURL(try XCTUnwrap(URL(string: "http://127.0.0.1:\(server.port)/")))
         let ordered = await pollUntil(timeout: 10) { posts.withLock { $0 } == 1 && spy.commits == 2 && !tab.isLoading }
         XCTAssertTrue(ordered)

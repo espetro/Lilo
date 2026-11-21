@@ -246,7 +246,8 @@ final class LittleWindowTests: XCTestCase {
     func testTheLastBrowserWindowHidesWhileALittleWindowIsOpen() throws {
         let little = try openPage()
         let window = try XCTUnwrap(controller.window)
-        window.makeKeyAndOrderFront(nil)
+        window.orderFrontOffscreen()
+        window.makeKey()
 
         XCTAssertFalse(controller.windowShouldClose(window), "closing it would quit the app")
         XCTAssertFalse(window.isVisible)

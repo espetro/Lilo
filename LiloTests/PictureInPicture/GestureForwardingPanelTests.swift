@@ -16,6 +16,7 @@ final class GestureForwardingPanelTests: XCTestCase {
         defer { panel.orderOut(nil) }
         let spy = GestureSpy(frame: NSRect(origin: .zero, size: NSSize(width: 320, height: 200)))
         panel.contentView?.addSubview(spy)
+        // Transparent but in place: the synthesized scroll event must land on the panel's real frame.
         panel.alphaValue = 0
         panel.orderFrontRegardless()
 

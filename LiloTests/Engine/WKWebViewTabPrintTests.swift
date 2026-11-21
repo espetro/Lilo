@@ -35,7 +35,7 @@ final class WKWebViewTabPrintTests: XCTestCase {
         let window = NSWindow(contentRect: NSRect(x: 0, y: 0, width: 600, height: 400), styleMask: [.titled], backing: .buffered, defer: false)
         window.isReleasedWhenClosed = false
         window.contentView = tab.view
-        window.orderFront(nil)
+        window.orderFrontOffscreen()
         addTeardownBlock { @MainActor in
             window.orderOut(nil)
             tab.teardown()

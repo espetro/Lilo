@@ -184,9 +184,7 @@ final class PagePopupTests: XCTestCase {
         let engine = try XCTUnwrap(controller.tabManager.engineTab(for: opener.id))
         let window = try XCTUnwrap(controller.window)
         if engine.view.window == nil {
-            window.alphaValue = 0
-            window.orderFrontRegardless()
-            window.setFrame(NSRect(x: -20000, y: -20000, width: 800, height: 600), display: false)
+            window.orderFrontOffscreen(frame: NSRect(x: 0, y: 0, width: 800, height: 600))
             engine.view.frame = NSRect(x: 0, y: 0, width: 600, height: 400)
             window.contentView?.addSubview(engine.view)
         }
