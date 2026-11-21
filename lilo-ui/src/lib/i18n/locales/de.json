@@ -950,6 +950,10 @@
 		"bottom": "Darunter öffnen",
 		"replace": "Ersetzen"
 	},
+	"splitPane": {
+		"close": "Geteilten Bereich schließen",
+		"maximize": "Geteilten Bereich maximieren"
+	},
 	"tabSection": {
 		"splitView": "Geteilte Ansicht",
 		"folderEmpty": "Ordner leer",
@@ -1224,6 +1228,7 @@
 		"terminalProgram": "Programm",
 		"hintRun": "Ausführen",
 		"hintSplit": "Teilen",
+		"splitFull": "Geteilte Ansicht ist voll ({count} Bereiche)",
 		"scopeTabs": "Tabs",
 		"scopeBookmarks": "Lesezeichen",
 		"scopeHistory": "Verlauf",
@@ -2136,6 +2141,7 @@
 		"Close Split Pane": "Geteilten Bereich schließen",
 		"Maximize Split Pane": "Geteilten Bereich maximieren",
 		"Open in Split View": "In geteilter Ansicht öffnen",
+		"Split view is full (%lld panes)": "Geteilte Ansicht ist voll (%lld Bereiche)",
 		"Hide Element…": "Element ausblenden…",
 		"Click an element to hide it on this site. Press Esc to cancel.": "Klicke auf ein Element, um es auf dieser Website auszublenden. Drücke Esc zum Abbrechen.",
 		"Click an element or drag an area. Arrow keys change the element, Return captures, Esc cancels.": "Klicke auf ein Element oder ziehe einen Bereich auf. Pfeiltasten wechseln das Element, Return nimmt auf, Esc bricht ab.",

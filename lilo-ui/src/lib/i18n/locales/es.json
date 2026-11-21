@@ -950,6 +950,10 @@
 		"bottom": "Abrir abajo",
 		"replace": "Sustituir"
 	},
+	"splitPane": {
+		"close": "Cerrar panel dividido",
+		"maximize": "Maximizar panel dividido"
+	},
 	"tabSection": {
 		"splitView": "Vista dividida",
 		"folderEmpty": "Carpeta vacía",
@@ -1224,6 +1228,7 @@
 		"terminalProgram": "Programa",
 		"hintRun": "Ejecutar",
 		"hintSplit": "Dividir",
+		"splitFull": "La vista dividida está llena ({count} paneles)",
 		"scopeTabs": "Pestañas",
 		"scopeBookmarks": "Marcadores",
 		"scopeHistory": "Historial",
@@ -2136,6 +2141,7 @@
 		"Close Split Pane": "Cerrar panel dividido",
 		"Maximize Split Pane": "Maximizar panel dividido",
 		"Open in Split View": "Abrir en vista dividida",
+		"Split view is full (%lld panes)": "La vista dividida está llena (%lld paneles)",
 		"Hide Element…": "Ocultar elemento…",
 		"Click an element to hide it on this site. Press Esc to cancel.": "Haz clic en un elemento para ocultarlo en este sitio. Pulsa Esc para cancelar.",
 		"Click an element or drag an area. Arrow keys change the element, Return captures, Esc cancels.": "Haz clic en un elemento o arrastra un área. Las flechas cambian el elemento, Intro captura y Esc cancela.",
