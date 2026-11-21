@@ -23,6 +23,10 @@
 		"terabyte": "TB"
 	},
 	"settings": {
+		"commandBarLayout": {
+			"default": "Varsayılan",
+			"compact": "Kompakt"
+		},
 		"terminalEnabled": "Terminal sekmeleri",
 		"terminalEnabledDescription": "Sayfalarınızın yanında kabukları sekme olarak açın. Kapalıyken terminal kestirmeleri, düğmeleri ve menüleri gizlenir. Açık terminaller kapatılana kadar kalır.",
 		"terminalTheme": "Tema",
@@ -217,6 +221,11 @@
 				"arguments": "Argümanlar, her satırda bir tane",
 				"environment": "Ortam, her satırda AD=değer",
 				"note": "Komut, Agent Client Protocol'ü standart girdi ve çıktı üzerinden konuşan çalıştırılabilir bir dosyanın tam yoludur. Kaydedilince ajan listesine katılır; komutu boşaltmak onu kaldırır."
+			},
+			"commandBarLayout": {
+				"title": "Komut çubuğu düzeni",
+				"description": "Varsayılan veya kompakt düzeni seçin.",
+				"keywords": "Komut çubuğu düzeni Varsayılan Kompakt"
 			},
 			"appIcon": {
 				"title": "Uygulama simgesi",
@@ -1245,6 +1254,8 @@
 		"sectionOpenTabs": "Açık Sekmeler",
 		"sectionBookmarks": "Yer İmleri",
 		"sectionRecentHistory": "Son Geçmiş",
+		"sectionFrequentSites": "Sık Ziyaret Edilenler",
+		"sectionRecentConversations": "Son Sohbetler",
 		"sectionHistory": "Geçmiş",
 		"sectionSwitchToTab": "Sekmeye Geç",
 		"sectionGoTo": "Git",

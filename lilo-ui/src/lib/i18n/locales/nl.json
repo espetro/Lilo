@@ -23,6 +23,10 @@
 		"terabyte": "TB"
 	},
 	"settings": {
+		"commandBarLayout": {
+			"default": "Standaard",
+			"compact": "Compact"
+		},
 		"terminalEnabled": "Terminaltabbladen",
 		"terminalEnabledDescription": "Open shells als tabbladen naast je pagina's. Als dit uitstaat, worden sneltoetsen, knoppen en menu's voor de terminal verborgen; geopende terminals blijven staan totdat je ze sluit.",
 		"terminalTheme": "Thema",
@@ -217,6 +221,11 @@
 				"arguments": "Argumenten, één per regel",
 				"environment": "Omgeving, NAAM=waarde per regel",
 				"note": "De opdracht is het volledige pad van een uitvoerbaar bestand dat het Agent Client Protocol spreekt via standaardinvoer en -uitvoer. Het komt in de agentenlijst zodra het is bewaard; leegmaken haalt het weg."
+			},
+			"commandBarLayout": {
+				"title": "Indeling van de opdrachtbalk",
+				"description": "Kies de standaard- of compacte indeling.",
+				"keywords": "Indeling van de opdrachtbalk Standaard Compact"
 			},
 			"appIcon": {
 				"title": "Appsymbool",
@@ -1245,6 +1254,8 @@
 		"sectionOpenTabs": "Geopende tabbladen",
 		"sectionBookmarks": "Bladwijzers",
 		"sectionRecentHistory": "Recente geschiedenis",
+		"sectionFrequentSites": "Vaak bezochte sites",
+		"sectionRecentConversations": "Recente gesprekken",
 		"sectionHistory": "Geschiedenis",
 		"sectionSwitchToTab": "Schakel over naar tabblad",
 		"sectionGoTo": "Ga naar",

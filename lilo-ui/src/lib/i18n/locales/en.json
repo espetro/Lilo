@@ -23,6 +23,10 @@
 		"terabyte": "TB"
 	},
 	"settings": {
+		"commandBarLayout": {
+			"default": "Default",
+			"compact": "Compact"
+		},
 		"terminalEnabled": "Terminal tabs",
 		"terminalEnabledDescription": "Open shells as tabs next to your pages. When off, the terminal shortcuts, buttons and menus are hidden; open terminals stay until closed.",
 		"terminalTheme": "Theme",
@@ -217,6 +221,11 @@
 				"arguments": "Arguments, one per line",
 				"environment": "Environment, NAME=value per line",
 				"note": "The command is the full path of an executable file that speaks the Agent Client Protocol over standard input and output. It joins the agent list once saved; clearing the command removes it."
+			},
+			"commandBarLayout": {
+				"title": "Command bar layout",
+				"description": "Choose the default or compact command bar.",
+				"keywords": "Command bar layout Default Compact"
 			},
 			"appIcon": {
 				"title": "App icon",
@@ -1245,6 +1254,8 @@
 		"sectionOpenTabs": "Open Tabs",
 		"sectionBookmarks": "Bookmarks",
 		"sectionRecentHistory": "Recent History",
+		"sectionFrequentSites": "Frequent Sites",
+		"sectionRecentConversations": "Recent Conversations",
 		"sectionHistory": "History",
 		"sectionSwitchToTab": "Switch to Tab",
 		"sectionGoTo": "Go To",

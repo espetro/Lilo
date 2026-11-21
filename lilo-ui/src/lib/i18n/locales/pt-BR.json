@@ -23,6 +23,10 @@
 		"terabyte": "TB"
 	},
 	"settings": {
+		"commandBarLayout": {
+			"default": "Padrão",
+			"compact": "Compacto"
+		},
 		"terminalEnabled": "Abas de terminal",
 		"terminalEnabledDescription": "Abra shells em abas ao lado das suas páginas. Quando desativado, os atalhos, botões e menus do terminal ficam ocultos; os terminais abertos permanecem até serem fechados.",
 		"terminalTheme": "Tema",
@@ -217,6 +221,11 @@
 				"arguments": "Argumentos, um por linha",
 				"environment": "Ambiente, NOME=valor por linha",
 				"note": "O comando é o caminho completo de um arquivo executável que fala o Agent Client Protocol pela entrada e saída padrão. Ele entra na lista de agentes ao ser salvo; esvaziá-lo o remove."
+			},
+			"commandBarLayout": {
+				"title": "Layout da barra de comandos",
+				"description": "Escolha o layout padrão ou compacto.",
+				"keywords": "Layout da barra de comandos Padrão Compacto"
 			},
 			"appIcon": {
 				"title": "Ícone do app",
@@ -1245,6 +1254,8 @@
 		"sectionOpenTabs": "Abas abertas",
 		"sectionBookmarks": "Favoritos",
 		"sectionRecentHistory": "Histórico recente",
+		"sectionFrequentSites": "Sites frequentes",
+		"sectionRecentConversations": "Conversas recentes",
 		"sectionHistory": "Histórico",
 		"sectionSwitchToTab": "Alternar para aba",
 		"sectionGoTo": "Ir para",

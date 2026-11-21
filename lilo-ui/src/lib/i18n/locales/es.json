@@ -23,6 +23,10 @@
 		"terabyte": "TB"
 	},
 	"settings": {
+		"commandBarLayout": {
+			"default": "Predeterminado",
+			"compact": "Compacto"
+		},
 		"terminalEnabled": "Pestañas de terminal",
 		"terminalEnabledDescription": "Abre sesiones de shell en pestañas junto a tus páginas. Al desactivarlo, se ocultan los atajos, botones y menús del terminal; los terminales abiertos permanecen hasta que los cierres.",
 		"terminalTheme": "Tema",
@@ -217,6 +221,11 @@
 				"arguments": "Argumentos, uno por línea",
 				"environment": "Entorno, NOMBRE=valor por línea",
 				"note": "El comando es la ruta completa de un archivo ejecutable que habla el Agent Client Protocol por la entrada y la salida estándar. Se une a la lista de agentes al guardarse; vaciarlo lo quita."
+			},
+			"commandBarLayout": {
+				"title": "Diseño de la barra de comandos",
+				"description": "Elige el diseño predeterminado o compacto.",
+				"keywords": "Diseño de la barra de comandos Predeterminado Compacto"
 			},
 			"appIcon": {
 				"title": "Icono de la app",
@@ -1245,6 +1254,8 @@
 		"sectionOpenTabs": "Pestañas abiertas",
 		"sectionBookmarks": "Marcadores",
 		"sectionRecentHistory": "Historial reciente",
+		"sectionFrequentSites": "Sitios frecuentes",
+		"sectionRecentConversations": "Conversaciones recientes",
 		"sectionHistory": "Historial",
 		"sectionSwitchToTab": "Cambiar a la pestaña",
 		"sectionGoTo": "Ir a",
