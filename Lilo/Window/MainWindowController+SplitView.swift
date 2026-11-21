@@ -568,7 +568,7 @@ final class SplitPanesController {
         guard let tabId = paneDragTabId else { return }
         let share = windowPoint.flatMap(paneDragShare) ?? (x: 0, y: 0)
         controller.bridgeRouter.send(event: "splitPaneDrag", data: [
-            "tabId": tabId.uuidString, "phase": phase, "x": share.x, "y": share.y,
+            "tabId": tabId.uuidString, "phase": phase, "x": share.x, "y": share.y
         ])
     }
 
@@ -765,8 +765,8 @@ final class SplitPanesController {
                 edge = -cand.minY; cross = cand.minX
                 reaches = cand.minY >= frame.maxY - 0.002
             }
-            guard overlap > 0, reaches,
-                  best == nil || edge > best!.edge || (edge == best!.edge && cross < best!.cross) else { continue }
+            guard overlap > 0, reaches else { continue }
+            if let current = best, !(edge > current.edge || (edge == current.edge && cross < current.cross)) { continue }
             best = (id, edge, cross)
         }
         return best?.id
