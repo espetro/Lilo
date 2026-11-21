@@ -35,20 +35,20 @@ fi
 
 echo "ci-swift: run $id for ${sha:0:8}: $(gh run view "$id" --json url --jq .url)"
 if command -v timeout >/dev/null; then
-  timeout "$timeout_s" gh run watch "$id" --interval 30 >/dev/null 2>&1 \
-    || echo "ci-swift: stopped waiting (timeout or watch error): showing the state so far" >&2
+  timeout "$timeout_s" gh run watch "$id" --interval 30 >/dev/null 2>&1
+  [ $? -eq 124 ] && echo "ci-swift: still running after ${timeout_s}s: showing the state so far (rerun make ci-swift to keep waiting)" >&2
 else
-  gh run watch "$id" --interval 30 >/dev/null 2>&1 || true
+  gh run watch "$id" --interval 30 >/dev/null 2>&1
 fi
 
 summary=$(gh run view "$id" --json status,conclusion,jobs \
-  --jq '.jobs[] | select(.name | startswith("App Validate")) | [.name, (.conclusion // .status), (.startedAt // ""), (.completedAt // "")] | @tsv')
+  --jq '.jobs[] | select(.name | startswith("App Validate")) | [.name, (.conclusion // .status), (.startedAt // "-"), (.completedAt // "-")] | join("|"))')
 [ -n "$summary" ] || { echo "ci-swift: the run has no macOS Swift jobs (docs-only change?): nothing to report"; exit 0; }
 
 status=0
-while IFS=$'\t' read -r name result started completed; do
+while IFS='|' read -r name result started completed; do
   secs=""
-  if [ -n "$started" ] && [ -n "$completed" ] && [ "$completed" != "0001-01-01T00:00:00Z" ]; then
+  if [ "$completed" != "-" ] && [ "$completed" != "0001-01-01T00:00:00Z" ]; then
     secs=$(( $(date -u -j -f %Y-%m-%dT%H:%M:%SZ "$completed" +%s 2>/dev/null || date -u -d "$completed" +%s) - $(date -u -j -f %Y-%m-%dT%H:%M:%SZ "$started" +%s 2>/dev/null || date -u -d "$started" +%s) ))s
   fi
   printf '%-8s %s %s\n' "$result" "$name" "$secs"
