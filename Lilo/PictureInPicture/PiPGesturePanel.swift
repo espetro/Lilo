@@ -66,7 +66,12 @@ class PiPGesturePanel: NSPanel {
         guard let contentView,
               let view = contentView.hitTest(contentView.convert(event.locationInWindow, from: nil))
         else { return true } // a titled panel's frame, or the borderless panel's margin
-        return sequence(first: view, next: { $0.superview }).contains { $0 is PiPWindowDragRegion }
+        var target: NSView? = view
+        while let current = target {
+            if current is PiPWindowDragRegion { return true }
+            target = unsafe current.superview
+        }
+        return false
     }
 
     /// Scales the frame about its center, keeping its aspect: the pinch factor is clamped between
@@ -83,7 +88,8 @@ class PiPGesturePanel: NSPanel {
             high = min((visible.width / 2).rounded(.down) / size.width,
                        (visible.height / 2).rounded(.down) / size.height)
         }
-        let clamped = size * max(low, min(scale, high))
+        let clampedScale = max(low, min(scale, high))
+        let clamped = NSSize(width: size.width * clampedScale, height: size.height * clampedScale)
         var resized = NSRect(x: frame.midX - clamped.width / 2, y: frame.midY - clamped.height / 2,
                              width: clamped.width, height: clamped.height)
         if let visible = screen?.visibleFrame {
