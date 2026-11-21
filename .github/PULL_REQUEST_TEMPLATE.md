@@ -2,6 +2,10 @@
 
 <!-- What this changes, and the problem it solves. Link the issue or discussion: "Fixes #123". -->
 
+## Why and measured impact
+
+<!-- Before and after numbers with the command that produced each (time, bytes, tokens, calls, disk, failure rate, interactions). Never invent a number. For a design or taste call say so and name who decides. -->
+
 ## How to test
 
 <!-- Steps to see the change working, and the tests that cover it. -->
