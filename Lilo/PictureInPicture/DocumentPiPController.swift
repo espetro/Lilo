@@ -172,6 +172,7 @@ final class DocumentPiPController: NSObject, WKUIDelegate, WKNavigationDelegate,
         content.onReturnToTab = { [weak self] in self?.returnToTab() }
         content.onClose = { [weak self] in self?.close() }
         content.onMoveEnded = { [weak self] in self?.endMove() }
+        panel.onGestureMoveEnded = { [weak self] in self?.endMove() }
         return panel
     }
 
@@ -212,7 +213,7 @@ final class DocumentPiPController: NSObject, WKUIDelegate, WKNavigationDelegate,
 }
 
 /// Borderless panels refuse key status by default; the PiP page needs it for its controls' keyboard handling.
-private final class PiPPanel: GestureForwardingPanel {
+private final class PiPPanel: PiPGesturePanel {
     override var canBecomeKey: Bool { true }
 }
 
@@ -266,7 +267,7 @@ private final class PiPContentView: NSView {
     override func mouseExited(with event: NSEvent) { bar.isHidden = true }
 }
 
-private final class PiPHoverBar: NSView {
+private final class PiPHoverBar: NSView, PiPWindowDragRegion {
     static let height: CGFloat = 28
 
     var onReturnToTab: (() -> Void)?
