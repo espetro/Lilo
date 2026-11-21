@@ -57,6 +57,16 @@
 
   setTopLevelDomains(TOP_LEVEL_DOMAINS);
 
+  interface Props {
+    /** Escape on a bar in place (docked), once there is no scope or move left to leave: a window that is only the bar closes with it. */
+    onEscape?: () => void;
+    /** The scope chips offered; all of them by default. */
+    scopes?: CommandScope[];
+    /** What the field and the empty list say before anything is typed, for a bar that does not search tabs and actions. */
+    copy?: { placeholder: string; emptyTitle: string; emptySubtitle: string };
+  }
+  let { onEscape, scopes, copy }: Props = $props();
+
   const SCOPE_HINTS: Array<{
     prefix: string;
     labelKey: string;
@@ -71,7 +81,7 @@
     { prefix: "<", labelKey: "commandBar.scopeArchive", scope: "archive" },
   ];
   const scopeHints = $derived(
-    SCOPE_HINTS.filter((hint) => hint.scope !== "terminal" || getSetting("terminalEnabled", "true") !== "false").map(
+    SCOPE_HINTS.filter((hint) => scopes ? scopes.includes(hint.scope) : hint.scope !== "terminal" || getSetting("terminalEnabled", "true") !== "false").map(
       (hint) => ({ ...hint, label: t(hint.labelKey) }),
     ),
   );
@@ -416,6 +426,8 @@
         } else if (!docked) {
           closeCommandBar();
           postMessage("focusPage");
+        } else {
+          onEscape?.();
         }
         break;
       // The strip of chips counts as one row for the up and down arrows; the side arrows walk it.
@@ -526,7 +538,7 @@
       case "archive":
         return t("commandBar.placeholderArchive");
       case "all":
-        return t("commandBar.placeholderAll");
+        return copy?.placeholder ?? t("commandBar.placeholderAll");
     }
   }
 
@@ -549,7 +561,7 @@
       case "archive":
         return t("commandBar.emptyTitleArchive");
       case "all":
-        return t("commandBar.emptyTitleAll");
+        return copy?.emptyTitle ?? t("commandBar.emptyTitleAll");
     }
   }
 
@@ -572,7 +584,7 @@
       case "archive":
         return t("commandBar.emptySubtitleArchive");
       case "all":
-        return t("commandBar.emptySubtitleAll");
+        return copy?.emptySubtitle ?? t("commandBar.emptySubtitleAll");
     }
   }
 </script>
@@ -636,7 +648,7 @@
               </span>
             {/each}
           </span>
-          {#if !docked || movingTab || escapeLeavesScope}
+          {#if !docked || movingTab || escapeLeavesScope || onEscape}
             <span class="key-hint"><span>{t(movingTab || escapeLeavesScope ? "common.back" : "common.close")}</span><kbd class="keycap">esc</kbd></span>
           {/if}
 {/snippet}
