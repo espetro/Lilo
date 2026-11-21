@@ -40,7 +40,7 @@ final class EngineFreezerTests: XCTestCase {
         let window = NSWindow(contentRect: NSRect(x: 0, y: 0, width: 400, height: 300), styleMask: [.titled], backing: .buffered, defer: false)
         window.isReleasedWhenClosed = false
         window.contentView = tab.view
-        window.orderFront(nil)
+        window.orderFrontOffscreen()
         defer {
             window.orderOut(nil)
             tab.teardown()

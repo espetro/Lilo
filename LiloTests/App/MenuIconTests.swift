@@ -15,9 +15,7 @@ final class MenuIconTests: XCTestCase {
         window = try browserContext.makeExtensionWindow().0
         // Transparent and off screen: the menus pop up there and close at once.
         let nsWindow = try XCTUnwrap(window.window)
-        nsWindow.alphaValue = 0
-        nsWindow.orderFrontRegardless()
-        nsWindow.setFrame(NSRect(x: -20000, y: -20000, width: 1000, height: 700), display: false)
+        nsWindow.orderFrontOffscreen(frame: NSRect(x: 0, y: 0, width: 1000, height: 700))
         NotificationCenter.default.addObserver(self, selector: #selector(menuDidBeginTracking(_:)), name: NSMenu.didBeginTrackingNotification, object: nil)
     }
 

@@ -185,7 +185,8 @@ final class WKWebViewTabTeardownTests: XCTestCase {
         tab.view.frame = NSRect(x: 0, y: 0, width: 900, height: 520)
         let window = NSWindow(contentRect: tab.view.frame, styleMask: [.titled, .closable], backing: .buffered, defer: false)
         window.contentView = tab.view
-        window.makeKeyAndOrderFront(nil)
+        window.orderFrontOffscreen()
+        window.makeKey()
         defer {
             tab.wkWebView.closeAllMediaPresentations(completionHandler: nil)
             tab.teardown()

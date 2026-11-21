@@ -70,9 +70,7 @@ final class ChromeGlobalEventRoutingTests: XCTestCase {
         let (controller, engine, first, second) = try await makeTabWithHistory(browserContext)
         let webView = engine.wkWebView
         let window = try XCTUnwrap(controller.window)
-        window.alphaValue = 0
-        window.orderFrontRegardless()
-        window.setFrame(NSRect(x: -20000, y: -20000, width: 800, height: 600), display: false)
+        window.orderFrontOffscreen(frame: NSRect(x: 0, y: 0, width: 800, height: 600))
         engine.view.frame = NSRect(x: 0, y: 0, width: 600, height: 400)
         window.contentView?.addSubview(engine.view)
         XCTAssertTrue(window.makeFirstResponder(webView))
@@ -104,9 +102,7 @@ final class ChromeGlobalEventRoutingTests: XCTestCase {
     /// A shown window whose focused page is `engine`'s, with the window's key monitor running.
     private func focusPage(of engine: WKWebViewTab, in controller: MainWindowController) throws -> NSWindow {
         let window = try XCTUnwrap(controller.window)
-        window.alphaValue = 0
-        window.orderFrontRegardless()
-        window.setFrame(NSRect(x: -20000, y: -20000, width: 800, height: 600), display: false)
+        window.orderFrontOffscreen(frame: NSRect(x: 0, y: 0, width: 800, height: 600))
         engine.view.frame = NSRect(x: 0, y: 0, width: 600, height: 400)
         window.contentView?.addSubview(engine.view)
         XCTAssertTrue(window.makeFirstResponder(engine.wkWebView))

@@ -20,9 +20,7 @@ final class WKWebViewTabDialogTests: XCTestCase {
         controller = MainWindowController(context: context)
         // Transparent, off screen and never key, so nothing shows to whoever runs the tests.
         let window = try XCTUnwrap(controller.window)
-        window.alphaValue = 0
-        window.orderFrontRegardless()
-        window.setFrame(NSRect(x: -20000, y: -20000, width: 1000, height: 700), display: false)
+        window.orderFrontOffscreen(frame: NSRect(x: 0, y: 0, width: 1000, height: 700))
         let container = NSView(frame: NSRect(x: 0, y: 0, width: 1000, height: 650))
         try XCTUnwrap(window.contentView).addSubview(container)
         controller.contentContainerView = container

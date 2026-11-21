@@ -473,7 +473,7 @@ final class ExtensionPageTabTests: XCTestCase {
         window.activateTabStateFirst(id: page.id)
         let adapter = window.tabManager.tabAdapter(for: page.id)
         // A popover shows only from a window on screen.
-        window.window?.orderFront(nil)
+        window.window?.orderFrontOffscreen()
         defer { window.window?.orderOut(nil) }
 
         let button = NSMenuItem()
@@ -619,7 +619,7 @@ final class ExtensionPageTabTests: XCTestCase {
         _ = try XCTUnwrap(window.createTerminalTab(activate: true))
         let standIn = try XCTUnwrap(window.tabManager.windowAdapter?.activeTab)
         XCTAssertNil(standIn.engineTab, "the terminal, not the web tab left behind, is the active tab")
-        window.window?.orderFront(nil)
+        window.window?.orderFrontOffscreen()
         defer { window.window?.orderOut(nil) }
 
         let button = NSMenuItem()

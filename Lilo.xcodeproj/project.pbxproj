@@ -312,6 +312,7 @@
 		71D0A3A8B3B4EC1ADEFC5980 /* GestureForwardingPanelTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 264524B84CE88B4DDF5C9613 /* GestureForwardingPanelTests.swift */; };
 		720EEDBF9BC1B4E69E487858 /* TraditionalChineseLocalizationTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5E6E4C686494304EB3C12561 /* TraditionalChineseLocalizationTests.swift */; };
 		72BB8D463560CB6D8B2CBA18 /* LittlePanel.swift in Sources */ = {isa = PBXBuildFile; fileRef = D3DEE76DA3195BB54C29F40D /* LittlePanel.swift */; };
+		72BFA2585845EDE6AEDAF2A1 /* HiddenWindow.swift in Sources */ = {isa = PBXBuildFile; fileRef = BD75C77BA7FCFA0CD9EE4A54 /* HiddenWindow.swift */; };
 		733FF31D58F45F81D359C723 /* NativeMessaging.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0F387BD7442412B893689E36 /* NativeMessaging.swift */; };
 		7347B5EE09265AB1363C7C3C /* QRCodeTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1957E0C36D17C64137430863 /* QRCodeTests.swift */; };
 		7363D33C1CF6FD94E68AE402 /* release-media in Resources */ = {isa = PBXBuildFile; fileRef = 2D0A9E30F6B3FBDFADF75B3C /* release-media */; };
@@ -1375,6 +1376,7 @@
 		BC9AFA9F81F8E4AE7E083F31 /* QuitSourceTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = QuitSourceTests.swift; sourceTree = "<group>"; };
 		BD4066E4F3CD717A035E1262 /* FullDiskAccessPanel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FullDiskAccessPanel.swift; sourceTree = "<group>"; };
 		BD72EED90A74A2317DEDC69B /* ViewSourceSchemeHandler.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ViewSourceSchemeHandler.swift; sourceTree = "<group>"; };
+		BD75C77BA7FCFA0CD9EE4A54 /* HiddenWindow.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HiddenWindow.swift; sourceTree = "<group>"; };
 		BD855C56D416FC5741E73B11 /* ContentBlockerBenchmarkTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentBlockerBenchmarkTests.swift; sourceTree = "<group>"; };
 		BE347F446FD2F4E9F6DEE14F /* WebInspectorRecoveryTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WebInspectorRecoveryTests.swift; sourceTree = "<group>"; };
 		BE7C2A4421CE9CB432CE18A8 /* PortBenchmarkTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PortBenchmarkTests.swift; sourceTree = "<group>"; };
@@ -2411,6 +2413,7 @@
 				01838BCE08BCAEA786362E06 /* ExtensionRegistryFixture.swift */,
 				68191F789AD259FECF8EE0B5 /* FilterTablesProbe.swift */,
 				22AD4BA8211AEC8D9AB6672F /* GapCallSupport.swift */,
+				BD75C77BA7FCFA0CD9EE4A54 /* HiddenWindow.swift */,
 				57E906D33DFB1DB3BDF44E90 /* ReleaseMediaCapture.swift */,
 				5135E1934C469BB54C50A03D /* SidebarState.swift */,
 				431ABDDD13D3442436E79EA8 /* TemporaryBrowserContext.swift */,
@@ -3648,6 +3651,7 @@
 				8D8C4F5A123A9A8DB53C12C2 /* GitDiffTests.swift in Sources */,
 				9EDAAE1ADAF5139944476FDD /* HTTPAuthKeychainTests.swift in Sources */,
 				92E37AF860E6672876D98983 /* HiddenSpaceEngineRetentionTests.swift in Sources */,
+				72BFA2585845EDE6AEDAF2A1 /* HiddenWindow.swift in Sources */,
 				51858CA62086397BF5F678DE /* HistoryImportTests.swift in Sources */,
 				CB7E167E65FF2C3C6388A3FE /* HistoryStoreTests.swift in Sources */,
 				BB46F90F8F880376E09F13D2 /* HitboxDebugOverlayTests.swift in Sources */,

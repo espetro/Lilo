@@ -557,7 +557,7 @@ final class ProfileExtensionRegistryTests: XCTestCase {
         let browserContext = try await TemporaryBrowserContext()
         defer { browserContext.tearDown() }
         let (window, extensions) = try browserContext.makeExtensionWindow()
-        window.window?.orderFrontRegardless()
+        window.window?.orderFrontOffscreen()
         let folder = tempDir.appendingPathComponent("popup_extension")
         try FileManager.default.createDirectory(at: folder, withIntermediateDirectories: true)
         try #"{"manifest_version":3,"name":"Popup","version":"1.0","action":{"default_popup":"popup.html"}}"#
