@@ -23,6 +23,10 @@
 		"terabyte": "TB"
 	},
 	"settings": {
+		"commandBarLayout": {
+			"default": "Predeterminado",
+			"compact": "Compacto"
+		},
 		"terminalEnabled": "Pestañas de terminal",
 		"terminalEnabledDescription": "Abre sesiones de shell en pestañas junto a tus páginas. Al desactivarlo, se ocultan los atajos, botones y menús del terminal; los terminales abiertos permanecen hasta que los cierres.",
 		"terminalTheme": "Tema",
@@ -217,6 +221,11 @@
 				"arguments": "Argumentos, uno por línea",
 				"environment": "Entorno, NOMBRE=valor por línea",
 				"note": "El comando es la ruta completa de un archivo ejecutable que habla el Agent Client Protocol por la entrada y la salida estándar. Se une a la lista de agentes al guardarse; vaciarlo lo quita."
+			},
+			"commandBarLayout": {
+				"title": "Diseño de la barra de comandos",
+				"description": "Elige el diseño predeterminado o compacto.",
+				"keywords": "Diseño de la barra de comandos Predeterminado Compacto"
 			},
 			"appIcon": {
 				"title": "Icono de la app",
@@ -549,6 +558,11 @@
 				"description": "Cambia cualquier atajo o usa los de Arc como punto de partida.",
 				"keywords": "teclado atajo teclas comando"
 			},
+			"holdToQuit": {
+				"title": "Mantener ⌘Q para salir",
+				"description": "⌘Q muestra un aviso; Lilo solo se cierra si se mantienen las teclas pulsadas.",
+				"keywords": "salir cerrar comando q accidental mantener"
+			},
 			"newProfile": {
 				"title": "Nuevo perfil",
 				"description": "Los perfiles mantienen separados las cookies, las sesiones y las extensiones.",
@@ -871,6 +885,7 @@
 		"dozing": "Dormida",
 		"dozingHint": "Dormida para ahorrar memoria. Se reactiva al abrirla.",
 		"keepLoaded": "Se mantiene cargada",
+		"keepLoadedHint": "Nunca se duerme; siempre lista.",
 		"pinned": "Fijada",
 		"loading": "Cargando",
 		"muted": "Silenciada",
@@ -934,6 +949,17 @@
 		"top": "Abrir arriba",
 		"bottom": "Abrir abajo",
 		"replace": "Sustituir"
+	},
+	"paneMove": {
+		"left": "Mover a la izquierda",
+		"right": "Mover a la derecha",
+		"top": "Mover arriba",
+		"bottom": "Mover abajo",
+		"replace": "Intercambiar"
+	},
+	"splitPane": {
+		"close": "Cerrar panel dividido",
+		"maximize": "Maximizar panel dividido"
 	},
 	"tabSection": {
 		"splitView": "Vista dividida",
@@ -1209,6 +1235,7 @@
 		"terminalProgram": "Programa",
 		"hintRun": "Ejecutar",
 		"hintSplit": "Dividir",
+		"splitFull": "La vista dividida está llena ({count} paneles)",
 		"scopeTabs": "Pestañas",
 		"scopeBookmarks": "Marcadores",
 		"scopeHistory": "Historial",
@@ -1244,6 +1271,8 @@
 		"sectionOpenTabs": "Pestañas abiertas",
 		"sectionBookmarks": "Marcadores",
 		"sectionRecentHistory": "Historial reciente",
+		"sectionFrequentSites": "Sitios frecuentes",
+		"sectionRecentConversations": "Conversaciones recientes",
 		"sectionHistory": "Historial",
 		"sectionSwitchToTab": "Cambiar a la pestaña",
 		"sectionGoTo": "Ir a",
@@ -2076,6 +2105,7 @@
 		"Hide Others": "Ocultar otros",
 		"Show All": "Mostrar todo",
 		"Quit Lilo": "Salir de Lilo",
+		"Hold %@ to Quit": "Mantén %@ para salir",
 		"File": "Archivo",
 		"New Tab": "Nueva pestaña",
 		"Back to tab": "Volver a la pestaña",
@@ -2123,7 +2153,12 @@
 		"Separate Split View": "Separar vista dividida",
 		"Close Split Pane": "Cerrar panel dividido",
 		"Maximize Split Pane": "Maximizar panel dividido",
+		"Move Pane Left": "Mover panel dividido a la izquierda",
+		"Move Pane Right": "Mover panel dividido a la derecha",
+		"Move Pane Up": "Mover panel dividido arriba",
+		"Move Pane Down": "Mover panel dividido abajo",
 		"Open in Split View": "Abrir en vista dividida",
+		"Split view is full (%lld panes)": "La vista dividida está llena (%lld paneles)",
 		"Hide Element…": "Ocultar elemento…",
 		"Click an element to hide it on this site. Press Esc to cancel.": "Haz clic en un elemento para ocultarlo en este sitio. Pulsa Esc para cancelar.",
 		"Click an element or drag an area. Arrow keys change the element, Return captures, Esc cancels.": "Haz clic en un elemento o arrastra un área. Las flechas cambian el elemento, Intro captura y Esc cancela.",
@@ -2728,7 +2763,11 @@
 			"noFolder": "Sin carpeta",
 			"noFolderDetail": "El agente trabaja en una carpeta propia",
 			"backgroundHint": "{shortcut} para mantenerlo en segundo plano",
-			"start": "Empezar"
+			"start": "Empezar",
+			"searchAgents": "Buscar agentes",
+			"featuredAgents": "Destacados",
+			"registryAgents": "Registro",
+			"noMatches": "No hay agentes coincidentes"
 		},
 		"row": {
 			"untitled": "Nueva conversación",

@@ -178,6 +178,8 @@ export interface BridgeAgentInfo {
 	description: string;
 	/** An SVG data URL from the ACP registry. */
 	icon?: string;
+	/** Offered first: one of Lilo's featured agents, or the user's custom command. */
+	featured?: boolean;
 }
 
 export interface BridgeFolderLock {
@@ -727,6 +729,8 @@ export interface BridgeCommandPayloadMap {
 	splitTab: { tabId: string; side: SplitDropSide; targetTabId?: string };
 	/** Takes a split pane's tab out of the split, back into the list; the tab stays open. */
 	unsplitTab: { tabId: string };
+	/** Leaves a split pane's tab as the split's only pane; the others return to the list. */
+	maximizeSplitPane: { tabId: string };
 	splitURL: { url: string; side: SplitDropSide; targetTabId?: string };
 	openDroppedLinks: { urls: string[] } & BridgeLinkDropTarget;
 	peekURL: { url: string };
@@ -1231,6 +1235,8 @@ export interface BridgeEventPayloadMap {
 	processSnapshotUpdated: BridgeProcessSnapshot;
 	tabMemoryUpdated: { tabId: string; bytes: number; cpuPercent?: number };
 	splitPanesChanged: { panes: BridgeSplitPaneFrame[] };
+	/** A split pane dragged by its handle, at the content-area point (fractions, as the pane frames). */
+	splitPaneDrag: { tabId: string; phase: "move" | "end" | "cancel"; x: number; y: number };
 	/** Width the extension side panel and its divider take right of the content; 0 when closed. */
 	sidePanelWidthChanged: { width: number };
 	processManagerActionCompleted: BridgeProcessManagerActionStatusPayload;

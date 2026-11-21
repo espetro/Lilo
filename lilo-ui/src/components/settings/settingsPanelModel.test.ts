@@ -40,7 +40,7 @@ test("groups a section's settings in display order", () => {
     { groupKey: "settings.groups.otherAppLinks", settings: ["externalLinkDefault", "externalLinkRules"] },
     { groupKey: "settings.groups.search", settings: ["searchEngine", "searchSuggestions", "preloadTopHit", "searchEngines"] },
     { groupKey: "settings.groups.downloads", settings: ["downloadsFolder", "askDownloadLocation"] },
-    { groupKey: "settings.groups.lilo", settings: ["appUpdates", "autoUpdate", "shortcuts"] },
+    { groupKey: "settings.groups.lilo", settings: ["appUpdates", "autoUpdate", "shortcuts", "holdToQuit"] },
   ]);
   assert.deepEqual(sectionGroups("media"), [
     { groupKey: "settings.groups.playback", settings: ["autoPictureInPicture", "autoplay"] },
@@ -128,7 +128,7 @@ test("settings search reaches hidden keywords and section names", () => {
   const resolve = (key: string) => catalog[key] ?? "";
 
   assert.deepEqual(searchSettings("cookies", resolve).map((setting) => setting.id), ["clearData"]);
-  assert.deepEqual(searchSettings("appearance", resolve).map((setting) => setting.id), ["theme", "appIcon", "seasonalAppIcon", "tabPosition", "addressPlacement", "hideSpaceNames", "defaultZoom", "minimumFontSize", "fullRefreshRate"]);
+  assert.deepEqual(searchSettings("appearance", resolve).map((setting) => setting.id), ["theme", "appIcon", "seasonalAppIcon", "tabPosition", "commandBarLayout", "addressPlacement", "hideSpaceNames", "defaultZoom", "minimumFontSize", "fullRefreshRate"]);
 });
 
 test("folds permissions, data, and zoom into one row per site", () => {

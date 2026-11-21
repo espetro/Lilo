@@ -23,6 +23,10 @@
 		"terabyte": "TB"
 	},
 	"settings": {
+		"commandBarLayout": {
+			"default": "기본",
+			"compact": "간결하게"
+		},
 		"terminalEnabled": "터미널 탭",
 		"terminalEnabledDescription": "페이지 옆에서 셸을 탭으로 엽니다. 끄면 터미널 단축키, 버튼, 메뉴가 숨겨집니다. 열려 있는 터미널은 닫을 때까지 유지됩니다.",
 		"terminalTheme": "테마",
@@ -217,6 +221,11 @@
 				"arguments": "인자, 한 줄에 하나",
 				"environment": "환경, 한 줄에 NAME=값",
 				"note": "명령은 표준 입출력으로 Agent Client Protocol을 사용하는 실행 파일의 전체 경로입니다. 저장하면 에이전트 목록에 추가되고, 명령을 비우면 제거됩니다."
+			},
+			"commandBarLayout": {
+				"title": "명령 모음 레이아웃",
+				"description": "기본 또는 간결한 레이아웃을 선택하세요.",
+				"keywords": "명령 모음 레이아웃 기본 간결하게"
 			},
 			"appIcon": {
 				"title": "앱 아이콘",
@@ -549,6 +558,11 @@
 				"description": "모든 단축키를 변경하거나 Arc의 단축키로 시작할 수 있습니다.",
 				"keywords": "키보드 단축키 키 명령"
 			},
+			"holdToQuit": {
+				"title": "⌘Q를 길게 눌러 종료",
+				"description": "⌘Q를 누르면 안내가 표시되고, 키를 계속 누르고 있을 때만 Lilo가 종료됩니다.",
+				"keywords": "종료 끝내기 명령 q 실수 길게"
+			},
 			"newProfile": {
 				"title": "새 프로필",
 				"description": "프로필별로 쿠키, 로그인, 확장 프로그램을 분리합니다.",
@@ -871,6 +885,7 @@
 		"dozing": "절전 중",
 		"dozingHint": "메모리를 절약하기 위해 절전 중입니다. 열면 다시 활성화됩니다.",
 		"keepLoaded": "로드 유지됨",
+		"keepLoadedHint": "절전하지 않고 항상 준비되어 있습니다.",
 		"pinned": "고정됨",
 		"loading": "로드 중",
 		"muted": "음소거됨",
@@ -934,6 +949,17 @@
 		"top": "위에 열기",
 		"bottom": "아래에 열기",
 		"replace": "대체"
+	},
+	"paneMove": {
+		"left": "왼쪽으로 이동",
+		"right": "오른쪽으로 이동",
+		"top": "위로 이동",
+		"bottom": "아래로 이동",
+		"replace": "교체"
+	},
+	"splitPane": {
+		"close": "분할 창 닫기",
+		"maximize": "분할 창 최대화"
 	},
 	"tabSection": {
 		"splitView": "분할 보기",
@@ -1209,6 +1235,7 @@
 		"terminalProgram": "프로그램",
 		"hintRun": "실행",
 		"hintSplit": "분할",
+		"splitFull": "분할 보기가 가득 찼습니다(패널: {count})",
 		"scopeTabs": "탭",
 		"scopeBookmarks": "책갈피",
 		"scopeHistory": "방문 기록",
@@ -1244,6 +1271,8 @@
 		"sectionOpenTabs": "열린 탭",
 		"sectionBookmarks": "책갈피",
 		"sectionRecentHistory": "최근 방문 기록",
+		"sectionFrequentSites": "자주 방문한 사이트",
+		"sectionRecentConversations": "최근 대화",
 		"sectionHistory": "방문 기록",
 		"sectionSwitchToTab": "탭으로 전환",
 		"sectionGoTo": "이동",
@@ -2076,6 +2105,7 @@
 		"Hide Others": "기타 가리기",
 		"Show All": "모두 보기",
 		"Quit Lilo": "Lilo 종료",
+		"Hold %@ to Quit": "%@를 길게 눌러 종료",
 		"File": "파일",
 		"New Tab": "새 탭",
 		"Back to tab": "탭으로 돌아가기",
@@ -2123,7 +2153,12 @@
 		"Separate Split View": "분할 보기 분리",
 		"Close Split Pane": "분할 창 닫기",
 		"Maximize Split Pane": "분할 창 최대화",
+		"Move Pane Left": "분할 창을 왼쪽으로 이동",
+		"Move Pane Right": "분할 창을 오른쪽으로 이동",
+		"Move Pane Up": "분할 창을 위로 이동",
+		"Move Pane Down": "분할 창을 아래로 이동",
 		"Open in Split View": "분할 보기에서 열기",
+		"Split view is full (%lld panes)": "분할 보기가 가득 찼습니다(%lld개 패널)",
 		"Hide Element…": "요소 가리기…",
 		"Click an element to hide it on this site. Press Esc to cancel.": "이 사이트에서 가릴 요소를 클릭하세요. 취소하려면 Esc 키를 누르세요.",
 		"Click an element or drag an area. Arrow keys change the element, Return captures, Esc cancels.": "요소를 클릭하거나 영역을 드래그하세요. 화살표 키로 요소를 바꾸고, Return으로 캡처하고, Esc로 취소합니다.",
@@ -2728,7 +2763,11 @@
 			"noFolder": "폴더 없음",
 			"noFolderDetail": "에이전트가 자체 폴더에서 작업합니다",
 			"backgroundHint": "{shortcut}로 백그라운드에서 유지",
-			"start": "시작"
+			"start": "시작",
+			"searchAgents": "에이전트 검색",
+			"featuredAgents": "추천",
+			"registryAgents": "레지스트리",
+			"noMatches": "일치하는 에이전트 없음"
 		},
 		"row": {
 			"untitled": "새 대화",

@@ -23,6 +23,10 @@
 		"terabyte": "TB"
 	},
 	"settings": {
+		"commandBarLayout": {
+			"default": "預設",
+			"compact": "精簡"
+		},
 		"terminalEnabled": "終端機分頁",
 		"terminalEnabledDescription": "在網頁旁以分頁開啟 shell。關閉此選項時，終端機的快速鍵、按鈕和選單會隱藏；已開啟的終端機會保留，直到你將其關閉。",
 		"terminalTheme": "主題",
@@ -217,6 +221,11 @@
 				"arguments": "引數，每行一個",
 				"environment": "環境，每行 NAME=值",
 				"note": "指令是可執行檔的完整路徑，該檔案透過標準輸入輸出使用 Agent Client Protocol。儲存後它會加入代理清單；清空指令即可移除。"
+			},
+			"commandBarLayout": {
+				"title": "命令列配置",
+				"description": "選擇預設或精簡配置。",
+				"keywords": "命令列配置 預設 精簡"
 			},
 			"appIcon": {
 				"title": "App 圖像",
@@ -549,6 +558,11 @@
 				"description": "更改任何快速鍵，或從 Arc 的配置開始。",
 				"keywords": "鍵盤 快速鍵 按鍵 command"
 			},
+			"holdToQuit": {
+				"title": "按住 ⌘Q 以結束",
+				"description": "按下 ⌘Q 會顯示提示；只有按住按鍵不放時 Lilo 才會結束。",
+				"keywords": "結束 關閉 指令 q 誤觸 按住"
+			},
 			"newProfile": {
 				"title": "新增個人檔案",
 				"description": "個人檔案可將 Cookie、登入狀態與延伸功能分開。",
@@ -871,6 +885,7 @@
 		"dozing": "休眠中",
 		"dozingHint": "已休眠以節省記憶體,開啟時喚醒。",
 		"keepLoaded": "已保持載入",
+		"keepLoadedHint": "不休眠，隨時可用。",
 		"pinned": "已釘選",
 		"loading": "載入中",
 		"muted": "已靜音",
@@ -934,6 +949,17 @@
 		"top": "在上方開啟",
 		"bottom": "在下方開啟",
 		"replace": "取代"
+	},
+	"paneMove": {
+		"left": "移到左側",
+		"right": "移到右側",
+		"top": "移到上方",
+		"bottom": "移到下方",
+		"replace": "交換"
+	},
+	"splitPane": {
+		"close": "關閉分割窗格",
+		"maximize": "最大化分割窗格"
 	},
 	"tabSection": {
 		"splitView": "分割顯示",
@@ -1209,6 +1235,7 @@
 		"terminalProgram": "程式",
 		"hintRun": "執行",
 		"hintSplit": "分割",
+		"splitFull": "分割顯示已滿（{count} 個窗格）",
 		"scopeTabs": "分頁",
 		"scopeBookmarks": "書籤",
 		"scopeHistory": "歷史記錄",
@@ -1244,6 +1271,8 @@
 		"sectionOpenTabs": "已開啟分頁",
 		"sectionBookmarks": "書籤",
 		"sectionRecentHistory": "最近的歷史記錄",
+		"sectionFrequentSites": "常用網站",
+		"sectionRecentConversations": "最近的對話",
 		"sectionHistory": "歷史記錄",
 		"sectionSwitchToTab": "切換至分頁",
 		"sectionGoTo": "前往",
@@ -2076,6 +2105,7 @@
 		"Hide Others": "隱藏其他",
 		"Show All": "全部顯示",
 		"Quit Lilo": "結束 Lilo",
+		"Hold %@ to Quit": "按住 %@ 以結束",
 		"File": "檔案",
 		"New Tab": "新增分頁",
 		"Back to tab": "返回分頁",
@@ -2123,7 +2153,12 @@
 		"Separate Split View": "分開分割顯示",
 		"Close Split Pane": "關閉分割窗格",
 		"Maximize Split Pane": "最大化分割窗格",
+		"Move Pane Left": "將分割窗格移到左側",
+		"Move Pane Right": "將分割窗格移到右側",
+		"Move Pane Up": "將分割窗格移到上方",
+		"Move Pane Down": "將分割窗格移到下方",
 		"Open in Split View": "以分割顯示開啟",
+		"Split view is full (%lld panes)": "分割顯示已滿（%lld 個窗格）",
 		"Hide Element…": "隱藏元素…",
 		"Click an element to hide it on this site. Press Esc to cancel.": "按一下要在此網站上隱藏的元素。按 Esc 鍵取消。",
 		"Click an element or drag an area. Arrow keys change the element, Return captures, Esc cancels.": "點按元素或拖移選取區域。方向鍵可更改元素,按 Return 截圖,按 Esc 取消。",
@@ -2728,7 +2763,11 @@
 			"noFolder": "無檔案夾",
 			"noFolderDetail": "代理程式在自己的檔案夾中工作",
 			"backgroundHint": "按 {shortcut} 在背景進行",
-			"start": "開始"
+			"start": "開始",
+			"searchAgents": "搜尋代理程式",
+			"featuredAgents": "精選",
+			"registryAgents": "註冊表",
+			"noMatches": "沒有相符的代理程式"
 		},
 		"row": {
 			"untitled": "新對話",

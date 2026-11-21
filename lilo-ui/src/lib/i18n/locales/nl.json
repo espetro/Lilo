@@ -23,6 +23,10 @@
 		"terabyte": "TB"
 	},
 	"settings": {
+		"commandBarLayout": {
+			"default": "Standaard",
+			"compact": "Compact"
+		},
 		"terminalEnabled": "Terminaltabbladen",
 		"terminalEnabledDescription": "Open shells als tabbladen naast je pagina's. Als dit uitstaat, worden sneltoetsen, knoppen en menu's voor de terminal verborgen; geopende terminals blijven staan totdat je ze sluit.",
 		"terminalTheme": "Thema",
@@ -217,6 +221,11 @@
 				"arguments": "Argumenten, één per regel",
 				"environment": "Omgeving, NAAM=waarde per regel",
 				"note": "De opdracht is het volledige pad van een uitvoerbaar bestand dat het Agent Client Protocol spreekt via standaardinvoer en -uitvoer. Het komt in de agentenlijst zodra het is bewaard; leegmaken haalt het weg."
+			},
+			"commandBarLayout": {
+				"title": "Indeling van de opdrachtbalk",
+				"description": "Kies de standaard- of compacte indeling.",
+				"keywords": "Indeling van de opdrachtbalk Standaard Compact"
 			},
 			"appIcon": {
 				"title": "Appsymbool",
@@ -549,6 +558,11 @@
 				"description": "Wijzig elke sneltoets of begin met die van Arc.",
 				"keywords": "toetsenbord sneltoets toetsen command"
 			},
+			"holdToQuit": {
+				"title": "Houd ⌘Q ingedrukt om te stoppen",
+				"description": "⌘Q toont een melding; Lilo stopt alleen als de toetsen ingedrukt blijven.",
+				"keywords": "stoppen afsluiten commando q per ongeluk houden"
+			},
 			"newProfile": {
 				"title": "Nieuw profiel",
 				"description": "Profielen houden cookies, aanmeldingen en extensies gescheiden.",
@@ -871,6 +885,7 @@
 		"dozing": "Slaapt",
 		"dozingHint": "Slaapt om geheugen te besparen. Wordt wakker zodra je het opent.",
 		"keepLoaded": "Blijft geladen",
+		"keepLoadedHint": "Slaapt nooit en is altijd klaar.",
 		"pinned": "Vastgemaakt",
 		"loading": "Laden",
 		"muted": "Gedempt",
@@ -934,6 +949,17 @@
 		"top": "Open erboven",
 		"bottom": "Open eronder",
 		"replace": "Vervang"
+	},
+	"paneMove": {
+		"left": "Verplaats naar links",
+		"right": "Verplaats naar rechts",
+		"top": "Verplaats erboven",
+		"bottom": "Verplaats eronder",
+		"replace": "Wissel"
+	},
+	"splitPane": {
+		"close": "Gesplitst deelvenster sluiten",
+		"maximize": "Gesplitst deelvenster maximaliseren"
 	},
 	"tabSection": {
 		"splitView": "Gesplitste weergave",
@@ -1209,6 +1235,7 @@
 		"terminalProgram": "Programma",
 		"hintRun": "Voer uit",
 		"hintSplit": "Splits",
+		"splitFull": "Gesplitste weergave is vol ({count} deelvensters)",
 		"scopeTabs": "Tabbladen",
 		"scopeBookmarks": "Bladwijzers",
 		"scopeHistory": "Geschiedenis",
@@ -1244,6 +1271,8 @@
 		"sectionOpenTabs": "Geopende tabbladen",
 		"sectionBookmarks": "Bladwijzers",
 		"sectionRecentHistory": "Recente geschiedenis",
+		"sectionFrequentSites": "Vaak bezochte sites",
+		"sectionRecentConversations": "Recente gesprekken",
 		"sectionHistory": "Geschiedenis",
 		"sectionSwitchToTab": "Schakel over naar tabblad",
 		"sectionGoTo": "Ga naar",
@@ -2076,6 +2105,7 @@
 		"Hide Others": "Verberg andere",
 		"Show All": "Toon alles",
 		"Quit Lilo": "Stop Lilo",
+		"Hold %@ to Quit": "Houd %@ ingedrukt om te stoppen",
 		"File": "Archief",
 		"New Tab": "Nieuw tabblad",
 		"Back to tab": "Terug naar tabblad",
@@ -2123,7 +2153,12 @@
 		"Separate Split View": "Hef gesplitste weergave op",
 		"Close Split Pane": "Gesplitst deelvenster sluiten",
 		"Maximize Split Pane": "Gesplitst deelvenster maximaliseren",
+		"Move Pane Left": "Gesplitst deelvenster naar links verplaatsen",
+		"Move Pane Right": "Gesplitst deelvenster naar rechts verplaatsen",
+		"Move Pane Up": "Gesplitst deelvenster naar boven verplaatsen",
+		"Move Pane Down": "Gesplitst deelvenster naar beneden verplaatsen",
 		"Open in Split View": "Open in gesplitste weergave",
+		"Split view is full (%lld panes)": "Gesplitste weergave is vol (%lld deelvensters)",
 		"Hide Element…": "Element verbergen…",
 		"Click an element to hide it on this site. Press Esc to cancel.": "Klik op een element om het op deze site te verbergen. Druk op Esc om te annuleren.",
 		"Click an element or drag an area. Arrow keys change the element, Return captures, Esc cancels.": "Klik op een element of sleep een gebied. Met de pijltjestoetsen wijzig je het element, Return legt vast, Esc annuleert.",
@@ -2728,7 +2763,11 @@
 			"noFolder": "Geen map",
 			"noFolderDetail": "De agent werkt in een eigen map",
 			"backgroundHint": "{shortcut} om het op de achtergrond te houden",
-			"start": "Start"
+			"start": "Start",
+			"searchAgents": "Zoek agents",
+			"featuredAgents": "Uitgelicht",
+			"registryAgents": "Register",
+			"noMatches": "Geen overeenkomende agents"
 		},
 		"row": {
 			"untitled": "Nieuw gesprek",

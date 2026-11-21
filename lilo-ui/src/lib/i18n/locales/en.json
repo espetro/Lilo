@@ -23,6 +23,10 @@
 		"terabyte": "TB"
 	},
 	"settings": {
+		"commandBarLayout": {
+			"default": "Default",
+			"compact": "Compact"
+		},
 		"terminalEnabled": "Terminal tabs",
 		"terminalEnabledDescription": "Open shells as tabs next to your pages. When off, the terminal shortcuts, buttons and menus are hidden; open terminals stay until closed.",
 		"terminalTheme": "Theme",
@@ -217,6 +221,11 @@
 				"arguments": "Arguments, one per line",
 				"environment": "Environment, NAME=value per line",
 				"note": "The command is the full path of an executable file that speaks the Agent Client Protocol over standard input and output. It joins the agent list once saved; clearing the command removes it."
+			},
+			"commandBarLayout": {
+				"title": "Command bar layout",
+				"description": "Choose the default or compact command bar.",
+				"keywords": "Command bar layout Default Compact"
 			},
 			"appIcon": {
 				"title": "App icon",
@@ -549,6 +558,11 @@
 				"description": "Change any shortcut, or start from Arc's.",
 				"keywords": "keyboard shortcut hotkey keys command"
 			},
+			"holdToQuit": {
+				"title": "Hold ⌘Q to quit",
+				"description": "Pressing ⌘Q shows a prompt; Lilo quits only when the keys are held down.",
+				"keywords": "quit exit command q accidental hold"
+			},
 			"newProfile": {
 				"title": "New profile",
 				"description": "Profiles keep cookies, sign-ins and extensions apart.",
@@ -871,6 +885,7 @@
 		"dozing": "Sleeping",
 		"dozingHint": "Sleeping to save memory. Wakes when you open it.",
 		"keepLoaded": "Kept loaded",
+		"keepLoadedHint": "Never sleeps; always ready.",
 		"pinned": "Pinned",
 		"loading": "Loading",
 		"muted": "Muted",
@@ -934,6 +949,17 @@
 		"top": "Open above",
 		"bottom": "Open below",
 		"replace": "Replace"
+	},
+	"paneMove": {
+		"left": "Move left",
+		"right": "Move right",
+		"top": "Move above",
+		"bottom": "Move below",
+		"replace": "Swap"
+	},
+	"splitPane": {
+		"close": "Close Split Pane",
+		"maximize": "Maximize Split Pane"
 	},
 	"tabSection": {
 		"splitView": "Split view",
@@ -1209,6 +1235,7 @@
 		"terminalProgram": "Program",
 		"hintRun": "Run",
 		"hintSplit": "Split",
+		"splitFull": "Split view is full ({count} panes)",
 		"scopeTabs": "Tabs",
 		"scopeBookmarks": "Bookmarks",
 		"scopeHistory": "History",
@@ -1244,6 +1271,8 @@
 		"sectionOpenTabs": "Open Tabs",
 		"sectionBookmarks": "Bookmarks",
 		"sectionRecentHistory": "Recent History",
+		"sectionFrequentSites": "Frequent Sites",
+		"sectionRecentConversations": "Recent Conversations",
 		"sectionHistory": "History",
 		"sectionSwitchToTab": "Switch to Tab",
 		"sectionGoTo": "Go To",
@@ -2076,6 +2105,7 @@
 		"Hide Others": "Hide Others",
 		"Show All": "Show All",
 		"Quit Lilo": "Quit Lilo",
+		"Hold %@ to Quit": "Hold %@ to Quit",
 		"File": "File",
 		"New Tab": "New Tab",
 		"Back to tab": "Back to tab",
@@ -2123,7 +2153,12 @@
 		"Separate Split View": "Separate Split View",
 		"Close Split Pane": "Close Split Pane",
 		"Maximize Split Pane": "Maximize Split Pane",
+		"Move Pane Left": "Move Pane Left",
+		"Move Pane Right": "Move Pane Right",
+		"Move Pane Up": "Move Pane Up",
+		"Move Pane Down": "Move Pane Down",
 		"Open in Split View": "Open in Split View",
+		"Split view is full (%lld panes)": "Split view is full (%lld panes)",
 		"Hide Element…": "Hide Element…",
 		"Click an element to hide it on this site. Press Esc to cancel.": "Click an element to hide it on this site. Press Esc to cancel.",
 		"Click an element or drag an area. Arrow keys change the element, Return captures, Esc cancels.": "Click an element or drag an area. Arrow keys change the element, Return captures, Esc cancels.",
@@ -2720,7 +2755,11 @@
 			"noFolder": "No Folder",
 			"noFolderDetail": "The agent works in a folder of its own",
 			"backgroundHint": "{shortcut} to keep it in the background",
-			"start": "Start"
+			"start": "Start",
+			"searchAgents": "Search agents",
+			"featuredAgents": "Featured",
+			"registryAgents": "Registry",
+			"noMatches": "No matching agents"
 		},
 		"row": {
 			"untitled": "New conversation",

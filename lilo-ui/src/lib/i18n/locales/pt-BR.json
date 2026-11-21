@@ -23,6 +23,10 @@
 		"terabyte": "TB"
 	},
 	"settings": {
+		"commandBarLayout": {
+			"default": "Padrão",
+			"compact": "Compacto"
+		},
 		"terminalEnabled": "Abas de terminal",
 		"terminalEnabledDescription": "Abra shells em abas ao lado das suas páginas. Quando desativado, os atalhos, botões e menus do terminal ficam ocultos; os terminais abertos permanecem até serem fechados.",
 		"terminalTheme": "Tema",
@@ -217,6 +221,11 @@
 				"arguments": "Argumentos, um por linha",
 				"environment": "Ambiente, NOME=valor por linha",
 				"note": "O comando é o caminho completo de um arquivo executável que fala o Agent Client Protocol pela entrada e saída padrão. Ele entra na lista de agentes ao ser salvo; esvaziá-lo o remove."
+			},
+			"commandBarLayout": {
+				"title": "Layout da barra de comandos",
+				"description": "Escolha o layout padrão ou compacto.",
+				"keywords": "Layout da barra de comandos Padrão Compacto"
 			},
 			"appIcon": {
 				"title": "Ícone do app",
@@ -549,6 +558,11 @@
 				"description": "Altere qualquer atalho ou comece com os do Arc.",
 				"keywords": "teclado atalho tecla teclas comando"
 			},
+			"holdToQuit": {
+				"title": "Manter ⌘Q pressionado para encerrar",
+				"description": "⌘Q mostra um aviso; o Lilo só é encerrado se as teclas continuarem pressionadas.",
+				"keywords": "encerrar sair comando q acidental manter"
+			},
 			"newProfile": {
 				"title": "Novo perfil",
 				"description": "Os perfis separam cookies, sessões e extensões.",
@@ -871,6 +885,7 @@
 		"dozing": "Dormindo",
 		"dozingHint": "Dormindo para economizar memória. Acorda ao abrir.",
 		"keepLoaded": "Mantida carregada",
+		"keepLoadedHint": "Nunca dorme; sempre pronta.",
 		"pinned": "Fixada",
 		"loading": "Carregando",
 		"muted": "Sem som",
@@ -934,6 +949,17 @@
 		"top": "Abrir acima",
 		"bottom": "Abrir abaixo",
 		"replace": "Substituir"
+	},
+	"paneMove": {
+		"left": "Mover à esquerda",
+		"right": "Mover à direita",
+		"top": "Mover acima",
+		"bottom": "Mover abaixo",
+		"replace": "Trocar"
+	},
+	"splitPane": {
+		"close": "Fechar painel dividido",
+		"maximize": "Maximizar painel dividido"
 	},
 	"tabSection": {
 		"splitView": "Visualização dividida",
@@ -1209,6 +1235,7 @@
 		"terminalProgram": "Programa",
 		"hintRun": "Executar",
 		"hintSplit": "Dividir",
+		"splitFull": "A visualização dividida está cheia ({count} painéis)",
 		"scopeTabs": "Abas",
 		"scopeBookmarks": "Favoritos",
 		"scopeHistory": "Histórico",
@@ -1244,6 +1271,8 @@
 		"sectionOpenTabs": "Abas abertas",
 		"sectionBookmarks": "Favoritos",
 		"sectionRecentHistory": "Histórico recente",
+		"sectionFrequentSites": "Sites frequentes",
+		"sectionRecentConversations": "Conversas recentes",
 		"sectionHistory": "Histórico",
 		"sectionSwitchToTab": "Alternar para aba",
 		"sectionGoTo": "Ir para",
@@ -2076,6 +2105,7 @@
 		"Hide Others": "Ocultar outros",
 		"Show All": "Mostrar tudo",
 		"Quit Lilo": "Encerrar Lilo",
+		"Hold %@ to Quit": "Mantenha %@ pressionado para encerrar",
 		"File": "Arquivo",
 		"New Tab": "Nova aba",
 		"Back to tab": "Voltar à aba",
@@ -2123,7 +2153,12 @@
 		"Separate Split View": "Separar visualização dividida",
 		"Close Split Pane": "Fechar painel dividido",
 		"Maximize Split Pane": "Maximizar painel dividido",
+		"Move Pane Left": "Mover painel dividido para a esquerda",
+		"Move Pane Right": "Mover painel dividido para a direita",
+		"Move Pane Up": "Mover painel dividido para cima",
+		"Move Pane Down": "Mover painel dividido para baixo",
 		"Open in Split View": "Abrir em visualização dividida",
+		"Split view is full (%lld panes)": "A visualização dividida está cheia (%lld painéis)",
 		"Hide Element…": "Ocultar elemento…",
 		"Click an element to hide it on this site. Press Esc to cancel.": "Clique em um elemento para ocultá-lo neste site. Pressione Esc para cancelar.",
 		"Click an element or drag an area. Arrow keys change the element, Return captures, Esc cancels.": "Clique em um elemento ou arraste uma área. As setas mudam o elemento, Return captura e Esc cancela.",
@@ -2728,7 +2763,11 @@
 			"noFolder": "Nenhuma pasta",
 			"noFolderDetail": "O agente trabalha em uma pasta própria",
 			"backgroundHint": "{shortcut} para manter em segundo plano",
-			"start": "Iniciar"
+			"start": "Iniciar",
+			"searchAgents": "Buscar agentes",
+			"featuredAgents": "Em destaque",
+			"registryAgents": "Registro",
+			"noMatches": "Nenhum agente correspondente"
 		},
 		"row": {
 			"untitled": "Nova conversa",
