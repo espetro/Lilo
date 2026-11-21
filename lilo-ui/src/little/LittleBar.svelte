@@ -122,11 +122,17 @@
   }
   .icon-button:hover { background: color-mix(in srgb, var(--sidebar-contrast) 10%, transparent); color: var(--text-primary); }
 
+  /* On the accent button the shortcut is part of its label, not a key cap of its own. */
   .keycap {
+    min-width: 0;
+    height: auto;
     margin-left: var(--space-6);
+    padding: 0;
+    background: transparent;
+    box-shadow: none;
+    color: inherit;
+    line-height: inherit;
     opacity: 0.75;
-    font: inherit;
-    font-size: var(--font-size-xs);
   }
 
   /* One line along the strip's foot: a quiet sweep while loading, still under Reduce motion. */
