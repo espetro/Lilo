@@ -114,7 +114,7 @@ export type SettingId =
   | "agentsNotifyDone"
   | "agentSystemPrompt"
   | "agentSystemPromptText"
-  | "customAgent"
+  | "agentInstances"
   | "agentControl"
   | "agentAskBeforeActions"
   | "agentActionLog"
@@ -253,7 +253,7 @@ export const SETTINGS: SettingModel[] = [
   { id: "agentsNotifyDone", section: "agents", groupKey: "settings.groups.agentConversations", requires: "agentsEnabled" },
   { id: "agentSystemPrompt", section: "agents", groupKey: "settings.groups.agentConversations", requires: "agentsEnabled" },
   { id: "agentSystemPromptText", section: "agents", groupKey: "settings.groups.agentConversations", requires: "agentsEnabled" },
-  { id: "customAgent", section: "agents", groupKey: "settings.groups.agentConversations", requires: "agentsEnabled" },
+  { id: "agentInstances", section: "agents", groupKey: "settings.groups.agentConversations", requires: "agentsEnabled" },
   { id: "agentControl", section: "agents", groupKey: "settings.groups.agentAccess" },
   { id: "agentAskBeforeActions", section: "agents", groupKey: "settings.groups.agentAccess", requires: "agentControl" },
   { id: "agentActionLog", section: "agents", groupKey: "settings.groups.agentAccess", requires: "agentControl" },
