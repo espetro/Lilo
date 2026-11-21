@@ -23,6 +23,10 @@
 		"terabyte": "TB"
 	},
 	"settings": {
+		"commandBarLayout": {
+			"default": "默认",
+			"compact": "紧凑"
+		},
 		"terminalEnabled": "终端标签页",
 		"terminalEnabledDescription": "在网页旁以标签页打开 Shell。关闭此选项后，终端的快捷键、按钮和菜单将隐藏；已打开的终端会保留，直到你将其关闭。",
 		"terminalTheme": "主题",
@@ -217,6 +221,11 @@
 				"arguments": "参数，每行一个",
 				"environment": "环境，每行 NAME=值",
 				"note": "命令是可执行文件的完整路径，该文件通过标准输入输出使用 Agent Client Protocol。保存后它会加入代理列表；清空命令即可移除。"
+			},
+			"commandBarLayout": {
+				"title": "命令栏布局",
+				"description": "选择默认或紧凑布局。",
+				"keywords": "命令栏布局 默认 紧凑"
 			},
 			"appIcon": {
 				"title": "App 图标",
@@ -1244,6 +1253,8 @@
 		"sectionOpenTabs": "打开的标签页",
 		"sectionBookmarks": "书签",
 		"sectionRecentHistory": "最近的历史记录",
+		"sectionFrequentSites": "常用网站",
+		"sectionRecentConversations": "最近的对话",
 		"sectionHistory": "历史记录",
 		"sectionSwitchToTab": "切换到标签页",
 		"sectionGoTo": "前往",

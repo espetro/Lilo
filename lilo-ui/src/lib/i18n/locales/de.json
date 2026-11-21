@@ -23,6 +23,10 @@
 		"terabyte": "TB"
 	},
 	"settings": {
+		"commandBarLayout": {
+			"default": "Standard",
+			"compact": "Kompakt"
+		},
 		"terminalEnabled": "Terminal-Tabs",
 		"terminalEnabledDescription": "Shells als Tabs neben deinen Seiten öffnen. Ist dies deaktiviert, werden Terminal-Kurzbefehle, -Tasten und -Menüs ausgeblendet. Offene Terminals bleiben bis zum Schließen erhalten.",
 		"terminalTheme": "Design",
@@ -217,6 +221,11 @@
 				"arguments": "Argumente, eines pro Zeile",
 				"environment": "Umgebung, NAME=Wert pro Zeile",
 				"note": "Der Befehl ist der vollständige Pfad einer ausführbaren Datei, die das Agent Client Protocol über Standardeingabe und -ausgabe spricht. Nach dem Sichern erscheint er in der Agentenliste; ein leerer Befehl entfernt ihn."
+			},
+			"commandBarLayout": {
+				"title": "Befehlsleistenlayout",
+				"description": "Standard- oder kompakte Befehlsleiste wählen.",
+				"keywords": "Befehlsleistenlayout Standard Kompakt"
 			},
 			"appIcon": {
 				"title": "App-Symbol",
@@ -1244,6 +1253,8 @@
 		"sectionOpenTabs": "Offene Tabs",
 		"sectionBookmarks": "Lesezeichen",
 		"sectionRecentHistory": "Letzter Verlauf",
+		"sectionFrequentSites": "Häufig besuchte Websites",
+		"sectionRecentConversations": "Letzte Unterhaltungen",
 		"sectionHistory": "Verlauf",
 		"sectionSwitchToTab": "Zum Tab wechseln",
 		"sectionGoTo": "Gehe zu",

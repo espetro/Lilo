@@ -23,6 +23,10 @@
 		"terabyte": "TB"
 	},
 	"settings": {
+		"commandBarLayout": {
+			"default": "デフォルト",
+			"compact": "コンパクト"
+		},
 		"terminalEnabled": "ターミナルタブ",
 		"terminalEnabledDescription": "ページの隣にシェルをタブとして開きます。オフにするとターミナルのショートカット、ボタン、メニューが非表示になります。開いているターミナルは閉じるまで残ります。",
 		"terminalTheme": "テーマ",
@@ -217,6 +221,11 @@
 				"arguments": "引数（1行に1つ）",
 				"environment": "環境（1行に NAME=値）",
 				"note": "コマンドは、標準入出力で Agent Client Protocol を話す実行可能ファイルのフルパスです。保存するとエージェントの一覧に加わり、コマンドを空にすると取り除かれます。"
+			},
+			"commandBarLayout": {
+				"title": "コマンドバーのレイアウト",
+				"description": "標準またはコンパクトなレイアウトを選択します。",
+				"keywords": "コマンドバーのレイアウト デフォルト コンパクト"
 			},
 			"appIcon": {
 				"title": "アプリアイコン",
@@ -1244,6 +1253,8 @@
 		"sectionOpenTabs": "開いているタブ",
 		"sectionBookmarks": "ブックマーク",
 		"sectionRecentHistory": "最近の履歴",
+		"sectionFrequentSites": "よく見るサイト",
+		"sectionRecentConversations": "最近の会話",
 		"sectionHistory": "履歴",
 		"sectionSwitchToTab": "タブに切り替える",
 		"sectionGoTo": "移動",
