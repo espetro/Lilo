@@ -55,6 +55,12 @@ export const scenarios: CaptureScenario[] = [
 	]),
 	// The start card, a search, Enter, then the page window's strip: the card grows into the window natively.
 	{ name: "little-flow", viewport: { width: 900, height: 640 }, boot: bootLittle, run: littleFlow },
+	// Settings > Agents' instances page and the sheet that adds to it.
+	{ name: "agents-instances-light", world: agentInstancesWorld(), run: openAgentsPage },
+	{ name: "agents-instances-dark", world: agentInstancesWorld(), colorScheme: "dark", run: openAgentsPage },
+	{ name: "agents-add-sheet-light", world: agentInstancesWorld(), run: openAddAgent },
+	{ name: "agents-add-sheet-dark", world: agentInstancesWorld(), colorScheme: "dark", run: openAddAgent },
+	{ name: "agents-add", world: agentInstancesWorld(), run: addRegistryAgent },
 ];
 
 const LITTLE_SPACE = { id: "space-home", name: "Home", icon: "🏠", color: "#5865f2" };
@@ -169,6 +175,67 @@ const agentCatalog = agentNames.map(([id, name, description, featured]) => ({
 	description,
 	...(featured ? { featured: true } : {}),
 }));
+
+// The catalog with the provenance lines the registry publishes and the add sheet shows.
+const agentCatalogWithMeta = agentCatalog.map((agent, index) => ({
+	...agent,
+	repository: `https://github.com/example/${agent.id}`,
+	license: index % 2 === 0 ? "MIT" : "Apache-2.0",
+}));
+
+// The Settings > Agents page's stored list: two registry agents and a command of the user's.
+function agentInstancesWorld(): FakeHostWorld {
+	const world = initialWorld();
+	world.settings = {
+		agentsEnabled: "true",
+		agentAcpInstances: JSON.stringify([
+			{ id: "codex-acp", source: "registry", registryId: "codex-acp", name: "Codex", enabled: true },
+			{ id: "gemini", source: "registry", registryId: "gemini", name: "Gemini CLI", enabled: false },
+			{ id: "command-abc", source: "command", name: "Acme Agent", executable: "/usr/local/bin/acme-agent", arguments: "--acp", enabled: true },
+		]),
+	};
+	return world;
+}
+
+// Steps that only exist after the change are guarded, so the same scenario records the old
+// Agents section at a merge base.
+async function openAgentsPage(page: Page) {
+	await receive(page, [
+		{ event: "openSettings" },
+		{ event: "agentCatalog", agents: agentCatalogWithMeta, projects: ["/Users/example/Code/acme"], home: "/Users/example" },
+	]);
+	await page.locator(".section-nav-button").filter({ hasText: "Agents" }).click({ timeout: 5000 }).catch(() => {});
+	await page.locator("[data-setting-id='agentInstances'] .ui-link-row").click({ timeout: 3000 }).catch(() => {});
+	await page.getByRole("button", { name: "Add Agent" }).waitFor({ timeout: 5000 }).catch(() => {});
+	// The subpage fades in over 160ms; shooting mid-fade leaves a blank page on WebKit.
+	await page
+		.waitForFunction(
+			() => {
+				const el = document.querySelector(".settings-section-page");
+				return !el || getComputedStyle(el).opacity === "1";
+			},
+			{ timeout: 3000 },
+		)
+		.catch(() => {});
+}
+
+async function openAddAgent(page: Page) {
+	await openAgentsPage(page);
+	await page.getByRole("button", { name: "Add Agent" }).click({ timeout: 3000 }).catch(() => {});
+	await page.locator(".ui-modal-panel").waitFor({ state: "visible", timeout: 5000 }).catch(() => {});
+}
+
+// A registry agent added from the sheet's search, back to the list it joined.
+async function addRegistryAgent(page: Page) {
+	await openAddAgent(page);
+	const sheet = page.locator(".ui-modal-panel");
+	if (!(await sheet.count())) return;
+	await sheet.getByRole("searchbox").fill("auggie").catch(() => {});
+	const row = sheet.locator(".result").filter({ hasText: "Auggie CLI" });
+	await row.waitFor({ state: "visible", timeout: 5000 }).catch(() => {});
+	await row.getByRole("button", { name: "Add" }).click({ timeout: 5000 }).catch(() => {});
+	await sheet.waitFor({ state: "hidden", timeout: 5000 }).catch(() => {});
+}
 
 function receive(page: Page, messages: Record<string, unknown>[]): Promise<void> {
 	return page.evaluate((list) => {
