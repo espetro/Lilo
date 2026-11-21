@@ -595,7 +595,8 @@ final class SplitPanesController {
             handle.removeFromSuperview()
             handles[tabId] = nil
         }
-        for (tabId, frame) in panes where tabManager.loadedContentView(forTabId: tabId) != nil {
+        // A conversation pane draws in the chrome, over any native pill: its header carries the controls.
+        for (tabId, frame) in panes where tabManager.loadedContentView(forTabId: tabId) != nil && tabManager.tab(for: tabId)?.kind != .agent {
             let handle = handles[tabId] ?? makeHandle(for: tabId)
             handle.frame = Self.handleFrame(in: frame)
             if unsafe handle.superview !== container {
@@ -716,15 +717,6 @@ final class SplitPanesController {
         guard let tabId = conversationPaneTabId(atWindowPoint: point),
               tabId != controller.tabManager.activeOpenTabId else { return }
         controller.activateTabStateFirst(id: tabId)
-    }
-
-    /// The hovered pane pill's button under `event`, when the pane's own conversation zone claimed
-    /// the point. The pill is native and sits under the chrome web view, so without this it shows on
-    /// hover but can never take a click; other chrome surfaces over a pane keep their presses.
-    func handleButtonForChromePress(_ event: NSEvent) -> NSView? {
-        guard let tabId = conversationPaneTabId(atWindowPoint: event.locationInWindow),
-              let handle = handles[tabId] else { return nil }
-        return handle.hitTest(controller.contentContainerView.convert(event.locationInWindow, from: nil))
     }
 
     /// The pointer monitor's every-move feed: reveals the hovered pane's handle and the divider

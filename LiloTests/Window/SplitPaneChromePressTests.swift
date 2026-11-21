@@ -93,29 +93,4 @@ final class SplitPaneChromePressTests: XCTestCase {
         setup.window.splitPanes.activatePaneForChromePress(atWindowPoint: setup.agentPaneCenter)
         XCTAssertEqual(setup.window.tabManager.activeOpenTabId, setup.webTabId)
     }
-
-    func testChromePressOnTheAgentPanePillReachesItsButton() async throws {
-        let setup = try await makeSplit()
-        defer { setup.browser.tearDown() }
-        registerConversationZone(setup)
-
-        // Hover reveals the pane's pill, as updatePointer does on every move; the layout pass
-        // positions the pill's buttons, which no run loop does for a test window.
-        setup.window.splitPanes.updateHover(atWindowPoint: setup.agentPaneCenter)
-        setup.window.contentContainerView.layoutSubtreeIfNeeded()
-        let pane = try XCTUnwrap(setup.window.tabManager.loadedContentView(forTabId: setup.agentTabId)).frame
-        // SplitPaneHandleView's close button: 5pt in, 24x22 centered in the 66x26 pill at the pane's top edge.
-        let pillPoint = setup.window.contentContainerView.convert(
-            NSPoint(x: pane.midX - 33 + 17, y: pane.maxY - 6 - 26 + 13), to: nil)
-        let event = try XCTUnwrap(NSEvent.mouseEvent(
-            with: .leftMouseDown, location: pillPoint, modifierFlags: [], timestamp: 0,
-            windowNumber: setup.window.window?.windowNumber ?? 0, context: nil, eventNumber: 0, clickCount: 1, pressure: 0))
-
-        let button = try XCTUnwrap(setup.window.splitPanes.handleButtonForChromePress(event))
-        XCTAssertTrue(button is NSButton)
-
-        // The same press with no conversation zone goes to the chrome, not the pill.
-        setup.window.chromeInteractiveZones.removeZone(id: "conversation-\(setup.agentTabId.uuidString)")
-        XCTAssertNil(setup.window.splitPanes.handleButtonForChromePress(event))
-    }
 }

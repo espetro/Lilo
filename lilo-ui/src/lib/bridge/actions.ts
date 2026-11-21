@@ -122,6 +122,7 @@ export const tabActions = {
 	splitTab: (tabId: string, side: SplitDropSide, targetTabId?: string): void =>
 		emit("splitTab", { tabId, side, targetTabId }),
 	unsplitTab: (tabId: string): void => emit("unsplitTab", { tabId }),
+	maximizeSplitPane: (tabId: string): void => emit("maximizeSplitPane", { tabId }),
 	splitURL: (url: string, side: SplitDropSide, targetTabId?: string): void =>
 		emit("splitURL", { url, side, targetTabId }),
 	openDroppedLinks: (urls: string[], target: BridgeLinkDropTarget): void =>

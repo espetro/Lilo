@@ -149,7 +149,7 @@ extension MainWindowController {
             let item = menu.addItem("Open in Split View".localized, icon: .openInSplit) { self.splitTab(uuid, at: nil, vertical: false, before: false) }
             if splitIsFull {
                 item.action = nil
-                item.toolTip = String(format: "Split view is full (%lld panes)".localized, SplitLayout.maxPanes)
+                item.toolTip = unsafe String(format: "Split view is full (%lld panes)".localized, SplitLayout.maxPanes)
             }
         }
         if tab.kind == .web {
