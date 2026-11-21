@@ -60,6 +60,9 @@ export const scenarios: CaptureScenario[] = [
 	...(["light", "dark"] as const).map((colorScheme) => ({ name: `agents-discovery-${colorScheme}`, colorScheme, run: agentsDiscovery })),
 	// Zed is found, Connect shows the file it will change, Add writes it, the tile reads Configured.
 	{ name: "agents-discovery-flow", run: agentsDiscoveryFlow },
+	// Settings > Agents: an allowed agent's Permissions row (ask each time or always allow, its own sites).
+	...(["light", "dark"] as const).map((colorScheme) => ({ name: `agents-permissions-${colorScheme}`, colorScheme, run: agentsPermissions })),
+	{ name: "agents-permissions-flow", run: agentsPermissionsFlow },
 	// The start card, a search, Enter, then the page window's strip: the card grows into the window natively.
 	{ name: "little-flow", viewport: { width: 900, height: 640 }, boot: bootLittle, run: littleFlow },
 	// Settings > Agents' instances page and the sheet that adds to it.
@@ -515,6 +518,45 @@ async function agentsDiscoveryFlow(page: Page) {
 	await send(page, { event: "settingsActionCompleted", action: "connectAgentClient", message: "Added Lilo to Zed", level: "info" });
 	await page.waitForTimeout(1500);
 	await page.getByRole("button", { name: "More apps" }).click();
+	await page.waitForTimeout(1500);
+}
+
+async function openPermissions(page: Page, settings: Record<string, string>) {
+	await send(page, { event: "openSettings" });
+	await send(page, { event: "settingsLoaded", settings: { agentControlEnabled: "true", ...settings } });
+	await send(page, {
+		event: "agentClientsLoaded",
+		clients: [
+			{ id: "claudeCode", configured: true, installed: true, stale: false, icon: null },
+			{ id: "cursor", configured: true, installed: true, stale: false, icon: APP_ICON },
+		],
+		allowed: [
+			{ name: "claude-code", displayName: "Claude Code", lastSeen: null, client: "claudeCode" },
+			{ name: "cursor", displayName: "Cursor", lastSeen: Date.now() / 1000 - 3600, client: "cursor" },
+		],
+	});
+	await page.locator(".section-nav-button").filter({ hasText: "Agents" }).click();
+	await page.locator(".agent-tile").filter({ hasText: "Claude Code" }).getByRole("button", { name: "More actions for Claude Code" }).click();
+	await page.getByRole("menuitem", { name: "Permissions" }).click();
+}
+
+async function agentsPermissions(page: Page) {
+	const stored = JSON.stringify({ "claude-code": { act: "ask", sites: ["shop.example.com"] } });
+	await openPermissions(page, { agentClientPermissions: stored });
+	await page.waitForTimeout(400);
+}
+
+async function agentsPermissionsFlow(page: Page) {
+	await openPermissions(page, {});
+	await page.waitForTimeout(1200);
+	const group = page.getByRole("group", { name: "Permissions of Claude Code" });
+	await group.getByRole("radio", { name: "Always allow" }).click();
+	await page.waitForTimeout(1200);
+	const field = group.getByRole("textbox", { name: /Add a site/ });
+	await field.pressSequentially("shop.example.com", { delay: 60 });
+	await field.press("Enter");
+	await page.waitForTimeout(1500);
+	await group.getByRole("radio", { name: "Ask each time" }).click();
 	await page.waitForTimeout(1500);
 }
 
