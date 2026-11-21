@@ -60,6 +60,10 @@ export const scenarios: CaptureScenario[] = [
 	...(["light", "dark"] as const).map((colorScheme) => ({ name: `agents-discovery-${colorScheme}`, colorScheme, run: agentsDiscovery })),
 	// Zed is found, Connect shows the file it will change, Add writes it, the tile reads Configured.
 	{ name: "agents-discovery-flow", run: agentsDiscoveryFlow },
+	// Settings > Agents > Activity: each app's latest calls from the action log.
+	...(["light", "dark"] as const).map((colorScheme) => ({ name: `agents-activity-${colorScheme}`, colorScheme, run: agentsActivity })),
+	// The log is off, Turn On, then the list fills and Refresh reads it again.
+	{ name: "agents-activity-flow", run: agentsActivityFlow },
 	// Settings > Agents: an allowed agent's Permissions row (ask each time or always allow, its own sites).
 	...(["light", "dark"] as const).map((colorScheme) => ({ name: `agents-permissions-${colorScheme}`, colorScheme, run: agentsPermissions })),
 	{ name: "agents-permissions-flow", run: agentsPermissionsFlow },
@@ -72,6 +76,58 @@ export const scenarios: CaptureScenario[] = [
 	{ name: "agents-add-sheet-dark", world: agentInstancesWorld(), colorScheme: "dark", run: openAddAgent },
 	{ name: "agents-add", world: agentInstancesWorld(), run: addRegistryAgent },
 ];
+
+const ACTIVITY_LOG = {
+	event: "agentActionLog",
+	clients: [
+		{
+			name: "Claude Code",
+			calls: [
+				{ time: "2026-01-02T03:04:09.000Z", tool: "form_input", host: "example.com", ok: false, code: "no_such_ref" },
+				{ time: "2026-01-02T03:04:05.000Z", tool: "navigate", host: "example.org", ok: true, code: null },
+				{ time: "2026-01-02T03:03:58.000Z", tool: "get_page_text", host: "example.org", ok: true, code: null },
+			],
+		},
+		{
+			name: "Codex",
+			calls: [
+				{ time: "2026-01-02T03:02:30.000Z", tool: "tabs_context_mcp", host: null, ok: true, code: null },
+				{ time: "2026-01-02T03:02:12.000Z", tool: "read_page", host: "example.net", ok: true, code: null },
+			],
+		},
+	],
+};
+
+async function openActivity(page: Page, settings: Record<string, string>) {
+	await send(page, { event: "openSettings" });
+	await send(page, { event: "settingsLoaded", settings: { agentControlEnabled: "true", ...settings } });
+	await agentClients(page, true);
+	await page.locator(".section-nav-button").filter({ hasText: "Agents" }).click();
+}
+
+async function agentsActivity(page: Page) {
+	await openActivity(page, {});
+	await send(page, ACTIVITY_LOG);
+	await page.getByRole("region", { name: "Activity" }).scrollIntoViewIfNeeded();
+	await page.getByRole("region", { name: "Activity" }).evaluate((el) => el.scrollIntoView({ block: "end" }));
+	await page.waitForTimeout(400);
+}
+
+async function agentsActivityFlow(page: Page) {
+	await openActivity(page, { agentActionLog: "false" });
+	const activity = page.getByRole("region", { name: "Activity" });
+	await activity.evaluate((el) => el.scrollIntoView({ block: "end" }));
+	await page.waitForTimeout(1500);
+	await activity.getByRole("button", { name: "Turn On" }).click();
+	await send(page, { event: "settingsLoaded", settings: { agentControlEnabled: "true", agentActionLog: "true" } });
+	await page.waitForTimeout(800);
+	await send(page, ACTIVITY_LOG);
+	await activity.evaluate((el) => el.scrollIntoView({ block: "end" }));
+	await page.waitForTimeout(1500);
+	await activity.getByRole("button", { name: "Refresh" }).click();
+	await send(page, { ...ACTIVITY_LOG, clients: [{ ...ACTIVITY_LOG.clients[0], calls: [{ time: "2026-01-02T03:05:01.000Z", tool: "click", host: "example.com", ok: true, code: null }, ...ACTIVITY_LOG.clients[0].calls] }, ACTIVITY_LOG.clients[1]] });
+	await page.waitForTimeout(1500);
+}
 
 const LITTLE_SPACE = { id: "space-home", name: "Home", icon: "🏠", color: "#5865f2" };
 
