@@ -14,6 +14,8 @@ async function drag(page: Page, from: { x: number; y: number }, toX: number) {
 }
 
 async function handleCenter(page: Page) {
+	// The docked rail slides in with the fold: its handle is where it ends.
+	await page.locator(".sidebar-rail").evaluateAll((rails) => Promise.all(rails.flatMap((rail) => rail.getAnimations().map((animation) => animation.finished))));
 	const box = (await page.locator(".sidebar-resize-handle, .sidebar-rail .resize-handle").first().boundingBox())!;
 	return { x: box.x + box.width / 2, y: 600 };
 }
@@ -27,6 +29,8 @@ test("dragging the edge under the detent folds the sidebar to its rail, and back
 	await expect(page.locator("#chrome-root > .sidebar")).toHaveClass(/rail-folded/);
 	expect(await sidebarWidth(page)).toBe("300px");
 	expect((await sentCommands(page)).filter((c) => c.action === "setSidebarRail").at(-1)?.payload).toEqual({ rail: true });
+	// The host keeps the width the fold remembers, not one the drag passed through on its way.
+	expect((await sentCommands(page)).filter((c) => c.action === "sidebarResized").at(-1)?.payload).toEqual({ width: 300 });
 
 	// Every icon is named for VoiceOver and the active one is marked.
 	const labels = await rail.locator(".rail-item[data-tab-id]").evaluateAll((items) => items.map((item) => item.getAttribute("aria-label")));

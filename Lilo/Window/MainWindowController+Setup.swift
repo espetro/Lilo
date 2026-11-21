@@ -804,7 +804,6 @@ extension MainWindowController {
             "sidebarWidth": sidebarExpandedWidth,
             "sidebarVisible": sidebarVisible,
             "sidebarRail": sidebarRail,
-            "narrowSidebarWidth": Self.narrowSidebarWidth,
             "toolbarVisible": toolbarVisible,
             "trafficLightsVisible": areTrafficLightsVisible(),
             "tabPosition": tabLayout.position.rawValue,

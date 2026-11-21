@@ -103,9 +103,8 @@ extension MainWindowController {
         sidebarExpandedWidth = width.clamped(to: Self.sidebarWidthRange)
         // The folded rail's edge holds still whatever width it unfolds to: only a change of the
         // fitted width relayouts, so the width a fold remembers cannot cut its slide short.
-        // The lights move with the sidebar's edge in the narrow range; the sync is a no-op elsewhere.
         if fittedSidebarWidth != sidebarWidth {
-            applySidebarLayout(animated: false, syncTrafficLights: true)
+            applySidebarLayout(animated: false)
         }
 
         // Persist only after the drag comes to rest (~500ms trailing) to avoid a synchronous
@@ -165,14 +164,13 @@ extension MainWindowController {
         bridgeRouter.send(event: "sidebarVisibilityChanged", data: ["visible": sidebarVisible, "width": sidebarExpandedWidth])
     }
 
-    /// The folded rail and a narrowed sidebar alike leave the header's lights' spot: the lights sit
-    /// past the sidebar's column, where a toolbar row's would be.
-    var railReplacesSidebar: Bool { (sidebarRail || sidebarWidth < Self.narrowSidebarWidth) && tabLayout.position.isVertical }
+    /// The folded rail leaves the lights where a hidden sidebar does: the toolbar row, or nowhere.
+    var railReplacesSidebar: Bool { sidebarRail && tabLayout.position.isVertical }
 
     /// Whether the layout leaves the lights a home. The address toolbar's row keeps them even with
     /// the sidebar hidden, the floating overlay takes them over its corner, and a shown sidebar holds
     /// them — folded to the rail only while a row over the page still does; merely narrowed, it keeps
-    /// them past its column rather than losing them.
+    /// them.
     static func showsTrafficLights(
         layout: TabLayout,
         toolbarVisible: Bool,
@@ -254,11 +252,11 @@ extension MainWindowController {
         let overSidebar = !window.styleMask.contains(.fullScreen) && ((tabLayout.position == .left && sidebarVisible && !railReplacesSidebar) || overlayCoversLights)
         let compactBar = !window.styleMask.contains(.fullScreen) && sidebarVisible && hasCompactPageToolbar
         let corner = (overSidebar && tabLayout.shown(toolbarVisible: toolbarVisible) == .default) || compactBar
-        // Docked on the left past the narrow range, the rail or the narrowed sidebar takes the sidebar's place:
-        // the lights move onto the toolbar row, past its column, as far in as they sit over the sidebar.
-        let rail = railReplacesSidebar && tabLayout.position == .left
+        // Docked on the left, the rail takes the sidebar's place: the lights move onto the toolbar row,
+        // the rail's column plus the same inset they keep over the sidebar.
+        let rail = sidebarRail && tabLayout.position == .left
         let inset: CGFloat? = overSidebar || compactBar ? Self.trafficLightsInset
-            : rail ? (sidebarRail ? Self.sidebarRailWidth : sidebarWidth) + Self.contentInset + Self.trafficLightsInset
+            : rail ? Self.sidebarRailWidth + Self.contentInset + Self.trafficLightsInset
             : nil
         trafficLightAnimator.place(window: window, inset: inset, square: corner)
     }
