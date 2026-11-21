@@ -950,6 +950,13 @@
 		"bottom": "Open eronder",
 		"replace": "Vervang"
 	},
+	"paneMove": {
+		"left": "Verplaats naar links",
+		"right": "Verplaats naar rechts",
+		"top": "Verplaats erboven",
+		"bottom": "Verplaats eronder",
+		"replace": "Wissel"
+	},
 	"splitPane": {
 		"close": "Gesplitst deelvenster sluiten",
 		"maximize": "Gesplitst deelvenster maximaliseren"
@@ -2140,6 +2147,10 @@
 		"Separate Split View": "Hef gesplitste weergave op",
 		"Close Split Pane": "Gesplitst deelvenster sluiten",
 		"Maximize Split Pane": "Gesplitst deelvenster maximaliseren",
+		"Move Pane Left": "Gesplitst deelvenster naar links verplaatsen",
+		"Move Pane Right": "Gesplitst deelvenster naar rechts verplaatsen",
+		"Move Pane Up": "Gesplitst deelvenster naar boven verplaatsen",
+		"Move Pane Down": "Gesplitst deelvenster naar beneden verplaatsen",
 		"Open in Split View": "Open in gesplitste weergave",
 		"Split view is full (%lld panes)": "Gesplitste weergave is vol (%lld deelvensters)",
 		"Hide Element…": "Element verbergen…",

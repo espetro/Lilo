@@ -950,6 +950,13 @@
 		"bottom": "Otwórz poniżej",
 		"replace": "Zastąp"
 	},
+	"paneMove": {
+		"left": "Przenieś po lewej",
+		"right": "Przenieś po prawej",
+		"top": "Przenieś powyżej",
+		"bottom": "Przenieś poniżej",
+		"replace": "Zamień"
+	},
 	"splitPane": {
 		"close": "Zamknij panel podziału",
 		"maximize": "Maksymalizuj panel podziału"
@@ -2140,6 +2147,10 @@
 		"Separate Split View": "Rozdziel widok",
 		"Close Split Pane": "Zamknij panel podziału",
 		"Maximize Split Pane": "Maksymalizuj panel podziału",
+		"Move Pane Left": "Przenieś panel podziału w lewo",
+		"Move Pane Right": "Przenieś panel podziału w prawo",
+		"Move Pane Up": "Przenieś panel podziału w górę",
+		"Move Pane Down": "Przenieś panel podziału w dół",
 		"Open in Split View": "Otwórz w widoku podzielonym",
 		"Split view is full (%lld panes)": "Widok podzielony jest pełny (%lld panele)",
 		"Hide Element…": "Ukryj element…",
