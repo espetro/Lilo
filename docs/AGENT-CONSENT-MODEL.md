@@ -29,7 +29,7 @@ A Release build never reads either variable (`#if DEBUG`).
 
 | State | Decided by | What `askConsent` returns | What the agent is told today |
 |-------|------------|---------------------------|------------------------------|
-| Not asked: setting off, site always allowed, or the page says the control is not consequential | `agentAskBeforeActions` and `agentAlwaysAllowedSites` in Swift, `consequential` in `AgentPage.js` | not called | the normal reply |
+| Not asked: setting off, site always allowed, the client's own default is always or lists the site (a structural hit is never skipped by these two: `AgentClientPermission.asks`), or the page says the control is not consequential | `agentAskBeforeActions`, `agentAlwaysAllowedSites` and `agentClientPermissions` in Swift, `consequential` (label and `structural`) in `AgentPage.js` | not called | the normal reply |
 | Asked, Allow Once | the user, in the drawer | `true` | the normal reply plus "(the user allowed it in Lilo)" |
 | Asked, Always Allow on this site | the user, in the drawer; `answerConsent` stores the site | `true` | as above, and the next click on that site is "not asked" |
 | Asked, Deny | the user, in the drawer | `false` | `[needs_user] The user did not allow clicking "X" on site: ask them to do it or to allow it` |
