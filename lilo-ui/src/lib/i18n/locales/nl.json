@@ -23,6 +23,10 @@
 		"terabyte": "TB"
 	},
 	"settings": {
+		"commandBarLayout": {
+			"default": "Standaard",
+			"compact": "Compact"
+		},
 		"terminalEnabled": "Terminaltabbladen",
 		"terminalEnabledDescription": "Open shells als tabbladen naast je pagina's. Als dit uitstaat, worden sneltoetsen, knoppen en menu's voor de terminal verborgen; geopende terminals blijven staan totdat je ze sluit.",
 		"terminalTheme": "Thema",
@@ -79,11 +83,6 @@
 		"passwordManagerAction": "Kies",
 		"passwordManagerChange": "Wijzig",
 		"replayOnboardingAction": "Speel opnieuw af",
-		"defaultBrowserSet": "Stel in als standaard",
-		"defaultBrowserLater": "Later",
-		"defaultBrowserBannerText": "Lilo instellen als je standaardbrowser?",
-		"defaultBrowserSetSuccess": "Lilo is nu je standaardbrowser.",
-		"defaultBrowserSetFailed": "Lilo is niet ingesteld als standaardbrowser. Je kunt dit wijzigen in Systeeminstellingen.",
 		"engineName": "Naam",
 		"engineUrlTemplate": "Zoek-URL (%s = zoekopdracht)",
 		"engineKeyword": "Trefwoord",
@@ -167,13 +166,15 @@
 			"passwords": "Wachtwoorden",
 			"agentAccess": "Agents die Lilo gebruiken",
 			"agentClients": "Apps die Lilo kunnen gebruiken",
+			"agentActivity": "Activiteit",
 			"lilo": "Lilo",
 			"tabsWindows": "Tabbladen en vensters",
 			"sitePermissions": "Websitebevoegdheden",
 			"profiles": "Profielen",
 			"otherAppLinks": "Links uit andere apps",
 			"blockerExceptions": "Lijsten en uitzonderingen",
-			"agentConversations": "Gesprekken"
+			"agentConversations": "Gesprekken",
+			"beta": "Bètamodus"
 		},
 		"searchPlaceholder": "Zoek in instellingen",
 		"searchResultsTitle": "Zoekresultaten",
@@ -203,7 +204,7 @@
 		"sites": {
 			"permissionSummary": "{type}: {decision}",
 			"zoomSummary": "Zoom {zoom}",
-			"hiddenSummary": {"one": "{count} verborgen element", "other": "{count} verborgen elementen"},
+			"hiddenSummary": "{count, plural, one{# verborgen element} other{# verborgen elementen}}",
 			"dataSummary": "Opgeslagen gegevens",
 			"permissionUpdated": "{origin} · Bijgewerkt {time}",
 			"emptyTitle": "Nog geen website-instellingen",
@@ -211,6 +212,24 @@
 			"more": "Nog {count}. Zoek om de lijst te verkleinen."
 		},
 		"items": {
+			"agentInstances": {
+				"title": "Agenten",
+				"description": "Agents uit het register en eigen opdrachten die de vraagbalk aanbiedt; een uitgeschakelde verdwijnt uit de kiezer.",
+				"keywords": "agenten acp register eigen opdracht provider instantie inschakelen uitschakelen kiezer"
+			},
+			"customAgent": {
+				"name": "Naam",
+				"namePlaceholder": "Mijn agent",
+				"executable": "Opdracht",
+				"arguments": "Argumenten, één per regel",
+				"environment": "Omgeving, NAAM=waarde per regel",
+				"note": "De opdracht is het volledige pad van een uitvoerbaar bestand dat het Agent Client Protocol spreekt via standaardinvoer en -uitvoer."
+			},
+			"commandBarLayout": {
+				"title": "Indeling van de opdrachtbalk",
+				"description": "Kies de standaard- of compacte indeling.",
+				"keywords": "Indeling van de opdrachtbalk Standaard Compact"
+			},
 			"appIcon": {
 				"title": "Appsymbool",
 				"description": "Alleen Klassiek volgt de donkere, getinte en doorzichtige symboolstijlen van macOS."
@@ -319,6 +338,12 @@
 				"title": "Inactieve tabbladen",
 				"description": "Hoe snel inactieve tabbladen worden bevroren en uit het geheugen worden verwijderd.",
 				"keywords": "geheugen prestaties batterij bevries verwijder sluimer"
+			},
+			"tabSleepAllowlist": {
+				"title": "Sites die geladen blijven",
+				"description": "Tabbladen van deze sites, subdomeinen inbegrepen, worden nooit bevroren of ontladen en blijven geheugen en accu gebruiken. Gescheiden door komma's.",
+				"keywords": "geladen houden uitzondering toegestane lijst nooit slapen bevriezen ontladen",
+				"placeholder": "mail.example.com, example.org"
 			},
 			"singleWindow": {
 				"title": "Houd alles in één venster",
@@ -497,6 +522,11 @@
 				"description": "De agent wacht op je antwoord.",
 				"keywords": "agent toestemming bevestig betaling aankoop bestelling verwijder verstuur publiceer"
 			},
+			"agentActionLog": {
+				"title": "Een logboek van de acties van de agent bijhouden",
+				"description": "Een lokaal bestand somt elke aanroep op, nooit getypte tekst of pagina-inhoud.",
+				"keywords": "agent logboek geschiedenis audit acties herhalen"
+			},
 			"agentAlwaysAllowed": {
 				"title": "Altijd toegestaan",
 				"description": "Agents voeren op deze websites acties uit zonder te vragen.",
@@ -505,6 +535,11 @@
 			"agentOther": {
 				"title": "Andere agents",
 				"description": "Elke andere MCP-client, met de configuratie van Lilo."
+			},
+			"agentActivity": {
+				"title": "Recente agentaanroepen",
+				"description": "De laatste aanroepen van elke app, nieuwste eerst. Gelezen bij het openen van deze pagina of bij verversen.",
+				"keywords": "agent logboek geschiedenis audit acties recente aanroepen activiteit"
 			},
 			"autoplay": {
 				"title": "Automatisch afspelen",
@@ -530,6 +565,11 @@
 				"title": "Sneltoetsen",
 				"description": "Wijzig elke sneltoets of begin met die van Arc.",
 				"keywords": "toetsenbord sneltoets toetsen command"
+			},
+			"holdToQuit": {
+				"title": "Houd ⌘Q ingedrukt om te stoppen",
+				"description": "⌘Q toont een melding; Lilo stopt alleen als de toetsen ingedrukt blijven.",
+				"keywords": "stoppen afsluiten commando q per ongeluk houden"
 			},
 			"newProfile": {
 				"title": "Nieuw profiel",
@@ -598,6 +638,19 @@
 				"reset": "Herstel standaard",
 				"resetTitle": "Prompt van Lilo herstellen?",
 				"resetMessage": "Je wijzigingen worden vervangen door de standaardprompt."
+			},
+			"betaUpdateCheck": {
+				"title": "Bèta-updates",
+				"description": "Deze bèta vergelijkt zijn build bij het starten één keer met de nieuwste release van de fork.",
+				"keywords": "Bèta-updates",
+				"check": "Zoek naar bèta's",
+				"lastChecked": "Gecontroleerd {time}",
+				"absent": "Deze build heeft geen bètafeed."
+			},
+			"betaUpdateRelease": {
+				"title": "Bèta {tag} is uit",
+				"description": "Handmatig gedownload van de releasepagina en geïnstalleerd; Lilo vervangt nooit zichzelf.",
+				"open": "Release openen"
 			}
 		},
 		"devices": {
@@ -610,28 +663,16 @@
 		},
 		"filterLists": {
 			"update": "Werk nu bij",
-			"summary": {
-				"one": "{count} lijst",
-				"other": "{count} lijsten"
-			},
+			"summary": "{count, plural, one{# lijst} other{# lijsten}}",
 			"updated": "bijgewerkt {time}"
 		},
 		"extensionUpdates": {
 			"checkNow": "Controleer nu",
 			"checking": "Zoeken naar updates...",
 			"upToDate": "Up-to-date",
-			"updated": {
-				"one": "{count} bijgewerkt",
-				"other": "{count} bijgewerkt"
-			},
-			"available": {
-				"one": "{count} update beschikbaar",
-				"other": "{count} updates beschikbaar"
-			},
-			"failed": {
-				"one": "{count} kon niet worden gecontroleerd",
-				"other": "{count} konden niet worden gecontroleerd"
-			},
+			"updated": "{count, plural, one{# bijgewerkt} other{# bijgewerkt}}",
+			"available": "{count, plural, one{# update beschikbaar} other{# updates beschikbaar}}",
+			"failed": "{count, plural, one{# kon niet worden gecontroleerd} other{# konden niet worden gecontroleerd}}",
 			"lastChecked": "Laatst gecontroleerd {time}"
 		},
 		"folderAutoLock": {
@@ -642,12 +683,34 @@
 				"claudeCode": "Claude Code",
 				"claudeDesktop": "Claude Desktop",
 				"codex": "Codex",
-				"cursor": "Cursor"
+				"cursor": "Cursor",
+				"zed": "Zed",
+				"vscode": "VS Code",
+				"opencode": "OpenCode",
+				"gemini": "Gemini CLI"
 			},
 			"connect": "Verbind",
 			"copy": "Kopieer configuratie",
 			"clientDescription": "Voegt Lilo toe aan de MCP-servers.",
 			"revoke": "Verwijder",
+			"repair": "Herstellen",
+			"moreFor": "Meer acties voor {client}",
+			"removeFrom": "Lilo uit {client} verwijderen…",
+			"sheet": {
+				"addTitle": "Lilo aan {client} toevoegen",
+				"repairTitle": "Lilo in {client} herstellen",
+				"removeTitle": "Lilo uit {client} verwijderen",
+				"diff": "Lilo wijzigt deze regels en verder niets.",
+				"runs": "Lilo voert dit commando uit.",
+				"unchanged": "In dit bestand verandert niets.",
+				"addedLine": "Toegevoegd",
+				"removedLine": "Verwijderd",
+				"add": "Lilo toevoegen",
+				"repair": "Herstellen",
+				"remove": "Lilo verwijderen",
+				"copy": "Kopieer",
+				"copied": "Gekopieerd"
+			},
 			"status": {
 				"acting": "Nu bezig",
 				"connected": "Verbonden",
@@ -656,7 +719,32 @@
 				"ready": "Geconfigureerd"
 			},
 			"allowedSeen": "Toegestaan, laatst gezien {time}",
-			"readyLine": "Ingesteld. Lilo vraagt het je bij de eerste verbinding."
+			"readyLine": "Ingesteld. Lilo vraagt het je bij de eerste verbinding.",
+			"detectedLine": "Gevonden op deze Mac. Nog niet ingesteld.",
+			"moreApps": "Meer apps",
+			"permissions": {
+				"button": "Rechten",
+				"group": "Rechten van {client}",
+				"act": "Handelen op pagina's",
+				"actHint": "Klikken en verzoeken die versturen, betalen, kopen, verwijderen of publiceren.",
+				"askingOff": "Vragen staat voor alle agents uit, in de instelling hierboven.",
+				"ask": "Elke keer vragen",
+				"always": "Altijd toestaan",
+				"sites": "Toegestaan op deze sites",
+				"addSite": "Site toevoegen",
+				"addSiteLabel": "Site toevoegen waarop {client} zonder te vragen mag handelen",
+				"removeSite": "{site} verwijderen",
+				"floor": "Inloggen, betalen en gegevens naar een andere site sturen worden altijd gevraagd."
+			}
+		},
+		"agentActivity": {
+			"refresh": "Ververs",
+			"open": "Open actielogboek",
+			"off": "Het actielogboek staat uit",
+			"offDescription": "Lilo legt geen agentaanroepen vast. Zet het aan om ze hier te zien.",
+			"turnOn": "Zet aan",
+			"empty": "Nog geen aanroepen vastgelegd.",
+			"failed": "Mislukt"
 		},
 		"navGroups": {
 			"tools": "Hulpmiddelen"
@@ -682,10 +770,7 @@
 			"clearData": "Wis gegevens...",
 			"remove": "Verwijder...",
 			"lastProfile": "Je laatste profiel blijft bestaan: elke ruimte heeft er één nodig.",
-			"extensionCount": {
-				"one": "{count} extensie",
-				"other": "{count} extensies"
-			},
+			"extensionCount": "{count, plural, one{# extensie} other{# extensies}}",
 			"newProfile": "Nieuw profiel...",
 			"newProfileDetail": "Nieuwe cookies, aanmeldingen en extensies",
 			"namePlaceholder": "Profielnaam",
@@ -760,34 +845,42 @@
 		},
 		"notes": {
 			"live": "Wijzigingen gelden meteen",
-			"spaces": {
-				"one": "{count} ruimte",
-				"other": "{count} ruimtes"
-			},
-			"profiles": {
-				"one": "{count} profiel",
-				"other": "{count} profielen"
-			},
+			"spaces": "{count, plural, one{# ruimte} other{# ruimtes}}",
+			"profiles": "{count, plural, one{# profiel} other{# profielen}}",
 			"blocking": "{count} van {total} soorten geblokkeerd",
 			"blockingOff": "Blokkeren staat uit",
 			"profile": "Profiel {name}",
-			"extensions": {
-				"one": "{count} extensie in {profile}",
-				"other": "{count} extensies in {profile}"
-			},
+			"extensions": "{count, plural, one{# extensie in {profile}} other{# extensies in {profile}}}",
 			"terminal": "Wijzigingen gelden voor elk terminaltabblad",
 			"agents": "Lilo heeft zelf geen AI",
 			"advanced": "Voor ontwikkeling en testen",
-			"searchMatches": {
-				"one": "{count} instelling past bij \"{query}\"",
-				"other": "{count} instellingen passen bij \"{query}\""
-			}
+			"searchMatches": "{count, plural, one{# instelling past bij \"{query}\"} other{# instellingen passen bij \"{query}\"}}"
 		},
 		"callDock": {
 			"sidebar": "In de zijbalk",
 			"floating": "Zwevend venster"
 		},
-		"terminalImportCaption": "Importeren neemt een iTerm2-kleurvoorinstelling (.itermcolors), een VS Code-kleurthema (.json) of een Ghostty-themabestand."
+		"terminalImportCaption": "Importeren neemt een iTerm2-kleurvoorinstelling (.itermcolors), een VS Code-kleurthema (.json) of een Ghostty-themabestand.",
+		"agentInstances": {
+			"registry": "Register",
+			"command": "Opdracht",
+			"add": "Agent toevoegen",
+			"hint": "Een agent uit het register die de lijst niet noemt, verschijnt nog steeds in de kiezer; voeg hem hier toe om hem uit te schakelen.",
+			"menu": "Acties voor {name}",
+			"edit": "Bewerk"
+		},
+		"agentSheet": {
+			"addTitle": "Agent toevoegen",
+			"editTitle": "Agent bewerken",
+			"registryTab": "Uit het register",
+			"commandTab": "Eigen opdracht",
+			"sourceLabel": "Agentbron",
+			"searchPlaceholder": "Zoek agenten",
+			"add": "Voeg toe",
+			"added": "Toegevoegd",
+			"loading": "Register wordt geladen…",
+			"none": "Geen agenten gevonden."
+		}
 	},
 	"nav": {
 		"navigationControls": "Navigatieknoppen",
@@ -864,6 +957,10 @@
 		"unreadCount": "{count} ongelezen",
 		"previewOpen": "Open",
 		"sleeping": "In sluimerstand",
+		"dozing": "Slaapt",
+		"dozingHint": "Slaapt om geheugen te besparen. Wordt wakker zodra je het opent.",
+		"keepLoaded": "Blijft geladen",
+		"keepLoadedHint": "Slaapt nooit en is altijd klaar.",
 		"pinned": "Vastgemaakt",
 		"loading": "Laden",
 		"muted": "Gedempt",
@@ -874,6 +971,7 @@
 		"terminalFailedDetail": "{command} is na {duration} mislukt (afsluitcode {code})",
 		"terminalSucceededDetail": "{command} is in {duration} voltooid",
 		"closeTab": "Sluit tabblad",
+		"removeFromSplit": "Verwijderen uit gesplitste weergave",
 		"removePinnedTab": "Verwijder vastgemaakt tabblad",
 		"tabName": "Tabbladnaam",
 		"removeBookmark": "Verwijder bladwijzer",
@@ -927,23 +1025,36 @@
 		"bottom": "Open eronder",
 		"replace": "Vervang"
 	},
+	"paneMove": {
+		"left": "Verplaats naar links",
+		"right": "Verplaats naar rechts",
+		"top": "Verplaats erboven",
+		"bottom": "Verplaats eronder",
+		"replace": "Wissel"
+	},
+	"splitPane": {
+		"close": "Gesplitst deelvenster sluiten",
+		"maximize": "Gesplitst deelvenster maximaliseren"
+	},
 	"tabSection": {
 		"splitView": "Gesplitste weergave",
 		"folderEmpty": "Map leeg",
 		"newTab": "Nieuw tabblad",
+		"newTabShort": "Nieuw",
 		"newTerminal": "Nieuwe terminal",
 		"clearUnpinnedTooltip": "Archiveer niet-vastgemaakte tabbladen",
 		"listOptions": "Sorteren en groeperen",
+		"searchTabs": "Zoek in tabbladen",
 		"pinnedTabs": "Vastgemaakte tabbladen",
 		"openTabs": "Geopende tabbladen",
 		"dropToPin": "Laat los om vast te maken",
-		"stackLabel": {"one": "{name}, {count} tabblad", "other": "{name}, {count} tabbladen"},
+		"stackLabel": "{count, plural, one{{name}, # tabblad} other{{name}, # tabbladen}}",
 		"closeStack": "Sluit stapel",
 		"trayAgents": "Agents",
 		"trayTerminals": "Terminals",
-		"trayNeedsInput": {"one": "{count} wacht op invoer", "other": "{count} wachten op invoer"},
-		"trayWorking": {"one": "{count} aan het werk", "other": "{count} aan het werk"},
-		"trayRunning": {"one": "{count} actief", "other": "{count} actief"},
+		"trayNeedsInput": "{count, plural, one{# wacht op invoer} other{# wachten op invoer}}",
+		"trayWorking": "{count, plural, one{# aan het werk} other{# aan het werk}}",
+		"trayRunning": "{count, plural, one{# actief} other{# actief}}",
 		"trayShow": "Toon {name}",
 		"trayHide": "Verberg {name}"
 	},
@@ -1199,6 +1310,7 @@
 		"terminalProgram": "Programma",
 		"hintRun": "Voer uit",
 		"hintSplit": "Splits",
+		"splitFull": "Gesplitste weergave is vol ({count} deelvensters)",
 		"scopeTabs": "Tabbladen",
 		"scopeBookmarks": "Bladwijzers",
 		"scopeHistory": "Geschiedenis",
@@ -1234,6 +1346,8 @@
 		"sectionOpenTabs": "Geopende tabbladen",
 		"sectionBookmarks": "Bladwijzers",
 		"sectionRecentHistory": "Recente geschiedenis",
+		"sectionFrequentSites": "Vaak bezochte sites",
+		"sectionRecentConversations": "Recente gesprekken",
 		"sectionHistory": "Geschiedenis",
 		"sectionSwitchToTab": "Schakel over naar tabblad",
 		"sectionGoTo": "Ga naar",
@@ -1348,7 +1462,7 @@
 		"tabStartup": "Opstarten",
 		"tabMemory": "Geheugen",
 		"tabLog": "Logboek",
-		"errorCount": {"one": "{count} fout", "other": "{count} fouten"},
+		"errorCount": "{count, plural, one{# fout} other{# fouten}}",
 		"copyReport": "Kopieer rapport",
 		"recordSession": "Sessie opnemen",
 		"stopRecording": "Opname stoppen",
@@ -1390,23 +1504,11 @@
 		"navLabel": "Weergaven van procesbeheer",
 		"searchPlaceholder": "Zoek tabbladen",
 		"memoryAriaLabel": "Geheugengebruik",
-		"tabsCount": {
-			"one": "{count} tabblad",
-			"other": "{count} tabbladen"
-		},
+		"tabsCount": "{count, plural, one{# tabblad} other{# tabbladen}}",
 		"cpu": "CPU {value}",
-		"others": {
-			"one": "{count} ander",
-			"other": "{count} andere"
-		},
-		"reclaim": {
-			"one": "{count} verborgen tabblad gebruikt {size}",
-			"other": "{count} verborgen tabbladen gebruiken {size}"
-		},
-		"reclaimNoSize": {
-			"one": "{count} verborgen tabblad is nog geladen",
-			"other": "{count} verborgen tabbladen zijn nog geladen"
-		},
+		"others": "{count, plural, one{# ander} other{# andere}}",
+		"reclaim": "{count, plural, one{# verborgen tabblad gebruikt {size}} other{# verborgen tabbladen gebruiken {size}}}",
+		"reclaimNoSize": "{count, plural, one{# verborgen tabblad is nog geladen} other{# verborgen tabbladen zijn nog geladen}}",
 		"sleep": "Zet in sluimerstand",
 		"groupTabs": "Tabbladen",
 		"groupSleeping": "In sluimerstand",
@@ -1416,10 +1518,7 @@
 		"audioPlaying": "Speelt audio af",
 		"frozen": "Bevroren",
 		"sharedEstimate": "Deelt het proces met andere tabbladen, dus dit is een schatting",
-		"sharedWith": {
-			"one": "Gedeeld met {count} ander tabblad",
-			"other": "Gedeeld met {count} andere tabbladen"
-		},
+		"sharedWith": "{count, plural, one{Gedeeld met # ander tabblad} other{Gedeeld met # andere tabbladen}}",
 		"pid": "PID {pid}",
 		"focus": "Toon",
 		"details": "Details tonen",
@@ -1445,19 +1544,22 @@
 		"resetTitle": "Gewijzigde vlaggen",
 		"reloadNote": "Herlaad een pagina om een wijziging toe te passen"
 	},
+	"little": {
+		"openIn": "Openen in {space}",
+		"openInMenu": "Openen in een andere Ruimte",
+		"copyLink": "Link kopiëren",
+		"linkCopied": "Link gekopieerd",
+		"placeholder": "Zoek of voer een URL in...",
+		"emptyTitle": "Zoek op het web of voer een URL in",
+		"emptySubtitle": "Typ / om bezochte pagina's te doorzoeken."
+	},
 	"urlToast": {
 		"pageActions": "Pagina-acties",
 		"reEnableBlocking": "Schakel blokkering op deze website weer in",
-		"trackersBlockedOnPage": {
-			"one": "{count} tracker geblokkeerd op deze pagina",
-			"other": "{count} trackers geblokkeerd op deze pagina"
-		},
+		"trackersBlockedOnPage": "{count, plural, one{# tracker geblokkeerd op deze pagina} other{# trackers geblokkeerd op deze pagina}}",
 		"disableBlocking": "Schakel blokkering op deze website uit",
 		"adsAllowed": "Advertenties toegestaan",
-		"trackersBlockedLabel": {
-			"one": "{count} tracker geblokkeerd",
-			"other": "{count} trackers geblokkeerd"
-		},
+		"trackersBlockedLabel": "{count, plural, one{# tracker geblokkeerd} other{# trackers geblokkeerd}}",
 		"adsBlocked": "Advertenties geblokkeerd",
 		"extensionAlreadyInstalled": "Extensie al geïnstalleerd",
 		"installChromeExtension": "Installeer deze Chrome-extensie",
@@ -1501,10 +1603,7 @@
 		"stop": "Debuggen stoppen"
 	},
 	"notices": {
-		"moreNotices": {
-			"one": "nog {count} melding",
-			"other": "nog {count} meldingen"
-		},
+		"moreNotices": "{count, plural, one{nog # melding} other{nog # meldingen}}",
 		"more": "nog {count}"
 	},
 	"crashRecovery": {
@@ -1545,7 +1644,7 @@
 	},
 	"archivedTabs": {
 		"title": "Gearchiveerd",
-		"buttonLabel": {"one": "{count} onlangs gearchiveerd tabblad", "other": "{count} onlangs gearchiveerde tabbladen"},
+		"buttonLabel": "{count, plural, one{# onlangs gearchiveerd tabblad} other{# onlangs gearchiveerde tabbladen}}",
 		"restore": "Herstellen",
 		"showAll": "Alle gearchiveerde tabbladen tonen",
 		"showAllDownloads": "Alle downloads tonen"
@@ -1556,7 +1655,7 @@
 		"undo": "Herstel",
 		"reopen": "Heropenen",
 		"archived": "‘{title}’ gearchiveerd",
-		"archivedCount": {"one": "{count} tabblad gearchiveerd", "other": "{count} tabbladen gearchiveerd"}
+		"archivedCount": "{count, plural, one{# tabblad gearchiveerd} other{# tabbladen gearchiveerd}}"
 	},
 	"updateCard": {
 		"ready": "Klaar om te installeren",
@@ -1589,6 +1688,11 @@
 		"placeholder": "Zoek of voer URL in...",
 		"addressBar": "Adresbalk: {url}",
 		"noProject": "Geen project",
+		"defaultBrowserSet": "Stel in als standaard",
+		"defaultBrowserLater": "Later",
+		"defaultBrowserBannerText": "Lilo instellen als je standaardbrowser?",
+		"defaultBrowserSetSuccess": "Lilo is nu je standaardbrowser.",
+		"defaultBrowserSetFailed": "Lilo is niet ingesteld als standaardbrowser. Je kunt dit wijzigen in Systeeminstellingen.",
 		"details": {
 			"branch": "Branch",
 			"command": "Commando",
@@ -1646,6 +1750,7 @@
 		"allow": "Sta toe",
 		"allowOnce": "Sta één keer toe",
 		"alwaysAllowOnSite": "Sta altijd toe op deze website",
+		"agentWaitsForAnswer": "De agent wacht op je antwoord.",
 		"popup": {
 			"blocked": "Pop-up geblokkeerd",
 			"tried": "probeerde een pop-upvenster te openen",
@@ -1767,26 +1872,11 @@
 			"done": "Klaar: {list}.",
 			"nothing": "Klaar: niets nieuws om te importeren.",
 			"count": {
-				"bookmarks": {
-					"one": "{count} bladwijzer",
-					"other": "{count} bladwijzers"
-				},
-				"tabs": {
-					"one": "{count} geopend tabblad",
-					"other": "{count} geopende tabbladen"
-				},
-				"history": {
-					"one": "{count} pagina geschiedenis",
-					"other": "{count} pagina's geschiedenis"
-				},
-				"cookies": {
-					"one": "{count} cookie",
-					"other": "{count} cookies"
-				},
-				"extensions": {
-					"one": "{count} extensie",
-					"other": "{count} extensies"
-				}
+				"bookmarks": "{count, plural, one{# bladwijzer} other{# bladwijzers}}",
+				"tabs": "{count, plural, one{# geopend tabblad} other{# geopende tabbladen}}",
+				"history": "{count, plural, one{# pagina geschiedenis} other{# pagina's geschiedenis}}",
+				"cookies": "{count, plural, one{# cookie} other{# cookies}}",
+				"extensions": "{count, plural, one{# extensie} other{# extensies}}"
 			},
 			"step": {
 				"bookmarks": "Bladwijzers importeren uit {from}",
@@ -1904,11 +1994,11 @@
 		"sectionSites": "Meestbezochte sites",
 		"sectionTerminals": "Vanuit terminals",
 		"searchResults": "Zoekresultaten",
-		"dayPages": {"one": "{count} pagina", "other": "{count} pagina's"},
-		"daySites": {"one": "{count} site", "other": "{count} sites"},
+		"dayPages": "{count, plural, one{# pagina} other{# pagina's}}",
+		"daySites": "{count, plural, one{# site} other{# sites}}",
 		"openInNewTab": "Openen in nieuw tabblad",
-		"selected": {"one": "{count} geselecteerd", "other": "{count} geselecteerd"},
-		"visits": {"one": "{count} bezoek", "other": "{count} bezoeken"},
+		"selected": "{count, plural, one{# geselecteerd} other{# geselecteerd}}",
+		"visits": "{count, plural, one{# bezoek} other{# bezoeken}}",
 		"openInNewTabs": "Openen in nieuwe tabbladen",
 		"delete": "Verwijderen",
 		"clearSelection": "Alles deselecteren",
@@ -2093,6 +2183,7 @@
 		"Hide Others": "Verberg andere",
 		"Show All": "Toon alles",
 		"Quit Lilo": "Stop Lilo",
+		"Hold %@ to Quit": "Houd %@ ingedrukt om te stoppen",
 		"File": "Archief",
 		"New Tab": "Nieuw tabblad",
 		"Back to tab": "Terug naar tabblad",
@@ -2138,9 +2229,17 @@
 		"New Split View": "Nieuwe gesplitste weergave",
 		"Split View": "Gesplitste weergave",
 		"Separate Split View": "Hef gesplitste weergave op",
+		"Close Split Pane": "Gesplitst deelvenster sluiten",
+		"Maximize Split Pane": "Gesplitst deelvenster maximaliseren",
+		"Move Pane Left": "Gesplitst deelvenster naar links verplaatsen",
+		"Move Pane Right": "Gesplitst deelvenster naar rechts verplaatsen",
+		"Move Pane Up": "Gesplitst deelvenster naar boven verplaatsen",
+		"Move Pane Down": "Gesplitst deelvenster naar beneden verplaatsen",
 		"Open in Split View": "Open in gesplitste weergave",
+		"Split view is full (%lld panes)": "Gesplitste weergave is vol (%lld deelvensters)",
 		"Hide Element…": "Element verbergen…",
 		"Click an element to hide it on this site. Press Esc to cancel.": "Klik op een element om het op deze site te verbergen. Druk op Esc om te annuleren.",
+		"Click an element or drag an area. Arrow keys change the element, Return captures, Esc cancels.": "Klik op een element of sleep een gebied. Met de pijltjestoetsen wijzig je het element, Return legt vast, Esc annuleert.",
 		"Picture in Picture": "Beeld in beeld",
 		"Develop": "Ontwikkel",
 		"Show Web Inspector": "Toon webinfovenster",
@@ -2227,6 +2326,7 @@
 		"Download Complete": "Download voltooid",
 		"Download Failed": "Download mislukt",
 		"Keep Awake Until Done": "Blijf wakker tot voltooid",
+		"Keep Loaded": "Geladen houden",
 		"Sleep is back on": "Sluimerstand is weer toegestaan",
 		"The battery is below %d%%.": "De batterij is onder %d%%.",
 		"The Mac is too hot.": "De Mac is te warm.",
@@ -2256,6 +2356,10 @@
 		"Close": "Sluit",
 		"New Terminal Tab": "Nieuw terminaltabblad",
 		"Close %d terminals?": {"one": "%d terminal sluiten?", "other": "%d terminals sluiten?"},
+		"Pin %d Tabs": {"one": "Maak %d tabblad vast", "other": "Maak %d tabbladen vast"},
+		"Bookmark %d Tabs": {"one": "Maak bladwijzer van %d tabblad", "other": "Maak bladwijzer van %d tabbladen"},
+		"Move Tabs to Space": "Verplaats tabbladen naar ruimte",
+		"Close %d Tabs": {"one": "Sluit %d tabblad", "other": "Sluit %d tabbladen"},
 		"Commands are still running in them and will be stopped.": "Er zijn nog commando's actief die worden gestopt.",
 		"The terminal could not start.": "De terminal kon niet starten.",
 		"Close the tab and try again.": "Sluit het tabblad en probeer het opnieuw.",
@@ -2378,6 +2482,11 @@
 		"Added Lilo to Claude Desktop: quit and reopen Claude to load it": "Lilo toegevoegd aan Claude Desktop: stop en heropen Claude om het te laden",
 		"Added Lilo to Cursor": "Lilo toegevoegd aan Cursor",
 		"Added Lilo to Codex": "Lilo toegevoegd aan Codex",
+		"Added Lilo to Zed": "Lilo toegevoegd aan Zed",
+		"Added Lilo to VS Code": "Lilo toegevoegd aan VS Code",
+		"Added Lilo to OpenCode": "Lilo toegevoegd aan OpenCode",
+		"Added Lilo to Gemini CLI": "Lilo toegevoegd aan Gemini CLI",
+		"Removed Lilo": "Lilo verwijderd",
 		"Lilo could not read %@: add this server to it yourself: %@": "Lilo kon %@ niet lezen: voeg deze server zelf toe: %@",
 		"Stop Agents": "Stop agents",
 		"Delete %@ and its %d tabs?": {"one": "%@ en %d tabblad verwijderen?", "other": "%@ en %d tabbladen verwijderen?"},
@@ -2452,6 +2561,8 @@
 		"%@ did not match its checksum and was not installed.": "%@ kwam niet overeen met de checksum en is niet geïnstalleerd.",
 		"%@ needs Node.js: install it from nodejs.org, then try again.": "%@ heeft Node.js nodig: installeer het via nodejs.org en probeer het opnieuw.",
 		"%@ needs uv: install it from astral.sh/uv, then try again.": "%@ heeft uv nodig: installeer het via astral.sh/uv en probeer het opnieuw.",
+		"%@ must be the full path of an executable file: %@": "%@ moet het volledige pad van een uitvoerbaar bestand zijn: %@",
+		"%@ has an environment line that is not NAME=value: %@": "%@ heeft een omgevingsregel die niet NAAM=waarde is: %@",
 		"Choose": "Kies",
 		"New Conversation": "Nieuw gesprek",
 		"Screenshot of %@": "Schermafbeelding van %@",
@@ -2474,10 +2585,7 @@
 		"title": "Nieuw in Lilo",
 		"description": "Een paar kleine verbeteringen voor dagelijks surfen.",
 		"allChanges": "Alles in deze update",
-		"changes": {
-			"one": "{count} wijziging",
-			"other": "{count} wijzigingen"
-		},
+		"changes": "{count, plural, one{# wijziging} other{# wijzigingen}}",
 		"originalNotes": "Oorspronkelijke versie-informatie.",
 		"unavailable": "Versie-informatie is niet beschikbaar in deze versie.",
 		"reopen": "Altijd te vinden via Help > Nieuw in Lilo.",
@@ -2661,10 +2769,7 @@
 			"ownCopyHint": "Werkt aan een eigen kopie van het project. Voeg die samen vanuit Wijzigingen.",
 			"starting": "Agent starten...",
 			"errorHint": "Stuur een bericht om het opnieuw te proberen.",
-			"showEarlier": {
-				"one": "Toon {count} eerder item",
-				"other": "Toon {count} eerdere items"
-			},
+			"showEarlier": "{count, plural, one{Toon # eerder item} other{Toon # eerdere items}}",
 			"queuedTag": "In wachtrij",
 			"sendNow": "Nu verzenden",
 			"thought": "Gedachte",
@@ -2674,16 +2779,10 @@
 			"restore": "Herstel",
 			"undo": "Ongedaan maken",
 			"undone": "Ongedaan gemaakt",
-			"moreLines": {
-				"one": "Nog {count} regel",
-				"other": "Nog {count} regels"
-			},
+			"moreLines": "{count, plural, one{Nog # regel} other{Nog # regels}}",
 			"plan": "Plan",
 			"planProgress": "{done}/{total}",
-			"planDone": {
-				"one": "{count} stap klaar",
-				"other": "{count} stappen klaar"
-			},
+			"planDone": "{count, plural, one{# stap klaar} other{# stappen klaar}}",
 			"planStatus": {
 				"pending": "Te doen",
 				"in_progress": "Bezig",
@@ -2711,26 +2810,11 @@
 				"failed": "Mislukt"
 			},
 			"group": {
-				"read": {
-					"one": "{count} bestand gelezen",
-					"other": "{count} bestanden gelezen"
-				},
-				"search": {
-					"one": "{count} zoekopdracht",
-					"other": "{count} zoekopdrachten"
-				},
-				"fetch": {
-					"one": "{count} pagina opgehaald",
-					"other": "{count} pagina's opgehaald"
-				},
-				"think": {
-					"one": "{count} keer nagedacht",
-					"other": "{count} keer nagedacht"
-				},
-				"action": {
-					"one": "{count} actie",
-					"other": "{count} acties"
-				}
+				"read": "{count, plural, one{# bestand gelezen} other{# bestanden gelezen}}",
+				"search": "{count, plural, one{# zoekopdracht} other{# zoekopdrachten}}",
+				"fetch": "{count, plural, one{# pagina opgehaald} other{# pagina's opgehaald}}",
+				"think": "{count, plural, one{# keer nagedacht} other{# keer nagedacht}}",
+				"action": "{count, plural, one{# actie} other{# acties}}"
 			}
 		},
 		"composer": {
@@ -2762,30 +2846,22 @@
 			"noFolder": "Geen map",
 			"noFolderDetail": "De agent werkt in een eigen map",
 			"backgroundHint": "{shortcut} om het op de achtergrond te houden",
-			"start": "Start"
+			"start": "Start",
+			"searchAgents": "Zoek agents",
+			"featuredAgents": "Uitgelicht",
+			"registryAgents": "Register",
+			"noMatches": "Geen overeenkomende agents"
 		},
 		"row": {
 			"untitled": "Nieuw gesprek",
 			"working": "Bezig",
 			"failed": "Gestopt met een fout",
-			"linesAdded": {
-				"one": "{count} regel toegevoegd",
-				"other": "{count} regels toegevoegd"
-			},
-			"linesRemoved": {
-				"one": "{count} regel verwijderd",
-				"other": "{count} regels verwijderd"
-			},
-			"pages": {
-				"one": "{count} pagina",
-				"other": "{count} pagina's"
-			},
+			"linesAdded": "{count, plural, one{# regel toegevoegd} other{# regels toegevoegd}}",
+			"linesRemoved": "{count, plural, one{# regel verwijderd} other{# regels verwijderd}}",
+			"pages": "{count, plural, one{# pagina} other{# pagina's}}",
 			"showPages": "Toon pagina's",
 			"hidePages": "Verberg pagina's",
-			"morePermissions": {
-				"one": "nog {count} verzoek wacht",
-				"other": "nog {count} verzoeken wachten"
-			}
+			"morePermissions": "{count, plural, one{nog # verzoek wacht} other{nog # verzoeken wachten}}"
 		},
 		"question": {
 			"allow": "Sta toe",
@@ -2799,10 +2875,7 @@
 		},
 		"badge": {
 			"title": "Agents",
-			"waiting": {
-				"one": "Agents, {count} wacht op je",
-				"other": "Agents, {count} wachten op je"
-			},
+			"waiting": "{count, plural, one{Agents, # wacht op je} other{Agents, # wachten op je}}",
 			"new": "Nieuw",
 			"needsYou": "Wacht op je",
 			"running": "Actief",
@@ -2823,10 +2896,7 @@
 			"signInOpenTerminal": "Open in terminal"
 		},
 		"work": {
-			"images": {
-				"one": "{count} afbeelding",
-				"other": "{count} afbeeldingen"
-			},
+			"images": "{count, plural, one{# afbeelding} other{# afbeeldingen}}",
 			"verb": {
 				"read": "Gelezen",
 				"edit": "Bewerkt",
@@ -2844,46 +2914,16 @@
 				"fetch": "Haalt op"
 			},
 			"summary": {
-				"read": {
-					"one": "{count} bestand gelezen",
-					"other": "{count} bestanden gelezen"
-				},
-				"edit": {
-					"one": "{count} bestand bewerkt",
-					"other": "{count} bestanden bewerkt"
-				},
-				"execute": {
-					"one": "{count} opdracht uitgevoerd",
-					"other": "{count} opdrachten uitgevoerd"
-				},
-				"search": {
-					"one": "{count} keer gezocht",
-					"other": "{count} keer gezocht"
-				},
-				"fetch": {
-					"one": "{count} pagina opgehaald",
-					"other": "{count} pagina's opgehaald"
-				},
-				"think": {
-					"one": "{count} keer nagedacht",
-					"other": "{count} keer nagedacht"
-				},
-				"browser": {
-					"one": "{count} keer de browser gebruikt",
-					"other": "{count} keer de browser gebruikt"
-				},
-				"browserOn": {
-					"one": "{count} keer de browser gebruikt op {site}",
-					"other": "{count} keer de browser gebruikt op {site}"
-				},
-				"tool": {
-					"one": "{count} tool gebruikt",
-					"other": "{count} tools gebruikt"
-				},
-				"agent": {
-					"one": "{count} agent gestart",
-					"other": "{count} agents gestart"
-				}
+				"read": "{count, plural, one{# bestand gelezen} other{# bestanden gelezen}}",
+				"edit": "{count, plural, one{# bestand bewerkt} other{# bestanden bewerkt}}",
+				"execute": "{count, plural, one{# opdracht uitgevoerd} other{# opdrachten uitgevoerd}}",
+				"search": "{count, plural, one{# keer gezocht} other{# keer gezocht}}",
+				"fetch": "{count, plural, one{# pagina opgehaald} other{# pagina's opgehaald}}",
+				"think": "{count, plural, one{# keer nagedacht} other{# keer nagedacht}}",
+				"browser": "{count, plural, one{# keer de browser gebruikt} other{# keer de browser gebruikt}}",
+				"browserOn": "{count, plural, one{# keer de browser gebruikt op {site}} other{# keer de browser gebruikt op {site}}}",
+				"tool": "{count, plural, one{# tool gebruikt} other{# tools gebruikt}}",
+				"agent": "{count, plural, one{# agent gestart} other{# agents gestart}}"
 			},
 			"browser": {
 				"closeTab": "Tabblad gesloten",
@@ -2934,10 +2974,7 @@
 				"request": "Verstuurt een verzoek naar {url}"
 			},
 			"exit": "Exitcode {code}",
-			"showAll": {
-				"one": "Toon {count} regel",
-				"other": "Toon alle {count} regels"
-			},
+			"showAll": "{count, plural, one{Toon # regel} other{Toon alle # regels}}",
 			"showLess": "Toon de laatste regels"
 		},
 		"turn": {
@@ -2945,10 +2982,7 @@
 			"stopped": "Gestopt",
 			"refusalTitle": "Het model weigerde door te gaan",
 			"refusalHint": "Zijn beveiligingen stopten deze beurt, soms ook bij legitiem werk. Herformuleer het verzoek of kies hieronder een ander model.",
-			"files": {
-				"one": "{count} bestand gewijzigd",
-				"other": "{count} bestanden gewijzigd"
-			},
+			"files": "{count, plural, one{# bestand gewijzigd} other{# bestanden gewijzigd}}",
 			"review": "Bekijken",
 			"copy": "Antwoord kopiëren",
 			"copied": "Gekopieerd"

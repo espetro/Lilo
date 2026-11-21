@@ -36,9 +36,7 @@ final class AgentInputTests: XCTestCase {
         // Transparent, off screen and never made key: the test must not show anything to whoever runs it
         // nor take their keyboard. Ordering a titled window in pulls it on screen, so it moves out after.
         let window = try XCTUnwrap(controller.window)
-        window.alphaValue = 0
-        window.orderFrontRegardless()
-        window.setFrame(NSRect(x: -20000, y: -20000, width: 800, height: 600), display: false)
+        window.orderFrontOffscreen(frame: NSRect(x: 0, y: 0, width: 800, height: 600))
         let content = try XCTUnwrap(window.contentView)
         engine.view.frame = NSRect(x: 0, y: 0, width: 600, height: 400)
         content.addSubview(engine.view)

@@ -25,6 +25,7 @@ final class SettingsStore {
             cache = [:]
             initialLoadError = error
         }
+        migrateAgentInstances()
     }
 
     /// Served while nothing is stored, and never stored themselves, so a newer default reaches everyone who
@@ -196,6 +197,9 @@ final class SettingsStore {
     /// Remove every persistent profile's cookies and website data when the app quits.
     var clearSiteDataOnQuit: Bool { (get("clearSiteDataOnQuit") ?? "false") == "true" }
 
+    /// The quit shortcut must be held about a second to quit; a tap only shows the HUD.
+    var holdToQuit: Bool { self.get("holdToQuit") == "true" }
+
     /// Auto-enter Picture-in-Picture when leaving a tab with active media (a call or playing video).
     var autoPictureInPicture: Bool { (get("autoPictureInPicture") ?? "true") == "true" }
 
@@ -259,6 +263,17 @@ final class SettingsStore {
         }
     }
 
+    static let agentAcpInstancesKey = "agentAcpInstances"
+
+    /// The one custom agent moves into the instances list once, as its first command entry; the list
+    /// wins from then on, so a value already stored is never rewritten.
+    private func migrateAgentInstances() {
+        guard get(Self.agentAcpInstancesKey) == nil, let custom = get("customAgent"),
+              let instance = ACPAgentInstance.migrate(customAgent: custom) else { return }
+        set(Self.agentAcpInstancesKey, value: ACPAgentInstance.json([instance]))
+        remove("customAgent")
+    }
+
     static let hiddenElementsKey = "hiddenElements"
 
     /// The elements the user hid, as selectors by host without `www.`. A selector holding a brace could close its rule and add
@@ -277,6 +292,9 @@ final class SettingsStore {
             set(Self.hiddenElementsKey, value: String(data: data, encoding: .utf8) ?? "{}")
         }
     }
+
+    /// Hosts whose tabs are never frozen or discarded.
+    var tabSleepAllowlist: Set<String> { TabLifecycleCoordinator.neverSleepHosts(from: get("tabSleepAllowlist") ?? "") }
 
     /// Domains whose requests are never blocked, whatever the page: the user's comma or space
     /// separated list, with entries that are not plain hostnames dropped.

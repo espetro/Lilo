@@ -47,15 +47,11 @@ jobs:
     timeout-minutes: 10
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
-        with:
-          node-version-file: 'site/.nvmrc'
-          cache: 'npm'
-          cache-dependency-path: |
-            site/package-lock.json
-            docs-site/package-lock.json
+      - uses: ./.github/actions/setup-pnpm
       # The documentation generators read the app's sources, so a Swift or UI change that breaks one fails here.
-      - run: make release-status release-test release-media-test perf-summary-test site-check site-test site-deploy-check docs-check docs-test docs-deploy-check
+      # swiftlint keeps the Linux download path working; its static build skips two SourceKit rules that the macOS job runs.
+      # scope-test, tier-test and lockf-test finish the linux-checks set CI did not cover; hooks-test runs in commits.yml.
+      - run: make release-status release-test release-media-test perf-summary-test retried-tests-test swiftlint metrics-test ci-metrics-test check-summary-test lockf-test scope-test tier-test site-check site-test site-deploy-check docs-check docs-test docs-deploy-check
 
   ui:
     name: UI (lint, test, build)
@@ -65,20 +61,7 @@ jobs:
     timeout-minutes: 10
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
-        with:
-          node-version-file: '.nvmrc'
-          cache: 'npm'
-          cache-dependency-path: lilo-ui/package-lock.json
-      # Restored files predate the checkout's lockfile: the touch keeps make from installing them again.
-      - name: Restore lilo-ui/node_modules
-        id: ui-modules
-        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
-        with:
-          path: lilo-ui/node_modules
-          key: ui-modules-${{ runner.os }}-${{ hashFiles('.nvmrc', 'lilo-ui/package-lock.json') }}
-      - if: steps.ui-modules.outputs.cache-hit == 'true'
-        run: touch lilo-ui/node_modules/.package-lock.json
+      - uses: ./.github/actions/setup-pnpm
       - run: make validate-ui
 
   e2e:
@@ -93,34 +76,31 @@ jobs:
         shard: [1, 2, 3]
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
-        with:
-          node-version-file: '.nvmrc'
-          cache: 'npm'
-          cache-dependency-path: lilo-ui/package-lock.json
-      # Restored files predate the checkout's lockfile: the touch keeps make from installing them again.
-      - name: Restore lilo-ui/node_modules
-        id: ui-modules
-        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
-        with:
-          path: lilo-ui/node_modules
-          key: ui-modules-${{ runner.os }}-${{ hashFiles('.nvmrc', 'lilo-ui/package-lock.json') }}
-      - if: steps.ui-modules.outputs.cache-hit == 'true'
-        run: touch lilo-ui/node_modules/.package-lock.json
-      # Before the browser install, so npx runs the locked Playwright.
-      - run: make lilo-ui/node_modules/.package-lock.json
+      - uses: ./.github/actions/setup-pnpm
+      # Before the browser install, so pnpm exec runs the locked Playwright.
+      - run: make lilo-ui/node_modules/.installed
       - uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         with:
           path: ~/.cache/ms-playwright
-          key: playwright-shell-${{ runner.os }}-${{ hashFiles('lilo-ui/package-lock.json') }}
+          key: playwright-shell-${{ runner.os }}-${{ hashFiles('pnpm-lock.yaml') }}
       # The image's Chrome already brings the libraries the headless shell needs; --with-deps would also apt-get
       # fonts and Xvfb from a mirror that takes up to 13 minutes.
-      - run: npx playwright install --only-shell chromium
+      - run: pnpm exec playwright install --only-shell chromium
         working-directory: lilo-ui
       - run: make e2e E2E_ARGS=--shard=${{ matrix.shard }}/3
       - name: List tests that passed only on a retry
+        id: retried
         if: always()
-        run: python3 scripts/retried_tests.py lilo-ui/test-results/report.json >> "$GITHUB_STEP_SUMMARY"
+        run: |
+          python3 scripts/retried_tests.py lilo-ui/test-results/report.json >> "$GITHUB_STEP_SUMMARY"
+          python3 scripts/retried_tests.py --failing --label "e2e shard ${{ matrix.shard }}/3" lilo-ui/test-results/report.json > failing-tests.md
+          if [ -s failing-tests.md ]; then echo "any=true" >> "$GITHUB_OUTPUT"; fi
+      # The failed tests and their first failure line: what to read before the trace archive.
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        if: always() && steps.retried.outputs.any == 'true'
+        with:
+          name: failing-tests-e2e-${{ matrix.shard }}
+          path: failing-tests.md
       # A retried test leaves its trace there too, failing the run or not.
       - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         if: always()
@@ -175,18 +155,12 @@ jobs:
           path: |
             Lilo/Generated/ChromeUIAssets.swift
             Lilo/Generated/NativeStrings.swift
-          key: ui-${{ hashFiles('lilo-ui/package-lock.json', 'lilo-ui/package.json', 'lilo-ui/src/**', 'lilo-ui/public/**', 'lilo-ui/index.html', 'lilo-ui/releaseNotesPlugin.ts', 'lilo-ui/svelte.config.js', 'lilo-ui/tsconfig.json', 'lilo-ui/vite.config.ts', 'release-media/catalog.ts', '.changes/v*.md', 'scripts/embed_chrome_ui.py', 'scripts/generate_native_strings.py') }}
-      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+          key: ui-${{ hashFiles('pnpm-lock.yaml', 'lilo-ui/package.json', 'lilo-ui/src/**', 'lilo-ui/public/**', 'lilo-ui/index.html', 'lilo-ui/releaseNotesPlugin.ts', 'lilo-ui/svelte.config.js', 'lilo-ui/tsconfig.json', 'lilo-ui/vite.config.ts', 'release-media/catalog.ts', '.changes/v*.md', 'scripts/embed_chrome_ui.py', 'scripts/generate_native_strings.py') }}
+      - uses: ./.github/actions/setup-pnpm
         if: steps.ui-cache.outputs.cache-hit != 'true'
-        with:
-          node-version-file: '.nvmrc'
-          cache: 'npm'
-          cache-dependency-path: lilo-ui/package-lock.json
       - name: Build the UI
         if: steps.ui-cache.outputs.cache-hit != 'true'
-        run: |
-          npm --prefix lilo-ui ci --ignore-scripts
-          make ui-build
+        run: make ui-build
       - uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         with:
           path: .derived.noindex/xcode/SourcePackages
@@ -215,10 +189,23 @@ jobs:
             !.derived.noindex/xcode/Logs
           key: deriveddata-debug-${{ hashFiles('Lilo.xcodeproj/project.xcworkspace/xcshareddata/swiftpm/Package.resolved') }}-${{ github.sha }}
           restore-keys: deriveddata-debug-${{ hashFiles('Lilo.xcodeproj/project.xcworkspace/xcshareddata/swiftpm/Package.resolved') }}-
+      # The Xcode compilation cache (CAS) at the path the local builds share, so CI and local CAS shapes converge. It
+      # only fills once the build points COMPILATION_CACHE_CAS_PATH there (the shared-CAS change of the plan's Stage 2);
+      # until then the path stays empty and the entry saves nothing. Saved from main only, like the Debug products.
+      - uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: ~/.cache/lilo/xcc
+          key: xcc-${{ runner.os }}-${{ hashFiles('Lilo.xcodeproj/project.xcworkspace/xcshareddata/swiftpm/Package.resolved') }}-${{ github.sha }}
+          restore-keys: xcc-${{ runner.os }}-${{ hashFiles('Lilo.xcodeproj/project.xcworkspace/xcshareddata/swiftpm/Package.resolved') }}-
       - run: make swiftlint
         if: matrix.shard == 1
-      # swift-test builds Debug itself.
-      - run: make swift-test SWIFT_TEST_SHARD=${{ matrix.shard }}/3 RESULT_BUNDLE=build/swift-test.xcresult
+      # swift-test builds Debug itself; its wall time lands in the job summary, pass or fail.
+      - name: Swift tests
+        shell: bash
+        run: |
+          start=$SECONDS
+          trap 'echo "swift-test shard ${{ matrix.shard }}/3 wall time: $((SECONDS - start))s" >> "$GITHUB_STEP_SUMMARY"' EXIT
+          make swift-test SWIFT_TEST_SHARD=${{ matrix.shard }}/3 RESULT_BUNDLE=build/swift-test.xcresult
       - run: make swift-test-slow RESULT_BUNDLE=build/swift-test-slow.xcresult
         if: matrix.shard == 3
       # Every shard builds the same products: one saves them.
@@ -230,6 +217,11 @@ jobs:
             !.derived.noindex/xcode/SourcePackages
             !.derived.noindex/xcode/Logs
           key: deriveddata-debug-${{ hashFiles('Lilo.xcodeproj/project.xcworkspace/xcshareddata/swiftpm/Package.resolved') }}-${{ github.sha }}
+      - uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main' && matrix.shard == 1
+        with:
+          path: ~/.cache/lilo/xcc
+          key: xcc-${{ runner.os }}-${{ hashFiles('Lilo.xcodeproj/project.xcworkspace/xcshareddata/swiftpm/Package.resolved') }}-${{ github.sha }}
       - name: List tests that passed only on a retry
         id: retried
         if: always()
@@ -238,6 +230,14 @@ jobs:
           python3 scripts/retried_tests.py build/*.xcresult > build/retried.md
           cat build/retried.md >> "$GITHUB_STEP_SUMMARY"
           if [ -s build/retried.md ]; then echo "any=true" >> "$GITHUB_OUTPUT"; fi
+          python3 scripts/retried_tests.py --failing --label "app shard ${{ matrix.shard }}/3" build/*.xcresult > build/failing-tests.md
+          if [ -s build/failing-tests.md ]; then echo "failing=true" >> "$GITHUB_OUTPUT"; fi
+      # The failed tests and their first failure line: what to read before the multi-megabyte result bundle or log.
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        if: always() && steps.retried.outputs.failing == 'true'
+        with:
+          name: failing-tests-app-${{ matrix.shard }}
+          path: build/failing-tests.md
       # Also kept for a test that passed on its retry, so its first failure can be looked into.
       - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         if: failure() || steps.retried.outputs.any == 'true'
@@ -247,11 +247,13 @@ jobs:
           if-no-files-found: ignore
 
   # Beside the tests rather than before them: a Release-only build error still fails the run. It is release.yml's
-  # build, ad-hoc signed for want of secrets (signing compiles nothing), so a release tag finds it built.
+  # build, ad-hoc signed for want of secrets (signing compiles nothing), so a release tag finds it built. It runs on
+  # main only, which frees one of the five free macOS slots for every pull request: a Release-only break surfaces on
+  # main, about 30 minutes after the merge.
   release-build:
     name: Release Build (macOS)
     needs: changes
-    if: needs.changes.outputs.code == 'true'
+    if: github.event_name == 'push' && needs.changes.outputs.code == 'true'
     runs-on: xcode-27
     timeout-minutes: 30
     steps:
@@ -265,18 +267,12 @@ jobs:
           path: |
             Lilo/Generated/ChromeUIAssets.swift
             Lilo/Generated/NativeStrings.swift
-          key: ui-${{ hashFiles('lilo-ui/package-lock.json', 'lilo-ui/package.json', 'lilo-ui/src/**', 'lilo-ui/public/**', 'lilo-ui/index.html', 'lilo-ui/releaseNotesPlugin.ts', 'lilo-ui/svelte.config.js', 'lilo-ui/tsconfig.json', 'lilo-ui/vite.config.ts', 'release-media/catalog.ts', '.changes/v*.md', 'scripts/embed_chrome_ui.py', 'scripts/generate_native_strings.py') }}
-      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
-        with:
-          node-version-file: '.nvmrc'
-          cache: 'npm'
-          cache-dependency-path: lilo-ui/package-lock.json
+          key: ui-${{ hashFiles('pnpm-lock.yaml', 'lilo-ui/package.json', 'lilo-ui/src/**', 'lilo-ui/public/**', 'lilo-ui/index.html', 'lilo-ui/releaseNotesPlugin.ts', 'lilo-ui/svelte.config.js', 'lilo-ui/tsconfig.json', 'lilo-ui/vite.config.ts', 'release-media/catalog.ts', '.changes/v*.md', 'scripts/embed_chrome_ui.py', 'scripts/generate_native_strings.py') }}
+      - uses: ./.github/actions/setup-pnpm
       # As release.yml builds it: no install script runs.
       - name: Build the UI
         if: steps.ui-cache.outputs.cache-hit != 'true'
-        run: |
-          npm --prefix lilo-ui ci --ignore-scripts
-          make ui-build
+        run: make ui-build
       - name: Date files by their content
         run: |
           { git ls-files -s -z
@@ -291,10 +287,7 @@ jobs:
             !.derived.noindex/build-app/Logs
           key: deriveddata-release-${{ hashFiles('Lilo.xcodeproj/project.xcworkspace/xcshareddata/swiftpm/Package.resolved') }}-${{ github.sha }}
           restore-keys: deriveddata-release-${{ hashFiles('Lilo.xcodeproj/project.xcworkspace/xcshareddata/swiftpm/Package.resolved') }}-
-      # A pull request builds the runner's architecture only; main keeps the universal build its cache saves.
       - run: make release-archive
-        env:
-          LILO_NATIVE_ARCH: ${{ github.event_name == 'pull_request' && '1' || '' }}
       - uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         if: github.event_name == 'push' && github.ref == 'refs/heads/main'
         with:
@@ -318,3 +311,23 @@ jobs:
           name: startup-bench-${{ github.sha }}
           path: build/startup-bench/
           if-no-files-found: ignore
+
+  # The one required check. A job skipped because only documentation changed, or because it runs on main only,
+  # counts as passed; one that failed or was cancelled does not. Without always() the gate would be skipped when a
+  # dependency fails, and a skipped required check passes. A job added above goes into needs, and branch protection
+  # never changes again.
+  gate:
+    name: Gate
+    needs: [changes, release-tooling, ui, e2e, bridge, app, release-build]
+    if: always()
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Fail on any failed or cancelled job
+        env:
+          RESULTS: ${{ join(needs.*.result, ' ') }}
+        run: |
+          echo "Job results: $RESULTS"
+          case " $RESULTS " in
+            *" failure "* | *" cancelled "*) echo "::error::A job failed or was cancelled."; exit 1 ;;
+          esac

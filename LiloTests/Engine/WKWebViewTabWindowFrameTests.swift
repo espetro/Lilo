@@ -17,7 +17,7 @@ final class WKWebViewTabWindowFrameTests: XCTestCase {
         let content = try XCTUnwrap(window.contentView)
         webView.frame = NSRect(x: 300, y: 0, width: 900, height: content.bounds.height - 40)
         content.addSubview(webView)
-        window.orderFront(nil)
+        window.orderFrontOffscreen()
         webView.loadHTMLString("<p>page</p>", baseURL: URL(string: "https://example.com/"))
 
         /// The page's [innerWidth, outerWidth - innerWidth, outerHeight - innerHeight], once at `innerWidth` with no devtools-sized gap.

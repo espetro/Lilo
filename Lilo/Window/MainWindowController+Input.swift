@@ -63,6 +63,9 @@ extension MainWindowController {
             dismissChangesPeek()
         } else if let peek = pagePopups.values.first(where: { unsafe $0.peekView?.superview != nil }) {
             peek.requestClose()
+        } else if pageShellOpen {
+            // The chrome closes the system screen covering the page; the tab under it stays.
+            bridgeRouter.send(event: "closePageShell")
         } else if let id = tabManager.activeOpenTabId {
             closeTabStateFirst(id: id)
         }
@@ -609,7 +612,7 @@ extension MainWindowController: NSUserInterfaceValidations {
         let action = item.action
         if isShowingWhatsNew && action != #selector(showWhatsNew(_:)) { return false }
 
-        if action == #selector(closeCurrentTab(_:)) { return tabManager.activeTab != nil }
+        if action == #selector(closeCurrentTab(_:)) { return tabManager.activeTab != nil || pageShellOpen }
         if action == #selector(openPageAsTab(_:)) { return pagePopups.values.contains { unsafe $0.peekView?.superview != nil } }
         if action == #selector(goBackInHistory(_:)) { return focusedEngineTab?.canGoBack == true }
         if action == #selector(goForwardInHistory(_:)) { return focusedEngineTab?.wkWebView.canGoForward == true }
@@ -684,9 +687,21 @@ extension MainWindowController: NSUserInterfaceValidations {
             return tabManager.activeTab != nil && (tabManager.activeSplit?.layout.paneIds.count ?? 0) < SplitLayout.maxPanes
         }
         if action == #selector(closeSplitView(_:)) { return tabManager.activeSplit != nil }
+        if action == #selector(closeActiveSplitPane(_:)) || action == #selector(maximizeActiveSplitPane(_:)) {
+            guard let id = tabManager.activeOpenTabId else { return false }
+            return tabManager.activeSplit?.layout.paneIds.contains(id) ?? false
+        }
+        if action == #selector(moveSplitPane(_:)) {
+            guard let item = item as? NSMenuItem, let id = tabManager.activeOpenTabId,
+                  let direction = SplitPaneDirection(rawValue: item.tag) else { return false }
+            return SplitPanesController.neighborPane(of: id, in: splitPanes.sentPaneFrames, direction: direction) != nil
+        }
         if action == #selector(showChanges(_:)) { return tabManager.activeTab.map { $0.kind == .terminal && !$0.gitBranch.isEmpty } ?? false }
-        if action == #selector(newTerminalBeside(_:)) || action == #selector(newTerminalBelow(_:)) || action == #selector(newTerminalTab(_:))
-            || action == #selector(showNextWaitingTerminal(_:)) {
+        if action == #selector(newTerminalBeside(_:)) || action == #selector(newTerminalBelow(_:)) {
+            return context.settingsStore?.terminalEnabled != false
+                && (tabManager.activeSplit?.layout.paneIds.count ?? 0) < SplitLayout.maxPanes
+        }
+        if action == #selector(newTerminalTab(_:)) || action == #selector(showNextWaitingTerminal(_:)) {
             return context.settingsStore?.terminalEnabled != false
         }
         if action == #selector(askAgent(_:)) {

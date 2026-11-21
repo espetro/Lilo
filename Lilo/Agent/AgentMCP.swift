@@ -75,10 +75,11 @@ enum AgentMCP {
         case "ping":
             return result(id: id, [:])
         case "tools/list":
-            // A conversation's agent drives the Lilo it runs in: the browser pickers, kept for agents used to them, only cost it tokens.
-            let tools = session.conversationTabId == nil ? AgentTools.definitions
-                : AgentTools.definitions.filter { !AgentInteractionTools.browserPickers.contains($0["name"] as? String ?? "") }
-            return result(id: id, ["tools": tools])
+            #if DEBUG
+            return result(id: id, ["tools": AgentTools.definitions + [AgentWindowCapture.definition]])
+            #else
+            return result(id: id, ["tools": AgentTools.definitions])
+            #endif
         case "tools/call":
             // Queued behind a freeze, a request whose client cancelled it or left does nothing.
             guard !Task.isCancelled else { return nil }
@@ -148,6 +149,13 @@ enum AgentMCP {
             // Cancelled once the call ends, so it stops holding the call's result.
             var timer: Task<Void, Never>?
             defer { timer?.cancel() }
+            let record = { (ok: Bool, code: String?) in
+                guard control.context?.settingsStore?.get(AgentActionLog.settingKey) != "false", AgentTools.toolNames.contains(name) else { return }
+                control.actionLog.record(
+                    tool: name, arguments: arguments, session: session, host: control.actionHost(arguments, session: session),
+                    ok: ok, code: code, possibleCommit: sent.write, startedAt: startedAt
+                )
+            }
             do {
                 let content = try await withTaskCancellationHandler {
                     try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<[AgentContent], Error>) in
@@ -170,14 +178,21 @@ enum AgentMCP {
                 } onCancel: {
                     work.cancel()
                 }
+                record(true, nil)
+                // A successful call becomes a step while a flow records: locate reads its live element.
+                if session.flow != nil { await AgentFlows.record(name, arguments: arguments, session: session, control: control) }
                 return result(id: id, ["content": (warning.map(AgentContent.text) + content).map(\.json)])
             } catch {
                 let code = (error as? AgentToolError)?.code
+                record(false, code)
+                // A call the user refused is still the flow's intent: it records, and replay asks again.
+                if session.flow != nil { await AgentFlows.record(name, arguments: arguments, session: session, control: control) }
                 let commit = sent.write ? ["It may have reached the site already: read the page or the data back before trying again, or it may happen twice."] : []
                 let text = (warning + [(code.map { "[\($0)] " } ?? "") + error.localizedDescription] + commit).joined(separator: "\n")
                 var reply: [String: Any] = ["content": [AgentContent.text(text).json], "isError": true]
                 var meta: [String: Any] = [:]
                 meta["lilo/errorCode"] = code
+                if let consent = (error as? AgentToolError)?.consent { meta["lilo/consent"] = consent.rawValue }
                 if sent.write { meta["lilo/possibleCommit"] = true }
                 if !meta.isEmpty { reply["_meta"] = meta }
                 return result(id: id, reply)
@@ -251,9 +266,12 @@ struct AgentToolError: LocalizedError {
     let message: String
     /// Stable and machine-readable, sent as `_meta["lilo/errorCode"]`: "needs_user" when only the user can unblock the call.
     let code: String?
-    init(_ message: String, code: String? = nil) {
+    /// The consent answer behind a `needs_user` refusal, sent as `_meta["lilo/consent"]`.
+    let consent: ConsentAnswer?
+    init(_ message: String, code: String? = nil, consent: ConsentAnswer? = nil) {
         self.message = message
         self.code = code
+        self.consent = consent
     }
     var errorDescription: String? { message }
 }

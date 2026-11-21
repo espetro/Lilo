@@ -9,10 +9,10 @@ SHELL := /bin/bash
 
 UI_DIR := lilo-ui
 BRIDGE_DIR := Lilo/Extensions/bridge-src
-UI_DEPS := $(UI_DIR)/node_modules/.package-lock.json
+UI_DEPS := $(UI_DIR)/node_modules/.installed
 BRIDGE_DEPS := $(BRIDGE_DIR)/node_modules/.package-lock.json
-SITE_DEPS := site/node_modules/.package-lock.json
-DOCS_DEPS := docs-site/node_modules/.package-lock.json
+SITE_DEPS := site/node_modules/.installed
+DOCS_DEPS := docs-site/node_modules/.installed
 CHANGIE_VERSION := 1.26.0
 CHANGIE := $(CURDIR)/build/changie-$(CHANGIE_VERSION)/changie
 CHANGIE_OS := $(shell uname -s | tr '[:upper:]' '[:lower:]')
@@ -20,13 +20,22 @@ CHANGIE_ARCH := $(shell uname -m | sed -e 's/^x86_64$$/amd64/' -e 's/^aarch64$$/
 CHANGIE_ARCHIVE := changie_$(CHANGIE_VERSION)_$(CHANGIE_OS)_$(CHANGIE_ARCH).tar.gz
 # Pinned so a new release's rules or project output never break validate or the xcodeproj sync check.
 SWIFTLINT_VERSION := 0.65.0
+# Linux takes the static build: it needs no Swift toolchain, but skips the two rules that need SourceKit.
+ifeq ($(CHANGIE_OS),linux)
+SWIFTLINT_ZIP := swiftlint_linux_amd64.zip
+SWIFTLINT_SHA256 := 79306a34e5c7cc55a220cd108cbb861dcad5f10138dcdf261e2624ae8b0a486b
+SWIFTLINT_BIN := swiftlint-static
+else
+SWIFTLINT_ZIP := portable_swiftlint.zip
 SWIFTLINT_SHA256 := d6cb0aa7a2f5f1ef306fc9e37bcb54dc9a26facc8f7784ac0c3dd3eccf5c6ba6
-SWIFTLINT := $(CURDIR)/build/swiftlint-$(SWIFTLINT_VERSION)/swiftlint
+SWIFTLINT_BIN := swiftlint
+endif
+SWIFTLINT :=$(CURDIR)/build/swiftlint-$(SWIFTLINT_VERSION)/swiftlint
 XCODEGEN_VERSION := 2.46.0
 XCODEGEN_SHA256 := 4d9e34b62172d645eed6457cac13fc222569974098ef4ee9c3368bedf0196806
 XCODEGEN := $(CURDIR)/build/xcodegen-$(XCODEGEN_VERSION)/bin/xcodegen
 # What the UI and bridge builds read, and the stamps they leave once built from them.
-UI_SOURCES := $(shell find $(UI_DIR)/src) $(addprefix $(UI_DIR)/,index.html package-lock.json svelte.config.js tsconfig.json vite.config.ts) \
+UI_SOURCES := pnpm-lock.yaml $(shell find $(UI_DIR)/src) $(addprefix $(UI_DIR)/,index.html svelte.config.js tsconfig.json vite.config.ts) \
 	$(UI_DIR)/releaseNotesPlugin.ts $(wildcard .changes/v*.md) scripts/embed_chrome_ui.py scripts/generate_native_strings.py
 UI_SOURCES += release-media/catalog.ts release-media/stage-native.mjs $(wildcard release-media/assets/*/*)
 BRIDGE_SOURCES := $(shell find $(BRIDGE_DIR)/src $(BRIDGE_DIR)/scripts) $(addprefix $(BRIDGE_DIR)/,esbuild.mjs package-lock.json tsconfig.json)
@@ -56,8 +65,24 @@ VAULTWARDEN_SRC := build/vaultwarden-$(VAULTWARDEN_VERSION)-src
 # Bitwarden talks to its server over HTTPS only: a self-signed certificate valid for 127.0.0.1 alone, which
 # ext-e2e-passwords-trust has the keychain trust once.
 VAULTWARDEN_CERT := build/vaultwarden-tls/cert.pem
+# The Xcode compilation cache, shared by every worktree: a fresh derived data path starts from this instead of
+# compiling from scratch. Only make-driven builds use it (not the xcconfig), so the IDE keeps its index store.
+# Cache keys include output paths, so reuse is partial; the limit (bytes) bounds the growth.
+XCC_DIR ?= $(HOME)/.cache/lilo/xcc
+XCC_LIMIT ?= 10737418240
+export XCC_DIR XCC_LIMIT
+# CI's runners start empty and have no cache for it yet: it keeps Xcode's defaults.
+XCC_SETTINGS := $(if $(CI),,COMPILATION_CACHE_ENABLE_CACHING=YES COMPILATION_CACHE_CAS_PATH=$(XCC_DIR) COMPILATION_CACHE_LIMIT_SIZE=$(XCC_LIMIT) COMPILER_INDEX_STORE_ENABLE=NO)
+# The package checkouts (GRDB, Sparkle: about 480 MB) are cloned once per Package.resolved, not once per worktree:
+# keyed by its hash, two worktrees with different pins never share a folder. CI caches its own copy, so it keeps
+# the default one.
+SPM_PACKAGES_DIR ?= $(HOME)/.cache/lilo/spm-$(shell shasum -a 256 Lilo.xcodeproj/project.xcworkspace/xcshareddata/swiftpm/Package.resolved | cut -d' ' -f1)
+SPM_SETTINGS := $(if $(CI),,-clonedSourcePackagesDirPath $(SPM_PACKAGES_DIR) -onlyUsePackageVersionsFromResolvedFile)
+# Handed to ext-smoke and ext-e2e-passwords, which run their own xcodebuild in the same derived data: differing settings
+# would rebuild the app each time they follow a make build.
+export LILO_XCODEBUILD_EXTRA := $(SPM_SETTINGS) $(XCC_SETTINGS)
 # Inside the checkout, so a worktree's build goes with the worktree instead of staying in ~/Library.
-XCODEBUILD := xcodebuild -project Lilo.xcodeproj -scheme Lilo -destination 'platform=macOS' -derivedDataPath $(CURDIR)/.derived.noindex/xcode
+XCODEBUILD := xcodebuild -project Lilo.xcodeproj -scheme Lilo -destination 'platform=macOS' -derivedDataPath $(CURDIR)/.derived.noindex/xcode $(SPM_SETTINGS) $(XCC_SETTINGS)
 # They wait out real clocks (a worker's 30 s unload, a controller's first 5 s, a terminal's 5 s between
 # line counts): about 100 s together. The ruleset compile takes a second alone, but WebKit starves it while
 # the other test runs keep every core busy: past its 120 s bound, it only skips.
@@ -77,23 +102,35 @@ DEBUG_SIGNING := $(if $(DEBUG_TEAM_ID),DEVELOPMENT_TEAM=$(DEBUG_TEAM_ID) CODE_SI
 energy-browsers:
 	@scripts/energy_browsers.sh --rounds $(or $(ROUNDS),3) --duration $(or $(DURATION),60) --session $(or $(SESSION),900) $(if $(SCENARIOS),--scenarios '$(SCENARIOS)') $(if $(BROWSERS),--browsers '$(BROWSERS)') $(if $(OUT),--out $(OUT)) $(if $(APP),--app '$(abspath $(APP))')
 
-# One run at a time per machine, whatever the worktree and whichever test host: each already fills every
+# One run at a time per machine by default, whatever the worktree and whichever test host: each already fills every
 # performance core, and concurrent runs' WebKit processes saturate runningboardd until the whole Mac stalls.
+# TEST_SLOTS=2 in Makefile.local lets that many runs go at once and halves each one's workers (TEST_WORKERS): do it
+# only after the runningboardd A/B of docs/build-baseline.md came out clean on your Mac. ext-smoke and ext-e2e use
+# network, keychain and one Store: they take every slot. See scripts/test_slot.sh.
 # The build runs before taking the lock: other worktrees build while one runs its tests.
-TEST_LOCK := lockf -k $(or $(TMPDIR),/tmp/)lilo-swift-test.lock
+TEST_SLOTS ?= 1
+TEST_LOCK := scripts/test_slot.sh $(TEST_SLOTS)
+TEST_LOCK_ALL := scripts/test_slot.sh --all $(TEST_SLOTS)
+CHECK_SUMMARY := python3 scripts/check_summary.py
 # A test that never ends would hold the lock for good: past its allowance, rounded up to the minute, xcodebuild
 # samples it, ends it as failed and goes on. A test that needs longer sets its own executionTimeAllowance.
 TEST_TIMEOUTS := -test-timeouts-enabled YES -default-test-execution-time-allowance 120 -maximum-test-execution-time-allowance 600
+# The test host's data folder (database, agent socket, downloads) is per worktree: two worktrees' runs would
+# otherwise share Lilo-Debug's database and socket. xcodebuild gives the test host the TEST_RUNNER_ variables as
+# LILO_APP_SUPPORT_DIR; a build setting of that name would not reach it. CI runs one job per machine and keeps the default.
+ifndef CI
+export TEST_RUNNER_LILO_APP_SUPPORT_DIR ?= $(CURDIR)/.derived.noindex/test-data
+endif
 TEST_CONFIG := $(XCODEBUILD) -configuration Debug LILO_BUNDLE_ID_SUFFIX=.tests $(DEBUG_SIGNING)
 TEST := $(TEST_LOCK) $(TEST_CONFIG) test-without-building $(TEST_TIMEOUTS)
 # CI (which sets CI) runs a failed test once more and lists it in the job summary; locally a flake fails.
 TEST_RETRY := $(if $(CI),-retry-tests-on-failure -test-iterations 2)
-TEST_WORKERS = $(shell sysctl -n hw.perflevel0.physicalcpu 2>/dev/null || sysctl -n hw.ncpu)
+TEST_WORKERS = $(shell cores=$$(sysctl -n hw.perflevel0.physicalcpu 2>/dev/null || sysctl -n hw.ncpu); echo $$((cores / $(TEST_SLOTS) > 0 ? cores / $(TEST_SLOTS) : 1)))
 
-.PHONY: help site-release-import validate validate-ui swiftlint project-sync ui-build ui-watch ui-dev ui-lint ui-test e2e e2e-energy \
+.PHONY: help site-release-import validate validate-scope validate-ui check check-staged ui-check swiftlint-changed sync-check linux-checks swiftlint project-sync ui-build ui-watch ui-dev ui-lint ui-test e2e e2e-energy ui-capture \
 	swift-test swift-test-slow blocker-coverage blocker-bench script-bench speedometer-bench page-bench preload-bench terminal-bench ext-bridge-build ext-bridge-test ext-smoke ext-nightly ext-e2e-passwords ext-e2e-passwords-trust top-extensions top-manifests chrome-surface \
 	chrome-contracts chrome-smoke public-suffix-list app install install-debug xcode-build xcode-build-release \
-	run-ui-dev release release-notarize release-archive dmg dmg-background bridge-gen vt-build vt-build-source vt-zip webkit-fork bootstrap ui-preview check-commits startup-bench ext-bench energy-sample energy-compare energy-browsers perf-summary perf-compare perf-summary-test agent-call \
+	run-ui-dev release release-notarize release-archive dmg dmg-background bridge-gen vt-build vt-build-source vt-zip webkit-fork bootstrap bootstrap-test ui-preview check-commits startup-bench ext-bench energy-sample energy-compare energy-browsers perf-summary perf-compare perf-summary-test retried-tests-test lockf-test slot-test scope-test tier-test metrics metrics-on metrics-off metrics-test ci-metrics ci-metrics-test check-summary-test agent-app agent-call window-capture agent-eval agent-eval-test \
 	logs logs-stream site-dev site-dev-stop site-preview site-native-preview site-generate site-check site-fix site-test site-e2e site-release-capture site-capture-server site-capture-deps site-lock site-audit site-add-svelte site-playground-deps site-demo-icons site-deploy site-deploy-check emoji-data password-manager-icons \
 	docs-dev docs-build docs-check docs-test docs-preview docs-deploy-check docs-deploy docs-translate docs-eval docs-lock \
 	hooks-install hooks-test lint-commit-message lint-commits \
@@ -126,23 +163,34 @@ lint-commits:
 hooks-test:
 	@scripts/commit_hooks.test.sh
 
-## Check the prerequisites, then fetch and build what a fresh clone needs (npm deps, libghostty-vt, UI bundle, bridge)
+## Check every prerequisite, then fetch and build what a fresh clone needs (BOOTSTRAP_ARGS="--with-sites --json")
 bootstrap:
-	@scripts/bootstrap.sh "$(UI_DEPS) $(BRIDGE_DEPS)" "vt-build $(UI_STAMP) $(BRIDGE_STAMP) $(SWIFTLINT) $(XCODEGEN)"
+	@VT_URL="$(VT_URL)" VT_STAMP="$(VT_STAMP)" GHOSTTY_SHA="$(GHOSTTY_SHA)" VT_FROM_SOURCE="$(VT_FROM_SOURCE)" \
+		scripts/bootstrap.sh $(BOOTSTRAP_ARGS) "$(UI_DEPS) $(BRIDGE_DEPS)" "vt-build $(UI_STAMP) $(BRIDGE_STAMP) $(SWIFTLINT) $(XCODEGEN)" "$(SITE_DEPS) $(DOCS_DEPS) $(CHANGIE)"
+
+## Test the bootstrap checks with stubbed tools
+bootstrap-test:
+	@scripts/bootstrap.test.sh
 
 # The app embeds the UI and bridge builds, rebuilt only when their sources changed; swift-test builds the app.
-# The lint and the JS tests run beside the other steps, their output shown on failure.
+# The lint and the JS tests run beside the other steps. scripts/check_summary.py keeps every check's output in a log
+# and prints one line per check, then the logs of the failed ones only (JSON=1: one JSON object per check).
 ## Run UI, website and docs checks, Swift lint/tests, the app build, bridge and hook checks and release version checks
 validate: $(UI_DEPS) $(BRIDGE_DEPS) $(SITE_DEPS) $(DOCS_DEPS) $(SWIFTLINT) $(CHANGIE)
-	@logs=$$(mktemp -d); checks=; \
-	for group in ui-lint ui-test "site-check site-test" "docs-check docs-test" "hooks-test perf-summary-test ext-bridge-test swiftlint release-status"; do \
-		name=$${group%% *}; $(MAKE) -k --no-print-directory $$group > "$$logs/$$name.log" 2>&1 & checks="$$checks $$!:$$name"; \
+	@export LILO_CHECK_SCOPE=$${LILO_CHECK_SCOPE:-full}; logs=$$(mktemp -d); names=; pids=; \
+	for group in ui-lint ui-test "site-check site-test" "docs-check docs-test" "hooks-test bootstrap-test perf-summary-test retried-tests-test lockf-test slot-test scope-test tier-test metrics-test ci-metrics-test check-summary-test agent-eval-test ext-bridge-test swiftlint release-status"; do \
+		name=$${group%% *}; names="$$names $$name"; \
+		$(CHECK_SUMMARY) run $$name "$$logs" -- $(MAKE) -k --no-print-directory $$group & pids="$$pids $$!"; \
 	done; \
-	$(MAKE) --no-print-directory $(BRIDGE_STAMP) & bridge=$$!; \
-	$(MAKE) --no-print-directory $(UI_STAMP); ui=$$?; wait $$bridge; bridge=$$?; \
-	[ $$ui -eq 0 ] && [ $$bridge -eq 0 ] && $(MAKE) --no-print-directory swift-test; swift=$$?; \
-	failed=0; for check in $$checks; do wait $${check%%:*} || { failed=1; cat "$$logs/$${check#*:}.log"; }; done; \
-	/bin/rm -rf "$$logs"; [ $$swift -eq 0 ] && [ $$failed -eq 0 ]
+	$(CHECK_SUMMARY) run bridge-build "$$logs" -- $(MAKE) --no-print-directory $(BRIDGE_STAMP) & bridge=$$!; \
+	$(CHECK_SUMMARY) run ui-build "$$logs" -- $(MAKE) --no-print-directory $(UI_STAMP); ui=$$?; wait $$bridge; bridge=$$?; \
+	names="ui-build bridge-build$$names"; \
+	if [ $$ui -eq 0 ] && [ $$bridge -eq 0 ]; then \
+		$(CHECK_SUMMARY) run swift-test "$$logs" -- $(MAKE) --no-print-directory swift-test; names="$$names swift-test"; \
+	fi; \
+	wait $$pids; \
+	$(CHECK_SUMMARY) report $(if $(JSON),--json) "$$logs" $$names; status=$$?; \
+	/bin/rm -rf "$$logs"; exit $$status
 
 $(UI_STAMP): $(UI_DEPS) $(UI_SOURCES)
 	@$(MAKE) --no-print-directory ui-build
@@ -152,8 +200,56 @@ $(BRIDGE_STAMP): $(BRIDGE_DEPS) $(BRIDGE_SOURCES)
 	@$(MAKE) --no-print-directory ext-bridge-build
 	@mkdir -p $(@D) && touch $@
 
+## Run only the checks the diff against origin/main needs (BASE=ref), in parallel as in validate: a UI, website or docs change skips the Swift build and the installs it does not use
+validate-scope:
+	@checks=$$(scripts/scope_checks.sh $(BASE)); echo "validate-scope: $$checks" >&2; export LILO_CHECK_SCOPE="$$checks"; \
+	if [ "$$checks" = full ]; then $(MAKE) --no-print-directory validate; exit $$?; fi; \
+	deps=$(CHANGIE); \
+	case " $$checks " in *" ui-"*) deps="$$deps $(UI_DEPS)";; esac; \
+	case " $$checks " in *" site-"*) deps="$$deps $(SITE_DEPS)";; esac; \
+	case " $$checks " in *" docs-"*) deps="$$deps $(DOCS_DEPS)";; esac; \
+	$(MAKE) --no-print-directory $$deps || exit $$?; \
+	logs=$$(mktemp -d); names=; pids=; \
+	for group in ui-lint ui-test "site-check site-test" "docs-check docs-test" release-status; do \
+		name=$${group%% *}; \
+		case " $$checks " in *" $$name "*) \
+			names="$$names $$name"; \
+			$(CHECK_SUMMARY) run $$name "$$logs" -- $(MAKE) -k --no-print-directory $$group & pids="$$pids $$!";; \
+		esac; \
+	done; \
+	wait $$pids; \
+	$(CHECK_SUMMARY) report $(if $(JSON),--json) "$$logs" $$names; status=$$?; \
+	/bin/rm -rf "$$logs"; exit $$status
+
+# The quick tiers (scripts/check_tier.sh): no builds, fail at the first check, the checks chosen from the changed files.
+## Run the quick checks the diff against origin/main needs, under 10 s, no builds (BASE=ref): lint and the tests beside the changed files
+check:
+	@scripts/check_tier.sh check $(BASE)
+
+## Run the pre-commit checks on the staged files: lint, generated files and Lilo.xcodeproj in sync (what the pre-commit hook runs)
+check-staged:
+	@scripts/check_tier.sh commit
+
+## eslint on the changed UI files and the tests beside them (LILO_CHECK_FILES, empty for all; LILO_CHECK_TESTS=0 skips the tests)
+ui-check: $(UI_DEPS)
+	@scripts/ui_check.sh
+
+## SwiftLint on the changed Swift files (LILO_CHECK_FILES, empty for all)
+swiftlint-changed: $(SWIFTLINT)
+	@files=$$(printf '%s\n' "$$LILO_CHECK_FILES" | grep -E '^Lilo/.*\.swift$$' || :); \
+	if [ -z "$$LILO_CHECK_FILES" ]; then '$(SWIFTLINT)' lint --config .swiftlint.yml --strict; \
+	elif [ -n "$$files" ]; then '$(SWIFTLINT)' lint --config .swiftlint.yml --strict --force-exclude $$files; fi
+
+## Check the staged bridge outputs and Lilo.xcodeproj are in sync with their sources
+sync-check:
+	@scripts/sync_check.sh
+
 ## Run the CI UI validation sequence (lint + test + build)
 validate-ui: ui-lint ui-test ui-build
+
+# `validate` without the Xcode build and Swift tests: every other group, in order. Runs on macOS too.
+## Run every check that needs no Xcode: UI, website, docs, bridge, hooks, release and Swift lint (what Linux can run)
+linux-checks: ui-lint ui-test site-check site-test docs-check docs-test hooks-test perf-summary-test retried-tests-test scope-test tier-test metrics-test ci-metrics-test check-summary-test lockf-test ext-bridge-test swiftlint release-status
 
 ## Run Swift lint only
 swiftlint: $(SWIFTLINT)
@@ -165,10 +261,11 @@ project-sync: $(CHROME_UI_ASSETS) $(NATIVE_STRINGS) $(XCODEGEN)
 
 $(SWIFTLINT):
 	@set -eu; work=$$(mktemp -d); trap 'rm -rf "$$work"' EXIT; \
-	curl -fLsS --retry 3 'https://github.com/realm/SwiftLint/releases/download/$(SWIFTLINT_VERSION)/portable_swiftlint.zip' -o "$$work/swiftlint.zip"; \
+	[ '$(CHANGIE_OS)' != linux ] || [ '$(CHANGIE_ARCH)' = amd64 ] || { echo "Unsupported SwiftLint platform: $(CHANGIE_OS) $(CHANGIE_ARCH)" >&2; exit 1; }; \
+	curl -fLsS --retry 3 'https://github.com/realm/SwiftLint/releases/download/$(SWIFTLINT_VERSION)/$(SWIFTLINT_ZIP)' -o "$$work/swiftlint.zip"; \
 	echo '$(SWIFTLINT_SHA256)  '"$$work/swiftlint.zip" | shasum -a 256 -c - >/dev/null; \
-	unzip -q "$$work/swiftlint.zip" swiftlint -d "$$work"; \
-	mkdir -p '$(@D)'; mv "$$work/swiftlint" '$@'; touch '$@'
+	unzip -q "$$work/swiftlint.zip" '$(SWIFTLINT_BIN)' -d "$$work"; \
+	mkdir -p '$(@D)'; mv "$$work/$(SWIFTLINT_BIN)" '$@'; touch '$@'
 
 # The binary reads its setting presets from ../share beside it.
 $(XCODEGEN):
@@ -179,18 +276,18 @@ $(XCODEGEN):
 	rm -rf '$(CURDIR)/build/xcodegen-$(XCODEGEN_VERSION)'; mkdir -p build; \
 	mv "$$work/xcodegen" '$(CURDIR)/build/xcodegen-$(XCODEGEN_VERSION)'; touch '$@'
 
-$(UI_DEPS): $(UI_DIR)/package-lock.json
-	@npm --prefix $(UI_DIR) ci
+# One lockfile for the three web projects, each installed alone with what it needs from the others. Blume,
+# Sharp and the rest build without their dependencies' install scripts.
+$(UI_DEPS) $(SITE_DEPS) $(DOCS_DEPS): pnpm-lock.yaml pnpm-workspace.yaml package.json
+$(UI_DEPS): $(UI_DIR)/package.json
+$(SITE_DEPS): site/package.json
+$(DOCS_DEPS): docs-site/package.json
+$(UI_DEPS) $(SITE_DEPS) $(DOCS_DEPS):
+	@pnpm install --frozen-lockfile --ignore-scripts --filter './$(patsubst %/node_modules/.installed,%,$@)...'
+	@touch $@
 
 $(BRIDGE_DEPS): $(BRIDGE_DIR)/package-lock.json
 	@npm --prefix $(BRIDGE_DIR) ci
-
-$(SITE_DEPS): site/package.json site/package-lock.json
-	@npm --prefix site ci
-
-# Blume builds without its dependencies' install scripts.
-$(DOCS_DEPS): docs-site/package.json docs-site/package-lock.json
-	@npm --prefix docs-site ci --ignore-scripts
 
 $(CHANGIE): scripts/changie-checksums.txt
 	@set -eu; work=$$(mktemp -d); trap 'rm -rf "$$work"' EXIT; \
@@ -232,7 +329,7 @@ release-test: $(CHANGIE)
 
 ## Build the embedded Svelte UI bundle and the Swift sources generated from lilo-ui
 ui-build: $(UI_DEPS) release-media-stage
-	@npm --prefix $(UI_DIR) run build
+	@pnpm --dir $(UI_DIR) run build
 	@python3 scripts/embed_chrome_ui.py
 	@python3 scripts/generate_native_strings.py
 
@@ -282,27 +379,33 @@ password-manager-icons:
 
 ## Rebuild the UI bundle (build/chrome-ui) on change; use ui-dev for live reload in the app
 ui-watch: $(UI_DEPS)
-	@npm --prefix $(UI_DIR) run watch
+	@pnpm --dir $(UI_DIR) run watch
 
 ## Start the Vite dev server on localhost:5173
 ui-dev: $(UI_DEPS)
-	@npm --prefix $(UI_DIR) run dev
+	@pnpm --dir $(UI_DIR) run dev
 
 ## Open the interface in a browser against a fake host, with hot reload and no Xcode (lilo-ui/preview/)
 ui-preview: $(UI_DEPS)
-	@npm --prefix $(UI_DIR) run dev -- --open /preview/
+	@pnpm --dir $(UI_DIR) run dev --open /preview/
 
-## Run ESLint + svelte-check
+## Run ESLint + svelte-check + the i18n copy check
 ui-lint: $(UI_DEPS)
-	@npm --prefix $(UI_DIR) run lint
+	@pnpm --dir $(UI_DIR) run lint
+	@node scripts/i18n_check.mjs
 
 ## Run lightweight UI regression tests
 ui-test: $(UI_DEPS)
-	@npm --prefix $(UI_DIR) run test
+	@pnpm --dir $(UI_DIR) run test
 
 ## Run the chrome UI end-to-end tests (Playwright; E2E_ARGS narrows the run)
 e2e: $(UI_DEPS)
-	@npm --prefix $(UI_DIR) run test:e2e -- $(E2E_ARGS) || { echo 'If Chromium is missing, install it with: npx --prefix $(UI_DIR) playwright install chromium' >&2; exit 1; }
+	@pnpm --dir $(UI_DIR) run test:e2e $(E2E_ARGS) || { echo 'If Chromium is missing, install it with: pnpm --dir $(UI_DIR) exec playwright install chromium' >&2; exit 1; }
+
+## Capture chrome-UI screenshots and videos of the capture scenarios (OUT=out dir, PROJECT=browser)
+ui-capture: $(UI_DEPS)
+	@pnpm --dir $(UI_DIR) exec playwright test --config=captures/playwright.capture.config.ts $(PROJECT) || { echo 'If a browser is missing, install it with: pnpm --dir $(UI_DIR) exec playwright install webkit chromium' >&2; exit 1; }
+	@node $(UI_DIR)/captures/to-media.mjs $(OUT)
 
 # Not part of e2e: it takes about three minutes and drives the app with System Events keystrokes.
 ## Leave a Release build idle with tabs and a hidden terminal; fail on idle git, worker or snapshot work (IDLE=45 TABS=3 TERMINAL=1)
@@ -404,7 +507,7 @@ ext-bridge-test: $(BRIDGE_DEPS)
 
 ## Install the most used Chrome Web Store extensions and the MV3 probe in parallel runs, and check they run and what a few do on a page (network; TOP=100 IDS=a,b SHARDS=6)
 ext-smoke: vt-build $(BRIDGE_STAMP) $(UI_STAMP) $(CHROME_UI_ASSETS) $(NATIVE_STRINGS)
-	@$(TEST_LOCK) node scripts/ext-smoke.mjs --top '$(or $(TOP),100)' --ids '$(IDS)' --shards '$(or $(SHARDS),6)'
+	@$(TEST_LOCK_ALL) node scripts/ext-smoke.mjs --top '$(or $(TOP),100)' --ids '$(IDS)' --shards '$(or $(SHARDS),6)'
 
 ## Unattended ext-smoke of the top 500 (TOP=1000 for every listed one); report in .derived.noindex/ext-smoke/report.txt, non-zero exit on a regression
 ext-nightly:
@@ -418,7 +521,7 @@ ext-smoke-pr:
 ext-e2e-passwords: vt-build $(BRIDGE_STAMP) $(UI_STAMP) $(CHROME_UI_ASSETS) $(NATIVE_STRINGS) $(VAULTWARDEN)
 	@security verify-cert -q -c $(VAULTWARDEN_CERT) -p ssl -s 127.0.0.1 >/dev/null 2>&1 \
 		|| { echo "make ext-e2e-passwords: no trusted, unexpired $(VAULTWARDEN_CERT): run make ext-e2e-passwords-trust once." >&2; exit 1; }
-	@NODE_EXTRA_CA_CERTS='$(abspath $(VAULTWARDEN_CERT))' $(TEST_LOCK) node scripts/ext-e2e-passwords.mjs '$(abspath $(VAULTWARDEN))' '$(abspath $(VAULTWARDEN_CERT))'
+	@NODE_EXTRA_CA_CERTS='$(abspath $(VAULTWARDEN_CERT))' $(TEST_LOCK_ALL) node scripts/ext-e2e-passwords.mjs '$(abspath $(VAULTWARDEN))' '$(abspath $(VAULTWARDEN_CERT))'
 
 # Valid 397 days, the most macOS accepts for a TLS server certificate: one about to expire is made again, and trusted again.
 ## Make ext-e2e-passwords' 127.0.0.1 certificate and trust it for SSL in the login keychain, once (macOS asks for your password; CI: the system keychain)
@@ -491,16 +594,68 @@ xcode-build-release: vt-build $(CHROME_UI_ASSETS) $(NATIVE_STRINGS)
 run-ui-dev: app
 	@LILO_UI_DEV_SERVER=http://localhost:5173 ./build/debug/export/Lilo.app/Contents/MacOS/Lilo
 
-# LILO_AGENT_ALLOW_ALL lets any agent client in without asking: only a Debug build reads it.
+# LILO_AGENT_ALLOW_ALL lets any agent client in without asking, LILO_AGENT_CLICKS=allow|deny|expire (CLICKS=,
+# allow by default) answers every question before a send, payment or deletion yes, no or expired at once, and
+# LILO_HEADLESS keeps the app from taking focus, a Dock icon or a visible window (HEADLESS=0 opts out): only a
+# Debug build reads them.
+AGENT_DATA = $(or $(LILO_APP_SUPPORT_DIR),$(HOME)/Library/Application Support/Lilo-Debug)
+# A fresh Debug profile has agent control off, and the app reads that setting only at launch: it is switched on
+# in the profile's database, which a first launch creates, before the app a client talks to starts.
+agent-app:
+	@test -d build/debug/export/Lilo.app || { echo "run make app first" >&2; exit 1; }
+	@pgrep -qf "^$(CURDIR)/build/debug/export/Lilo.app/Contents/MacOS/Lilo$$" || { \
+		on="INSERT OR REPLACE INTO settings(key, value) VALUES ('agentControlEnabled', 'true')"; \
+		/bin/rm -f "$(AGENT_DATA)/agent.sock"; \
+		sqlite3 "$(AGENT_DATA)/global.db" "$$on" 2>/dev/null || { \
+			LILO_HEADLESS=$(or $(HEADLESS),1) "$(CURDIR)/build/debug/export/Lilo.app/Contents/MacOS/Lilo" >/dev/null 2>&1 & first=$$!; \
+			until sqlite3 "$(AGENT_DATA)/global.db" "$$on" 2>/dev/null; do sleep 1; done; \
+			kill $$first; wait $$first 2>/dev/null; /bin/rm -f "$(AGENT_DATA)/agent.sock"; }; \
+		LILO_AGENT_ALLOW_ALL=1 LILO_AGENT_CLICKS=$(or $(CLICKS),allow) LILO_HEADLESS=$(or $(HEADLESS),1) "$(CURDIR)/build/debug/export/Lilo.app/Contents/MacOS/Lilo" >/dev/null 2>&1 & \
+		echo $$! > "$(AGENT_DATA)/agent-app.pid"; \
+		until [ -S "$(AGENT_DATA)/agent.sock" ] && sleep 3; do sleep 1; done; }
+
+## Stop the Debug app agent-app started (never another one)
+agent-app-stop:
+	@pid=$$(cat "$(AGENT_DATA)/agent-app.pid" 2>/dev/null); \
+	if [ -n "$$pid" ] && ps -p $$pid -o command= | grep -q "^$(CURDIR)/build/debug/export/Lilo.app/Contents/MacOS/Lilo$$"; then \
+		kill $$pid; while kill -0 $$pid 2>/dev/null; do sleep 0.2; done; fi; \
+		/bin/rm -f "$(AGENT_DATA)/agent-app.pid" "$(AGENT_DATA)/agent.sock"
+
+## Start the Debug app in a click mode (CLICKS=allow|deny|expire), replacing the one agent-app started
+agent-app-restart: agent-app-stop agent-app
+	@kill -0 "$$(cat "$(AGENT_DATA)/agent-app.pid" 2>/dev/null)" 2>/dev/null || { \
+		echo "A Debug app that make did not start is running: quit it to run in CLICKS=$(CLICKS)" >&2; exit 1; }
+
 ## Call the debug app's agent tools from a shell, starting the app first if needed (CALLS=calls.json, see scripts/agent_call.mjs)
 agent-call:
 	@test -n "$(CALLS)" || { echo "CALLS=calls.json is required" >&2; exit 2; }
-	@test -d build/debug/export/Lilo.app || { echo "run make app first" >&2; exit 1; }
-	@pgrep -qf "build/debug/export/Lilo.app/Contents/MacOS/Lilo$$" || { \
-		/bin/rm -f "$(HOME)/Library/Application Support/Lilo-Debug/agent.sock"; \
-		LILO_AGENT_ALLOW_ALL=1 ./build/debug/export/Lilo.app/Contents/MacOS/Lilo >/dev/null 2>&1 & \
-		until [ -S "$(HOME)/Library/Application Support/Lilo-Debug/agent.sock" ] && sleep 3; do sleep 1; done; }
+	@$(MAKE) --no-print-directory agent-app
 	@node scripts/agent_call.mjs build/debug/export/Lilo.app/Contents/MacOS/lilo-mcp "$(CALLS)"
+
+## Render the Debug app's main window to PNGs from inside the app, no screen permission (OUT=/abs/shot.png [SIZE=1280x800] [WIDTHS="203 150 rail"] [GIF=/abs/shots.gif])
+window-capture:
+	@case "$(OUT)" in /*.png) ;; *) echo "OUT=/absolute/path.png is required" >&2; exit 2;; esac
+	@mkdir -p build && OUT="$(OUT)" SIZE="$(SIZE)" WIDTHS="$(WIDTHS)" GIF="$(GIF)" node -e '\
+		const e = process.env, [width, height] = (e.SIZE || "1280x800").split("x").map(Number); \
+		const sidebarWidths = e.WIDTHS.split(/\s+/).filter(Boolean).map(w => w === "rail" ? w : Number(w)); \
+		console.log(JSON.stringify([{ tool: "window_capture", args: { path: e.OUT, width, height, ...(sidebarWidths.length && { sidebarWidths }), ...(e.GIF && { gif: e.GIF }) } }]))' > build/window-capture.json
+	@$(MAKE) --no-print-directory agent-call CALLS=build/window-capture.json
+
+## Run the fixture agent tasks with Claude Code, graded in code (TOOL=lilo|playwright|chrome-devtools MODEL=sonnet PASSES=1 TASK=name)
+# The gate tasks (`asks`) run against an app answering every action question no, the others against one answering yes.
+agent-eval:
+	@set -e; for clicks in allow deny; do \
+		tasks=$$(python3 -I bench/mcp/fixtures.py tasks --tool $(or $(TOOL),lilo) --clicks $$clicks $(if $(TASK),--task $(TASK))); \
+		[ -n "$$tasks" ] || continue; \
+		$(if $(filter-out lilo,$(or $(TOOL),lilo)),,$(MAKE) --no-print-directory agent-app-restart CLICKS=$$clicks;) \
+		LILO_MCP="$(CURDIR)/build/debug/export/Lilo.app/Contents/MacOS/lilo-mcp" python3 -I bench/mcp/fixtures.py run \
+			--tool $(or $(TOOL),lilo) --model $(or $(MODEL),sonnet) --passes $(or $(PASSES),1) $$(printf -- '--task %s ' $$tasks); \
+	done
+	@$(if $(filter-out lilo,$(or $(TOOL),lilo)),,$(MAKE) --no-print-directory agent-app-stop)
+
+## Test the fixture agent tasks' server and grading (no browser, no model)
+agent-eval-test:
+	@python3 -I bench/mcp/fixtures_test.py -q
 
 ## Build the UI bundle and create release artifacts
 release: vt-build $(UI_STAMP) $(BRIDGE_STAMP) $(if $(WEBKIT_FORK_URL),webkit-fork)
@@ -511,7 +666,7 @@ release-notarize: vt-build $(UI_STAMP) $(BRIDGE_STAMP) $(if $(WEBKIT_FORK_URL),w
 	@scripts/build-app.sh release notarize
 
 # CI's release path: the UI is built or restored beforehand and the committed bridge bundles are checked
-# against bridge-src on main, so neither needs npm here.
+# against bridge-src on main, so neither installs anything here.
 ## Archive and export the release app from the UI already built (CI)
 release-archive: release-media-stage vt-build $(CHROME_UI_ASSETS) $(NATIVE_STRINGS) $(if $(WEBKIT_FORK_URL),webkit-fork)
 	@scripts/build-app.sh release
@@ -625,6 +780,54 @@ perf-compare:
 perf-summary-test:
 	@python3 scripts/perf_summary_test.py -q
 
+## Test the report of failed and retried tests that CI writes
+retried-tests-test:
+	@python3 scripts/retried_tests_test.py -q
+
+## Test the lock wrapper that keeps heavy commands to one at a time
+lockf-test:
+	@python3 scripts/lockf_test.py -q
+
+## Summarize the recorded recipe timings (SINCE=days NAME=target); `make metrics-on` starts recording
+metrics:
+	@python3 scripts/metrics.py summary $(if $(SINCE),--since $(SINCE)) $(if $(NAME),--target $(NAME))
+
+## Record every recipe's timing in ~/.cache/lilo/metrics.jsonl: opt-in, local, via Makefile.local
+metrics-on:
+	@python3 scripts/metrics.py on
+
+## Stop recording and remove the hook from Makefile.local
+metrics-off:
+	@python3 scripts/metrics.py off
+
+## Test the recipe timing recorder
+metrics-test:
+	@python3 scripts/metrics_test.py -q
+
+## Summarize the last CI runs from the Actions API (RUNS=20 REPO=owner/name)
+ci-metrics:
+	@python3 scripts/ci_metrics.py --runs $(or $(RUNS),20) $(if $(REPO),--repo $(REPO))
+
+## Test the CI timing summary
+ci-metrics-test:
+	@python3 scripts/ci_metrics_test.py -q
+
+## Test the quick tiers and their Git hooks
+tier-test:
+	@scripts/check_tier.test.sh
+
+## Test the quiet check summary behind validate and validate-scope
+check-summary-test:
+	@python3 scripts/check_summary_test.py -q
+
+## Test the slot locks that keep test runs to TEST_SLOTS at a time (stub commands, no xcodebuild)
+slot-test:
+	@scripts/test_slot.test.sh
+
+## Test the diff scoping behind validate-scope
+scope-test:
+	@scripts/scope_checks.test.sh
+
 # --info --debug are required: os_log info/debug messages are memory-only and absent from `log show` without them.
 ## Dump the app log to lilo-log.txt (SINCE=15m OUT=path)
 logs:
@@ -638,15 +841,15 @@ logs-stream:
 
 ## Serve getlilo.app with Astro and live reload on localhost:8787
 site-dev: $(SITE_DEPS)
-	@npm --prefix site run dev
+	@pnpm --dir site run dev
 
 ## Stop Astro when it has started its dev server in the background
 site-dev-stop: $(SITE_DEPS)
-	@npm --prefix site run dev -- stop
+	@pnpm --dir site run dev stop
 
 ## Preview the built website with Cloudflare's headers and redirects on localhost:8788
 site-preview: site-generate
-	@npm --prefix site run preview -- --port $(or $(SITE_PREVIEW_PORT),8788)
+	@pnpm --dir site run preview --port $(or $(SITE_PREVIEW_PORT),8788)
 
 ## Compare the website with a disposable native Debug session (no personal profiles or preferences)
 site-native-preview: app
@@ -659,55 +862,55 @@ site-native-preview: app
 
 ## Build getlilo.app with Astro, Markdown copies and FAQ metadata
 site-generate: $(SITE_DEPS)
-	@npm --prefix site run build
+	@pnpm --dir site run build
 
 ## Check website lint, formatting, Astro templates and TypeScript
 site-check: $(SITE_DEPS)
-	@npm --prefix site run check
+	@pnpm --dir site run check
 
 ## Fix website lint and formatting with Ultracite
 site-fix: $(SITE_DEPS)
-	@npm --prefix site run fix
+	@pnpm --dir site run fix
 
 ## Build and test the website's release notes, routes and metadata
 site-test: site-generate
-	@npm --prefix site run test
+	@pnpm --dir site run test
 
 ## Exercise the interactive website demo with production headers (SITE_E2E_ARGS passes Playwright flags)
 site-e2e: site-generate
-	@npm --prefix site run test:e2e -- $(SITE_E2E_ARGS)
+	@pnpm --dir site run test:e2e $(SITE_E2E_ARGS)
 
 ## Capture a prepared release's recording and posters (RELEASE=x.y.z; RECAPTURE=1 replaces archived media)
 site-release-capture: $(SITE_DEPS)
-	@LILO_CAPTURE_VERSION='$(RELEASE)' LILO_CAPTURE_REPLACE='$(RECAPTURE)' npm --prefix site run capture:release
+	@LILO_CAPTURE_VERSION='$(RELEASE)' LILO_CAPTURE_REPLACE='$(RECAPTURE)' pnpm --dir site run capture:release
 
 ## Encode reviewed native Lilo frames (FRAMES=/path/to/manifest.json; RECAPTURE=1 replaces archived media)
 site-release-import: $(SITE_DEPS)
-	@LILO_CAPTURE_VERSION='$(RELEASE)' LILO_CAPTURE_FRAMES='$(FRAMES)' LILO_CAPTURE_REPLACE='$(RECAPTURE)' npm --prefix site run capture:import
+	@LILO_CAPTURE_VERSION='$(RELEASE)' LILO_CAPTURE_FRAMES='$(FRAMES)' LILO_CAPTURE_REPLACE='$(RECAPTURE)' pnpm --dir site run capture:import
 
 # Playwright owns this foreground server; it leaves the maintainer's dev server alone.
 site-capture-server: $(SITE_DEPS)
-	@ASTRO_DEV_BACKGROUND=0 npm --prefix site run dev -- --port 8791 --ignore-lock
+	@ASTRO_DEV_BACKGROUND=0 pnpm --dir site run dev --port 8791 --ignore-lock
 
 ## Install the release recording encoder at the website's pinned Sharp version
 site-capture-deps:
-	@npm --prefix site install --save-dev --save-exact sharp@0.35.5
+	@pnpm --dir site add --save-dev --save-exact sharp@0.35.5
 
 ## Update the website's dependencies and lockfile after changing package.json
 site-lock:
-	@npm --prefix site update
+	@pnpm --dir site update
 
 ## Set up Astro's official Svelte integration
 site-add-svelte: $(SITE_DEPS)
-	@cd site && npm exec astro add svelte -- --yes
+	@cd site && pnpm exec astro add svelte --yes
 
 ## Install the browser-only terminal and MCP playground libraries
 site-playground-deps: $(SITE_DEPS)
-	@npm --prefix site install --save-exact @xterm/xterm @xterm/addon-fit just-bash @modelcontextprotocol/client @modelcontextprotocol/server zod
+	@pnpm --dir site add --save-exact @xterm/xterm @xterm/addon-fit just-bash @modelcontextprotocol/client @modelcontextprotocol/server zod
 
 ## Audit the website's dependency tree
 site-audit: $(SITE_DEPS)
-	@npm --prefix site audit
+	@pnpm --dir site audit
 
 ## Export the built Mac app's classic icon and Codex's app icon for the website (macOS; CODEX_ICON=path)
 site-demo-icons:
@@ -717,48 +920,48 @@ site-demo-icons:
 
 ## Check the Cloudflare deployment without publishing
 site-deploy-check: site-generate
-	@npm --prefix site run deploy:check
+	@pnpm --dir site run deploy:check
 
 ## Deploy getlilo.app to Cloudflare (requires authentication)
 site-deploy: $(SITE_DEPS)
-	@npm --prefix site run deploy
+	@pnpm --dir site run deploy
 
 ## Serve docs.getlilo.app with Blume and live reload
 docs-dev: $(DOCS_DEPS)
-	@npm --prefix docs-site run dev
+	@pnpm --dir docs-site run dev
 
 ## Build docs.getlilo.app: generated reference, pages and security headers in docs-site/dist/
 docs-build: $(DOCS_DEPS)
-	@npm --prefix docs-site run build
+	@pnpm --dir docs-site run build
 
 ## Check the docs' links and anchors, and that no French page is missing or out of date
 docs-check: $(DOCS_DEPS)
-	@npm --prefix docs-site run check
+	@pnpm --dir docs-site run check
 
 ## Build and test the docs' headers, routes and metadata, then audit the build
 docs-test: docs-build
-	@npm --prefix docs-site run test
+	@pnpm --dir docs-site run test
 
 ## Preview the built docs with Cloudflare's headers on localhost:8789
 docs-preview: docs-build
-	@npm --prefix docs-site run preview -- --port $(or $(DOCS_PREVIEW_PORT),8789)
+	@pnpm --dir docs-site run preview --port $(or $(DOCS_PREVIEW_PORT),8789)
 
 ## Check the docs' Cloudflare deployment without publishing
 docs-deploy-check: docs-build
-	@npm --prefix docs-site run deploy:check
+	@pnpm --dir docs-site run deploy:check
 
 ## Deploy docs.getlilo.app to Cloudflare (requires authentication)
 docs-deploy: $(DOCS_DEPS)
-	@npm --prefix docs-site run deploy
+	@pnpm --dir docs-site run deploy
 
 ## Translate new and changed docs pages into French with Claude Code (DOCS_TRANSLATE_ARGS passes blume translate flags)
 docs-translate: $(DOCS_DEPS)
-	@DOCS_TRANSLATE_ARGS='$(DOCS_TRANSLATE_ARGS)' npm --prefix docs-site run translate
+	@DOCS_TRANSLATE_ARGS='$(DOCS_TRANSLATE_ARGS)' pnpm --dir docs-site run translate
 
 ## Ask an agent the questions in docs-site/evals.yaml and grade its answers (Claude Code; costs model time)
 docs-eval: $(DOCS_DEPS)
-	@npm --prefix docs-site run generate && cd docs-site && npx blume eval --agent claude
+	@pnpm --dir docs-site run generate && cd docs-site && pnpm exec blume eval --agent claude
 
 ## Update the docs' dependencies and lockfile after changing package.json
 docs-lock:
-	@npm --prefix docs-site update
+	@pnpm --dir docs-site update

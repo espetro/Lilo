@@ -23,6 +23,10 @@
 		"terabyte": "TB"
 	},
 	"settings": {
+		"commandBarLayout": {
+			"default": "Standard",
+			"compact": "Kompakt"
+		},
 		"terminalEnabled": "Terminal-Tabs",
 		"terminalEnabledDescription": "Shells als Tabs neben deinen Seiten öffnen. Ist dies deaktiviert, werden Terminal-Kurzbefehle, -Tasten und -Menüs ausgeblendet. Offene Terminals bleiben bis zum Schließen erhalten.",
 		"terminalTheme": "Design",
@@ -79,11 +83,6 @@
 		"passwordManagerAction": "Auswählen",
 		"passwordManagerChange": "Ändern",
 		"replayOnboardingAction": "Wiederholen",
-		"defaultBrowserSet": "Als Standard festlegen",
-		"defaultBrowserLater": "Später",
-		"defaultBrowserBannerText": "Lilo als Standardbrowser festlegen?",
-		"defaultBrowserSetSuccess": "Lilo ist jetzt dein Standardbrowser.",
-		"defaultBrowserSetFailed": "Lilo wurde nicht als Standardbrowser festgelegt. Du kannst dies in den Systemeinstellungen ändern.",
 		"engineName": "Name",
 		"engineUrlTemplate": "Such-URL (%s = Suchanfrage)",
 		"engineKeyword": "Schlüsselwort",
@@ -167,13 +166,15 @@
 			"passwords": "Passwörter",
 			"agentAccess": "Agenten, die Lilo nutzen",
 			"agentClients": "Apps, die Lilo nutzen können",
+			"agentActivity": "Aktivität",
 			"lilo": "Lilo",
 			"tabsWindows": "Tabs und Fenster",
 			"sitePermissions": "Websiteberechtigungen",
 			"profiles": "Profile",
 			"otherAppLinks": "Links aus anderen Apps",
 			"blockerExceptions": "Listen und Ausnahmen",
-			"agentConversations": "Unterhaltungen"
+			"agentConversations": "Unterhaltungen",
+			"beta": "Beta-Modus"
 		},
 		"searchPlaceholder": "Einstellungen durchsuchen",
 		"searchResultsTitle": "Suchergebnisse",
@@ -203,7 +204,7 @@
 		"sites": {
 			"permissionSummary": "{type}: {decision}",
 			"zoomSummary": "Zoom {zoom}",
-			"hiddenSummary": {"one": "{count} ausgeblendetes Element", "other": "{count} ausgeblendete Elemente"},
+			"hiddenSummary": "{count, plural, one{# ausgeblendetes Element} other{# ausgeblendete Elemente}}",
 			"dataSummary": "Gespeicherte Daten",
 			"permissionUpdated": "{origin} · Aktualisiert {time}",
 			"emptyTitle": "Noch keine Websiteeinstellungen",
@@ -211,6 +212,24 @@
 			"more": "{count} weitere. Grenze die Liste mit der Suche ein."
 		},
 		"items": {
+			"agentInstances": {
+				"title": "Agenten",
+				"description": "Agenten aus der Registrierung und eigene Befehle, die die Fragenleiste anbietet; ein ausgeschalteter verlässt die Auswahl.",
+				"keywords": "agenten acp registrierung eigener befehl anbieter instanz aktivieren deaktivieren auswahl"
+			},
+			"customAgent": {
+				"name": "Name",
+				"namePlaceholder": "Mein Agent",
+				"executable": "Befehl",
+				"arguments": "Argumente, eines pro Zeile",
+				"environment": "Umgebung, NAME=Wert pro Zeile",
+				"note": "Der Befehl ist der vollständige Pfad einer ausführbaren Datei, die das Agent Client Protocol über Standardeingabe und -ausgabe spricht."
+			},
+			"commandBarLayout": {
+				"title": "Befehlsleistenlayout",
+				"description": "Standard- oder kompakte Befehlsleiste wählen.",
+				"keywords": "Befehlsleistenlayout Standard Kompakt"
+			},
 			"appIcon": {
 				"title": "App-Symbol",
 				"description": "Nur „Klassisch“ unterstützt die macOS-Symbolstile „Dunkel“, „Eingefärbt“ und „Transparent“."
@@ -319,6 +338,12 @@
 				"title": "Inaktive Tabs",
 				"description": "Wie schnell inaktive Tabs eingefroren und entladen werden.",
 				"keywords": "speicher leistung batterie einfrieren entladen ruhezustand"
+			},
+			"tabSleepAllowlist": {
+				"title": "Websites, die geladen bleiben",
+				"description": "Tabs dieser Websites, Subdomains eingeschlossen, werden nie eingefroren oder entladen und verbrauchen weiter Speicher und Akku. Durch Kommas getrennt.",
+				"keywords": "geladen lassen ausnahme erlaubnisliste nie einfrieren entladen ruhezustand",
+				"placeholder": "mail.example.com, example.org"
 			},
 			"singleWindow": {
 				"title": "Alles in einem Fenster behalten",
@@ -497,6 +522,11 @@
 				"description": "Der Agent wartet auf deine Antwort.",
 				"keywords": "agent erlaubnis bestätigen zahlung kauf bestellung löschen senden veröffentlichen"
 			},
+			"agentActionLog": {
+				"title": "Protokoll der Agentenaktionen führen",
+				"description": "Eine lokale Datei listet jeden Aufruf, nie eingegebenen Text oder Seiteninhalt.",
+				"keywords": "agent protokoll verlauf audit aktionen wiedergabe"
+			},
 			"agentAlwaysAllowed": {
 				"title": "Immer erlaubt",
 				"description": "Auf diesen Websites handeln Agenten ohne Nachfrage.",
@@ -505,6 +535,11 @@
 			"agentOther": {
 				"title": "Andere Agenten",
 				"description": "Jeder andere MCP-Client mit Lilos Konfiguration."
+			},
+			"agentActivity": {
+				"title": "Letzte Agentenaufrufe",
+				"description": "Die letzten Aufrufe jeder App, neueste zuerst. Gelesen beim Öffnen dieser Seite oder beim Aktualisieren.",
+				"keywords": "agent protokoll verlauf audit aktionen letzte aufrufe aktivität"
 			},
 			"autoplay": {
 				"title": "Automatische Wiedergabe",
@@ -530,6 +565,11 @@
 				"title": "Tastaturkurzbefehle",
 				"description": "Jeden Kurzbefehl ändern oder die von Arc übernehmen.",
 				"keywords": "tastatur kurzbefehl tastenkombination tasten befehl"
+			},
+			"holdToQuit": {
+				"title": "Zum Beenden ⌘Q gedrückt halten",
+				"description": "⌘Q zeigt einen Hinweis; Lilo wird nur beendet, wenn die Tasten gedrückt bleiben.",
+				"keywords": "beenden verlassen Befehl q versehentlich halten"
 			},
 			"newProfile": {
 				"title": "Neues Profil",
@@ -598,6 +638,19 @@
 				"reset": "Standard wiederherstellen",
 				"resetTitle": "Prompt von Lilo wiederherstellen?",
 				"resetMessage": "Deine Änderungen werden durch den Standardprompt ersetzt."
+			},
+			"betaUpdateCheck": {
+				"title": "Beta-Aktualisierungen",
+				"description": "Dieses Beta vergleicht seinen Build beim Start einmal von selbst mit der neuesten Veröffentlichung des Forks.",
+				"keywords": "Beta-Aktualisierungen",
+				"check": "Nach Betas suchen",
+				"lastChecked": "Geprüft {time}",
+				"absent": "Dieser Build hat keinen Beta-Feed."
+			},
+			"betaUpdateRelease": {
+				"title": "Beta {tag} ist da",
+				"description": "Wird von der Veröffentlichungsseite geladen und von Hand installiert; Lilo ersetzt sich nie selbst.",
+				"open": "Veröffentlichung öffnen"
 			}
 		},
 		"devices": {
@@ -610,28 +663,16 @@
 		},
 		"filterLists": {
 			"update": "Jetzt aktualisieren",
-			"summary": {
-				"one": "{count} Liste",
-				"other": "{count} Listen"
-			},
+			"summary": "{count, plural, one{# Liste} other{# Listen}}",
 			"updated": "aktualisiert {time}"
 		},
 		"extensionUpdates": {
 			"checkNow": "Jetzt suchen",
 			"checking": "Nach Updates suchen...",
 			"upToDate": "Auf dem neuesten Stand",
-			"updated": {
-				"one": "{count} aktualisiert",
-				"other": "{count} aktualisiert"
-			},
-			"available": {
-				"one": "{count} Update verfügbar",
-				"other": "{count} Updates verfügbar"
-			},
-			"failed": {
-				"one": "{count} konnte nicht geprüft werden",
-				"other": "{count} konnten nicht geprüft werden"
-			},
+			"updated": "{count, plural, one{# aktualisiert} other{# aktualisiert}}",
+			"available": "{count, plural, one{# Update verfügbar} other{# Updates verfügbar}}",
+			"failed": "{count, plural, one{# konnte nicht geprüft werden} other{# konnten nicht geprüft werden}}",
 			"lastChecked": "Zuletzt geprüft {time}"
 		},
 		"folderAutoLock": {
@@ -642,12 +683,34 @@
 				"claudeCode": "Claude Code",
 				"claudeDesktop": "Claude Desktop",
 				"codex": "Codex",
-				"cursor": "Cursor"
+				"cursor": "Cursor",
+				"zed": "Zed",
+				"vscode": "VS Code",
+				"opencode": "OpenCode",
+				"gemini": "Gemini CLI"
 			},
 			"connect": "Verbinden",
 			"copy": "Konfiguration kopieren",
 			"clientDescription": "Fügt Lilo zu seinen MCP-Servern hinzu.",
 			"revoke": "Entfernen",
+			"repair": "Reparieren",
+			"moreFor": "Weitere Aktionen für {client}",
+			"removeFrom": "Lilo aus {client} entfernen …",
+			"sheet": {
+				"addTitle": "Lilo zu {client} hinzufügen",
+				"repairTitle": "Lilo in {client} reparieren",
+				"removeTitle": "Lilo aus {client} entfernen",
+				"diff": "Lilo ändert diese Zeilen und sonst nichts.",
+				"runs": "Lilo führt diesen Befehl aus.",
+				"unchanged": "In dieser Datei ändert sich nichts.",
+				"addedLine": "Hinzugefügt",
+				"removedLine": "Entfernt",
+				"add": "Lilo hinzufügen",
+				"repair": "Reparieren",
+				"remove": "Lilo entfernen",
+				"copy": "Kopieren",
+				"copied": "Kopiert"
+			},
 			"status": {
 				"acting": "Handelt gerade",
 				"connected": "Verbunden",
@@ -656,7 +719,32 @@
 				"ready": "Konfiguriert"
 			},
 			"allowedSeen": "Erlaubt, zuletzt gesehen {time}",
-			"readyLine": "Eingerichtet. Lilo fragt dich bei der ersten Verbindung."
+			"readyLine": "Eingerichtet. Lilo fragt dich bei der ersten Verbindung.",
+			"detectedLine": "Auf diesem Mac gefunden. Noch nicht eingerichtet.",
+			"moreApps": "Weitere Apps",
+			"permissions": {
+				"button": "Berechtigungen",
+				"group": "Berechtigungen von {client}",
+				"act": "Aktionen auf Seiten",
+				"actHint": "Klicks und Anfragen, die senden, bezahlen, kaufen, löschen oder veröffentlichen.",
+				"askingOff": "Nachfragen ist für alle Agenten in der Einstellung oben ausgeschaltet.",
+				"ask": "Jedes Mal fragen",
+				"always": "Immer erlauben",
+				"sites": "Auf diesen Websites erlaubt",
+				"addSite": "Website hinzufügen",
+				"addSiteLabel": "Website hinzufügen, auf der {client} ohne Nachfrage handeln darf",
+				"removeSite": "{site} entfernen",
+				"floor": "Anmelden, Bezahlen und das Senden von Daten an eine andere Website werden immer abgefragt."
+			}
+		},
+		"agentActivity": {
+			"refresh": "Aktualisieren",
+			"open": "Aktionsprotokoll öffnen",
+			"off": "Das Aktionsprotokoll ist aus",
+			"offDescription": "Lilo zeichnet keine Agentenaufrufe auf. Schalte es ein, um sie hier zu sehen.",
+			"turnOn": "Einschalten",
+			"empty": "Noch keine Aufrufe aufgezeichnet.",
+			"failed": "Fehlgeschlagen"
 		},
 		"navGroups": {
 			"tools": "Werkzeuge"
@@ -682,10 +770,7 @@
 			"clearData": "Daten löschen...",
 			"remove": "Entfernen...",
 			"lastProfile": "Dein letztes Profil bleibt erhalten. Jeder Space benötigt eines.",
-			"extensionCount": {
-				"one": "{count} Erweiterung",
-				"other": "{count} Erweiterungen"
-			},
+			"extensionCount": "{count, plural, one{# Erweiterung} other{# Erweiterungen}}",
 			"newProfile": "Neues Profil...",
 			"newProfileDetail": "Neue Cookies, Anmeldungen und Erweiterungen",
 			"namePlaceholder": "Profilname",
@@ -760,34 +845,42 @@
 		},
 		"notes": {
 			"live": "Änderungen gelten sofort",
-			"spaces": {
-				"one": "{count} Space",
-				"other": "{count} Spaces"
-			},
-			"profiles": {
-				"one": "{count} Profil",
-				"other": "{count} Profile"
-			},
+			"spaces": "{count, plural, one{# Space} other{# Spaces}}",
+			"profiles": "{count, plural, one{# Profil} other{# Profile}}",
 			"blocking": "{count} von {total} Arten blockiert",
 			"blockingOff": "Blockieren ist aus",
 			"profile": "Profil {name}",
-			"extensions": {
-				"one": "{count} Erweiterung in {profile}",
-				"other": "{count} Erweiterungen in {profile}"
-			},
+			"extensions": "{count, plural, one{# Erweiterung in {profile}} other{# Erweiterungen in {profile}}}",
 			"terminal": "Änderungen gelten für jeden Terminal-Tab",
 			"agents": "Lilo hat keine eigene KI",
 			"advanced": "Für Entwicklung und Tests",
-			"searchMatches": {
-				"one": "{count} Einstellung passt zu „{query}“",
-				"other": "{count} Einstellungen passen zu „{query}“"
-			}
+			"searchMatches": "{count, plural, one{# Einstellung passt zu „{query}“} other{# Einstellungen passen zu „{query}“}}"
 		},
 		"callDock": {
 			"sidebar": "In der Seitenleiste",
 			"floating": "Schwebendes Fenster"
 		},
-		"terminalImportCaption": "Importieren nimmt ein iTerm2-Farbschema (.itermcolors), ein VS-Code-Farbdesign (.json) oder eine Ghostty-Theme-Datei."
+		"terminalImportCaption": "Importieren nimmt ein iTerm2-Farbschema (.itermcolors), ein VS-Code-Farbdesign (.json) oder eine Ghostty-Theme-Datei.",
+		"agentInstances": {
+			"registry": "Registrierung",
+			"command": "Befehl",
+			"add": "Agent hinzufügen",
+			"hint": "Ein Agent der Registrierung, den die Liste nicht nennt, erscheint weiterhin in der Auswahl; füge ihn hinzu, um ihn auszuschalten.",
+			"menu": "Aktionen für {name}",
+			"edit": "Bearbeiten"
+		},
+		"agentSheet": {
+			"addTitle": "Agent hinzufügen",
+			"editTitle": "Agent bearbeiten",
+			"registryTab": "Aus der Registrierung",
+			"commandTab": "Eigener Befehl",
+			"sourceLabel": "Agentenquelle",
+			"searchPlaceholder": "Agenten suchen",
+			"add": "Hinzufügen",
+			"added": "Hinzugefügt",
+			"loading": "Registrierung wird geladen…",
+			"none": "Keine Agenten gefunden."
+		}
 	},
 	"nav": {
 		"navigationControls": "Navigationssteuerung",
@@ -864,6 +957,10 @@
 		"unreadCount": "{count} ungelesen",
 		"previewOpen": "Öffnen",
 		"sleeping": "Im Ruhezustand",
+		"dozing": "Schläft",
+		"dozingHint": "Schläft, um Speicher zu sparen. Wacht beim Öffnen auf.",
+		"keepLoaded": "Bleibt geladen",
+		"keepLoadedHint": "Schläft nie und ist immer bereit.",
 		"pinned": "Angeheftet",
 		"loading": "Wird geladen",
 		"muted": "Stumm",
@@ -874,6 +971,7 @@
 		"terminalFailedDetail": "{command} nach {duration} fehlgeschlagen (Exit-Code {code})",
 		"terminalSucceededDetail": "{command} in {duration} beendet",
 		"closeTab": "Tab schließen",
+		"removeFromSplit": "Aus geteilter Ansicht entfernen",
 		"removePinnedTab": "Angehefteten Tab entfernen",
 		"tabName": "Tabname",
 		"removeBookmark": "Lesezeichen entfernen",
@@ -927,23 +1025,36 @@
 		"bottom": "Darunter öffnen",
 		"replace": "Ersetzen"
 	},
+	"paneMove": {
+		"left": "Nach links bewegen",
+		"right": "Nach rechts bewegen",
+		"top": "Nach oben bewegen",
+		"bottom": "Nach unten bewegen",
+		"replace": "Tauschen"
+	},
+	"splitPane": {
+		"close": "Geteilten Bereich schließen",
+		"maximize": "Geteilten Bereich maximieren"
+	},
 	"tabSection": {
 		"splitView": "Geteilte Ansicht",
 		"folderEmpty": "Ordner leer",
 		"newTab": "Neuer Tab",
+		"newTabShort": "Neu",
 		"newTerminal": "Neues Terminal",
 		"clearUnpinnedTooltip": "Nicht angeheftete Tabs archivieren",
 		"listOptions": "Sortieren und gruppieren",
+		"searchTabs": "Tabs durchsuchen",
 		"pinnedTabs": "Angeheftete Tabs",
 		"openTabs": "Offene Tabs",
 		"dropToPin": "Zum Anheften ablegen",
-		"stackLabel": {"one": "{name}, {count} Tab", "other": "{name}, {count} Tabs"},
+		"stackLabel": "{count, plural, one{{name}, # Tab} other{{name}, # Tabs}}",
 		"closeStack": "Stapel schließen",
 		"trayAgents": "Agenten",
 		"trayTerminals": "Terminals",
-		"trayNeedsInput": {"one": "{count} wartet auf Eingabe", "other": "{count} warten auf Eingabe"},
-		"trayWorking": {"one": "{count} arbeitet", "other": "{count} arbeiten"},
-		"trayRunning": {"one": "{count} läuft", "other": "{count} laufen"},
+		"trayNeedsInput": "{count, plural, one{# wartet auf Eingabe} other{# warten auf Eingabe}}",
+		"trayWorking": "{count, plural, one{# arbeitet} other{# arbeiten}}",
+		"trayRunning": "{count, plural, one{# läuft} other{# laufen}}",
 		"trayShow": "{name} einblenden",
 		"trayHide": "{name} ausblenden"
 	},
@@ -1199,6 +1310,7 @@
 		"terminalProgram": "Programm",
 		"hintRun": "Ausführen",
 		"hintSplit": "Teilen",
+		"splitFull": "Geteilte Ansicht ist voll ({count} Bereiche)",
 		"scopeTabs": "Tabs",
 		"scopeBookmarks": "Lesezeichen",
 		"scopeHistory": "Verlauf",
@@ -1234,6 +1346,8 @@
 		"sectionOpenTabs": "Offene Tabs",
 		"sectionBookmarks": "Lesezeichen",
 		"sectionRecentHistory": "Letzter Verlauf",
+		"sectionFrequentSites": "Häufig besuchte Websites",
+		"sectionRecentConversations": "Letzte Unterhaltungen",
 		"sectionHistory": "Verlauf",
 		"sectionSwitchToTab": "Zum Tab wechseln",
 		"sectionGoTo": "Gehe zu",
@@ -1348,7 +1462,7 @@
 		"tabStartup": "Start",
 		"tabMemory": "Speicher",
 		"tabLog": "Protokoll",
-		"errorCount": {"one": "{count} Fehler", "other": "{count} Fehler"},
+		"errorCount": "{count, plural, one{# Fehler} other{# Fehler}}",
 		"copyReport": "Bericht kopieren",
 		"recordSession": "Sitzung aufzeichnen",
 		"stopRecording": "Aufzeichnung stoppen",
@@ -1390,23 +1504,11 @@
 		"navLabel": "Ansichten der Prozessverwaltung",
 		"searchPlaceholder": "Tabs durchsuchen",
 		"memoryAriaLabel": "Speichernutzung",
-		"tabsCount": {
-			"one": "{count} Tab",
-			"other": "{count} Tabs"
-		},
+		"tabsCount": "{count, plural, one{# Tab} other{# Tabs}}",
 		"cpu": "CPU {value}",
-		"others": {
-			"one": "{count} weiterer",
-			"other": "{count} weitere"
-		},
-		"reclaim": {
-			"one": "{count} ausgeblendeter Tab belegt {size}",
-			"other": "{count} ausgeblendete Tabs belegen {size}"
-		},
-		"reclaimNoSize": {
-			"one": "{count} ausgeblendeter Tab ist noch geladen",
-			"other": "{count} ausgeblendete Tabs sind noch geladen"
-		},
+		"others": "{count, plural, one{# weiterer} other{# weitere}}",
+		"reclaim": "{count, plural, one{# ausgeblendeter Tab belegt {size}} other{# ausgeblendete Tabs belegen {size}}}",
+		"reclaimNoSize": "{count, plural, one{# ausgeblendeter Tab ist noch geladen} other{# ausgeblendete Tabs sind noch geladen}}",
 		"sleep": "In Ruhezustand versetzen",
 		"groupTabs": "Tabs",
 		"groupSleeping": "Im Ruhezustand",
@@ -1416,10 +1518,7 @@
 		"audioPlaying": "Audiowiedergabe",
 		"frozen": "Eingefroren",
 		"sharedEstimate": "Teilt seinen Prozess mit anderen Tabs. Daher ist dies eine Schätzung.",
-		"sharedWith": {
-			"one": "mit {count} anderem Tab geteilt",
-			"other": "mit {count} anderen Tabs geteilt"
-		},
+		"sharedWith": "{count, plural, one{mit # anderem Tab geteilt} other{mit # anderen Tabs geteilt}}",
 		"pid": "PID {pid}",
 		"focus": "Anzeigen",
 		"details": "Details anzeigen",
@@ -1445,19 +1544,22 @@
 		"resetTitle": "Geänderte Schalter",
 		"reloadNote": "Lade eine Seite neu, damit eine Änderung wirkt"
 	},
+	"little": {
+		"openIn": "In {space} öffnen",
+		"openInMenu": "In einem anderen Space öffnen",
+		"copyLink": "Link kopieren",
+		"linkCopied": "Link kopiert",
+		"placeholder": "Suchen oder URL eingeben...",
+		"emptyTitle": "Im Web suchen oder URL eingeben",
+		"emptySubtitle": "Mit / durchsuchst du besuchte Seiten."
+	},
 	"urlToast": {
 		"pageActions": "Seitenaktionen",
 		"reEnableBlocking": "Blockierung auf dieser Website wieder aktivieren",
-		"trackersBlockedOnPage": {
-			"one": "{count} Tracker auf dieser Seite blockiert",
-			"other": "{count} Tracker auf dieser Seite blockiert"
-		},
+		"trackersBlockedOnPage": "{count, plural, one{# Tracker auf dieser Seite blockiert} other{# Tracker auf dieser Seite blockiert}}",
 		"disableBlocking": "Blockierung auf dieser Website deaktivieren",
 		"adsAllowed": "Werbung erlaubt",
-		"trackersBlockedLabel": {
-			"one": "{count} Tracker blockiert",
-			"other": "{count} Tracker blockiert"
-		},
+		"trackersBlockedLabel": "{count, plural, one{# Tracker blockiert} other{# Tracker blockiert}}",
 		"adsBlocked": "Werbung blockiert",
 		"extensionAlreadyInstalled": "Erweiterung bereits installiert",
 		"installChromeExtension": "Diese Chrome-Erweiterung installieren",
@@ -1501,10 +1603,7 @@
 		"stop": "Debugging beenden"
 	},
 	"notices": {
-		"moreNotices": {
-			"one": "{count} weiterer Hinweis",
-			"other": "{count} weitere Hinweise"
-		},
+		"moreNotices": "{count, plural, one{# weiterer Hinweis} other{# weitere Hinweise}}",
 		"more": "{count} weitere"
 	},
 	"crashRecovery": {
@@ -1545,7 +1644,7 @@
 	},
 	"archivedTabs": {
 		"title": "Archiviert",
-		"buttonLabel": {"one": "{count} kürzlich archivierter Tab", "other": "{count} kürzlich archivierte Tabs"},
+		"buttonLabel": "{count, plural, one{# kürzlich archivierter Tab} other{# kürzlich archivierte Tabs}}",
 		"restore": "Wiederherstellen",
 		"showAll": "Alle archivierten Tabs anzeigen",
 		"showAllDownloads": "Alle Downloads anzeigen"
@@ -1556,7 +1655,7 @@
 		"undo": "Widerrufen",
 		"reopen": "Wieder öffnen",
 		"archived": "„{title}“ archiviert",
-		"archivedCount": {"one": "{count} Tab archiviert", "other": "{count} Tabs archiviert"}
+		"archivedCount": "{count, plural, one{# Tab archiviert} other{# Tabs archiviert}}"
 	},
 	"updateCard": {
 		"ready": "Bereit zur Installation",
@@ -1589,6 +1688,11 @@
 		"placeholder": "Suchen oder URL eingeben...",
 		"addressBar": "Adressleiste: {url}",
 		"noProject": "Kein Projekt",
+		"defaultBrowserSet": "Als Standard festlegen",
+		"defaultBrowserLater": "Später",
+		"defaultBrowserBannerText": "Lilo als Standardbrowser festlegen?",
+		"defaultBrowserSetSuccess": "Lilo ist jetzt dein Standardbrowser.",
+		"defaultBrowserSetFailed": "Lilo wurde nicht als Standardbrowser festgelegt. Du kannst dies in den Systemeinstellungen ändern.",
 		"details": {
 			"branch": "Branch",
 			"command": "Befehl",
@@ -1646,6 +1750,7 @@
 		"allow": "Erlauben",
 		"allowOnce": "Einmal erlauben",
 		"alwaysAllowOnSite": "Auf dieser Website immer erlauben",
+		"agentWaitsForAnswer": "Der Agent wartet auf deine Antwort.",
 		"popup": {
 			"blocked": "Pop-up blockiert",
 			"tried": "wollte ein Pop-up-Fenster öffnen",
@@ -1767,26 +1872,11 @@
 			"done": "Fertig: {list}.",
 			"nothing": "Fertig: Es gibt nichts Neues zu importieren.",
 			"count": {
-				"bookmarks": {
-					"one": "{count} Lesezeichen",
-					"other": "{count} Lesezeichen"
-				},
-				"tabs": {
-					"one": "{count} offener Tab",
-					"other": "{count} offene Tabs"
-				},
-				"history": {
-					"one": "{count} Seite im Verlauf",
-					"other": "{count} Seiten im Verlauf"
-				},
-				"cookies": {
-					"one": "{count} Cookie",
-					"other": "{count} Cookies"
-				},
-				"extensions": {
-					"one": "{count} Erweiterung",
-					"other": "{count} Erweiterungen"
-				}
+				"bookmarks": "{count, plural, one{# Lesezeichen} other{# Lesezeichen}}",
+				"tabs": "{count, plural, one{# offener Tab} other{# offene Tabs}}",
+				"history": "{count, plural, one{# Seite im Verlauf} other{# Seiten im Verlauf}}",
+				"cookies": "{count, plural, one{# Cookie} other{# Cookies}}",
+				"extensions": "{count, plural, one{# Erweiterung} other{# Erweiterungen}}"
 			},
 			"step": {
 				"bookmarks": "Lesezeichen aus {from} werden importiert",
@@ -1904,11 +1994,11 @@
 		"sectionSites": "Meistbesuchte Websites",
 		"sectionTerminals": "Aus Terminals",
 		"searchResults": "Suchergebnisse",
-		"dayPages": {"one": "{count} Seite", "other": "{count} Seiten"},
-		"daySites": {"one": "{count} Website", "other": "{count} Websites"},
+		"dayPages": "{count, plural, one{# Seite} other{# Seiten}}",
+		"daySites": "{count, plural, one{# Website} other{# Websites}}",
 		"openInNewTab": "In neuem Tab öffnen",
-		"selected": {"one": "{count} ausgewählt", "other": "{count} ausgewählt"},
-		"visits": {"one": "{count} Besuch", "other": "{count} Besuche"},
+		"selected": "{count, plural, one{# ausgewählt} other{# ausgewählt}}",
+		"visits": "{count, plural, one{# Besuch} other{# Besuche}}",
 		"openInNewTabs": "In neuen Tabs öffnen",
 		"delete": "Löschen",
 		"clearSelection": "Auswahl aufheben",
@@ -2093,6 +2183,7 @@
 		"Hide Others": "Andere ausblenden",
 		"Show All": "Alle einblenden",
 		"Quit Lilo": "Lilo beenden",
+		"Hold %@ to Quit": "Zum Beenden %@ gedrückt halten",
 		"File": "Ablage",
 		"New Tab": "Neuer Tab",
 		"Back to tab": "Zurück zum Tab",
@@ -2138,9 +2229,17 @@
 		"New Split View": "Neue geteilte Ansicht",
 		"Split View": "Geteilte Ansicht",
 		"Separate Split View": "Geteilte Ansicht trennen",
+		"Close Split Pane": "Geteilten Bereich schließen",
+		"Maximize Split Pane": "Geteilten Bereich maximieren",
+		"Move Pane Left": "Geteilten Bereich nach links bewegen",
+		"Move Pane Right": "Geteilten Bereich nach rechts bewegen",
+		"Move Pane Up": "Geteilten Bereich nach oben bewegen",
+		"Move Pane Down": "Geteilten Bereich nach unten bewegen",
 		"Open in Split View": "In geteilter Ansicht öffnen",
+		"Split view is full (%lld panes)": "Geteilte Ansicht ist voll (%lld Bereiche)",
 		"Hide Element…": "Element ausblenden…",
 		"Click an element to hide it on this site. Press Esc to cancel.": "Klicke auf ein Element, um es auf dieser Website auszublenden. Drücke Esc zum Abbrechen.",
+		"Click an element or drag an area. Arrow keys change the element, Return captures, Esc cancels.": "Klicke auf ein Element oder ziehe einen Bereich auf. Pfeiltasten wechseln das Element, Return nimmt auf, Esc bricht ab.",
 		"Picture in Picture": "Bild-in-Bild",
 		"Develop": "Entwickler",
 		"Show Web Inspector": "Webinformationen einblenden",
@@ -2227,6 +2326,7 @@
 		"Download Complete": "Download abgeschlossen",
 		"Download Failed": "Download fehlgeschlagen",
 		"Keep Awake Until Done": "Bis zum Abschluss wach halten",
+		"Keep Loaded": "Geladen lassen",
 		"Sleep is back on": "Ruhezustand ist wieder aktiviert",
 		"The battery is below %d%%.": "Der Batteriestand liegt unter %d%%.",
 		"The Mac is too hot.": "Der Mac ist zu heiß.",
@@ -2256,6 +2356,10 @@
 		"Close": "Schließen",
 		"New Terminal Tab": "Neuer Terminal-Tab",
 		"Close %d terminals?": {"one": "%d Terminal schließen?", "other": "%d Terminals schließen?"},
+		"Pin %d Tabs": {"one": "%d Tab anheften", "other": "%d Tabs anheften"},
+		"Bookmark %d Tabs": {"one": "Lesezeichen für %d Tab hinzufügen", "other": "Lesezeichen für %d Tabs hinzufügen"},
+		"Move Tabs to Space": "Tabs in Space verschieben",
+		"Close %d Tabs": {"one": "%d Tab schließen", "other": "%d Tabs schließen"},
 		"Commands are still running in them and will be stopped.": "Darin laufen noch Befehle, die gestoppt werden.",
 		"The terminal could not start.": "Das Terminal konnte nicht starten.",
 		"Close the tab and try again.": "Schließe den Tab und versuche es erneut.",
@@ -2378,6 +2482,11 @@
 		"Added Lilo to Claude Desktop: quit and reopen Claude to load it": "Lilo zu Claude Desktop hinzugefügt: Beende und öffne Claude erneut, um es zu laden",
 		"Added Lilo to Cursor": "Lilo zu Cursor hinzugefügt",
 		"Added Lilo to Codex": "Lilo zu Codex hinzugefügt",
+		"Added Lilo to Zed": "Lilo zu Zed hinzugefügt",
+		"Added Lilo to VS Code": "Lilo zu VS Code hinzugefügt",
+		"Added Lilo to OpenCode": "Lilo zu OpenCode hinzugefügt",
+		"Added Lilo to Gemini CLI": "Lilo zu Gemini CLI hinzugefügt",
+		"Removed Lilo": "Lilo entfernt",
 		"Lilo could not read %@: add this server to it yourself: %@": "Lilo konnte %@ nicht lesen. Füge diesen Server dort selbst hinzu: %@",
 		"Stop Agents": "Agenten stoppen",
 		"Delete %@ and its %d tabs?": {"one": "%@ und den enthaltenen %d Tab löschen?", "other": "%@ und die enthaltenen %d Tabs löschen?"},
@@ -2452,6 +2561,8 @@
 		"%@ did not match its checksum and was not installed.": "%@ stimmte nicht mit seiner Prüfsumme überein und wurde nicht installiert.",
 		"%@ needs Node.js: install it from nodejs.org, then try again.": "%@ benötigt Node.js: Installiere es von nodejs.org und versuche es dann erneut.",
 		"%@ needs uv: install it from astral.sh/uv, then try again.": "%@ benötigt uv: Installiere es von astral.sh/uv und versuche es dann erneut.",
+		"%@ must be the full path of an executable file: %@": "%@ muss der vollständige Pfad einer ausführbaren Datei sein: %@",
+		"%@ has an environment line that is not NAME=value: %@": "%@ hat eine Umgebungszeile, die nicht NAME=Wert lautet: %@",
 		"Choose": "Auswählen",
 		"New Conversation": "Neue Unterhaltung",
 		"Screenshot of %@": "Bildschirmfoto von %@",
@@ -2474,10 +2585,7 @@
 		"title": "Neu in Lilo",
 		"description": "Ein paar kleine Verbesserungen für dein tägliches Surfen.",
 		"allChanges": "Alles in diesem Update",
-		"changes": {
-			"one": "{count} Änderung",
-			"other": "{count} Änderungen"
-		},
+		"changes": "{count, plural, one{# Änderung} other{# Änderungen}}",
 		"originalNotes": "Ursprüngliche Versionshinweise.",
 		"unavailable": "In dieser Version sind keine Versionshinweise verfügbar.",
 		"reopen": "Jederzeit unter Hilfe > Neuigkeiten zu finden.",
@@ -2661,10 +2769,7 @@
 			"ownCopyHint": "Arbeitet an einer eigenen Kopie des Projekts. Führe sie unter Änderungen zusammen.",
 			"starting": "Agent wird gestartet...",
 			"errorHint": "Sende eine Nachricht, um es erneut zu versuchen.",
-			"showEarlier": {
-				"one": "{count} früheren Eintrag anzeigen",
-				"other": "{count} frühere Einträge anzeigen"
-			},
+			"showEarlier": "{count, plural, one{# früheren Eintrag anzeigen} other{# frühere Einträge anzeigen}}",
 			"queuedTag": "In Warteschlange",
 			"sendNow": "Jetzt senden",
 			"thought": "Gedanken",
@@ -2674,16 +2779,10 @@
 			"restore": "Wiederherstellen",
 			"undo": "Widerrufen",
 			"undone": "Rückgängig gemacht",
-			"moreLines": {
-				"one": "{count} weitere Zeile",
-				"other": "{count} weitere Zeilen"
-			},
+			"moreLines": "{count, plural, one{# weitere Zeile} other{# weitere Zeilen}}",
 			"plan": "Plan",
 			"planProgress": "{done}/{total}",
-			"planDone": {
-				"one": "{count} Schritt erledigt",
-				"other": "{count} Schritte erledigt"
-			},
+			"planDone": "{count, plural, one{# Schritt erledigt} other{# Schritte erledigt}}",
 			"planStatus": {
 				"pending": "Offen",
 				"in_progress": "In Arbeit",
@@ -2711,26 +2810,11 @@
 				"failed": "Fehlgeschlagen"
 			},
 			"group": {
-				"read": {
-					"one": "{count} Datei gelesen",
-					"other": "{count} Dateien gelesen"
-				},
-				"search": {
-					"one": "{count} Suche",
-					"other": "{count} Suchen"
-				},
-				"fetch": {
-					"one": "{count} Seite abgerufen",
-					"other": "{count} Seiten abgerufen"
-				},
-				"think": {
-					"one": "{count}-mal nachgedacht",
-					"other": "{count}-mal nachgedacht"
-				},
-				"action": {
-					"one": "{count} Aktion",
-					"other": "{count} Aktionen"
-				}
+				"read": "{count, plural, one{# Datei gelesen} other{# Dateien gelesen}}",
+				"search": "{count, plural, one{# Suche} other{# Suchen}}",
+				"fetch": "{count, plural, one{# Seite abgerufen} other{# Seiten abgerufen}}",
+				"think": "{count, plural, one{#-mal nachgedacht} other{#-mal nachgedacht}}",
+				"action": "{count, plural, one{# Aktion} other{# Aktionen}}"
 			}
 		},
 		"composer": {
@@ -2762,30 +2846,22 @@
 			"noFolder": "Kein Ordner",
 			"noFolderDetail": "Der Agent arbeitet in einem eigenen Ordner",
 			"backgroundHint": "{shortcut}, um es im Hintergrund zu behalten",
-			"start": "Starten"
+			"start": "Starten",
+			"searchAgents": "Agenten suchen",
+			"featuredAgents": "Empfohlen",
+			"registryAgents": "Registrierung",
+			"noMatches": "Keine passenden Agenten"
 		},
 		"row": {
 			"untitled": "Neue Unterhaltung",
 			"working": "Arbeitet",
 			"failed": "Mit einem Fehler gestoppt",
-			"linesAdded": {
-				"one": "{count} Zeile hinzugefügt",
-				"other": "{count} Zeilen hinzugefügt"
-			},
-			"linesRemoved": {
-				"one": "{count} Zeile entfernt",
-				"other": "{count} Zeilen entfernt"
-			},
-			"pages": {
-				"one": "{count} Seite",
-				"other": "{count} Seiten"
-			},
+			"linesAdded": "{count, plural, one{# Zeile hinzugefügt} other{# Zeilen hinzugefügt}}",
+			"linesRemoved": "{count, plural, one{# Zeile entfernt} other{# Zeilen entfernt}}",
+			"pages": "{count, plural, one{# Seite} other{# Seiten}}",
 			"showPages": "Seiten einblenden",
 			"hidePages": "Seiten ausblenden",
-			"morePermissions": {
-				"one": "{count} weitere Anfrage wartet",
-				"other": "{count} weitere Anfragen warten"
-			}
+			"morePermissions": "{count, plural, one{# weitere Anfrage wartet} other{# weitere Anfragen warten}}"
 		},
 		"question": {
 			"allow": "Erlauben",
@@ -2799,10 +2875,7 @@
 		},
 		"badge": {
 			"title": "Agenten",
-			"waiting": {
-				"one": "Agenten, {count} wartet auf dich",
-				"other": "Agenten, {count} warten auf dich"
-			},
+			"waiting": "{count, plural, one{Agenten, # wartet auf dich} other{Agenten, # warten auf dich}}",
 			"new": "Neu",
 			"needsYou": "Wartet auf dich",
 			"running": "Läuft",
@@ -2823,10 +2896,7 @@
 			"signInOpenTerminal": "Im Terminal öffnen"
 		},
 		"work": {
-			"images": {
-				"one": "{count} Bild",
-				"other": "{count} Bilder"
-			},
+			"images": "{count, plural, one{# Bild} other{# Bilder}}",
 			"verb": {
 				"read": "Gelesen",
 				"edit": "Bearbeitet",
@@ -2844,46 +2914,16 @@
 				"fetch": "Ruft ab"
 			},
 			"summary": {
-				"read": {
-					"one": "{count} Datei gelesen",
-					"other": "{count} Dateien gelesen"
-				},
-				"edit": {
-					"one": "{count} Datei bearbeitet",
-					"other": "{count} Dateien bearbeitet"
-				},
-				"execute": {
-					"one": "{count} Befehl ausgeführt",
-					"other": "{count} Befehle ausgeführt"
-				},
-				"search": {
-					"one": "{count}-mal gesucht",
-					"other": "{count}-mal gesucht"
-				},
-				"fetch": {
-					"one": "{count} Seite abgerufen",
-					"other": "{count} Seiten abgerufen"
-				},
-				"think": {
-					"one": "{count}-mal nachgedacht",
-					"other": "{count}-mal nachgedacht"
-				},
-				"browser": {
-					"one": "{count}-mal den Browser genutzt",
-					"other": "{count}-mal den Browser genutzt"
-				},
-				"browserOn": {
-					"one": "{count}-mal den Browser auf {site} genutzt",
-					"other": "{count}-mal den Browser auf {site} genutzt"
-				},
-				"tool": {
-					"one": "{count} Tool genutzt",
-					"other": "{count} Tools genutzt"
-				},
-				"agent": {
-					"one": "{count} Agent gestartet",
-					"other": "{count} Agenten gestartet"
-				}
+				"read": "{count, plural, one{# Datei gelesen} other{# Dateien gelesen}}",
+				"edit": "{count, plural, one{# Datei bearbeitet} other{# Dateien bearbeitet}}",
+				"execute": "{count, plural, one{# Befehl ausgeführt} other{# Befehle ausgeführt}}",
+				"search": "{count, plural, one{#-mal gesucht} other{#-mal gesucht}}",
+				"fetch": "{count, plural, one{# Seite abgerufen} other{# Seiten abgerufen}}",
+				"think": "{count, plural, one{#-mal nachgedacht} other{#-mal nachgedacht}}",
+				"browser": "{count, plural, one{#-mal den Browser genutzt} other{#-mal den Browser genutzt}}",
+				"browserOn": "{count, plural, one{#-mal den Browser auf {site} genutzt} other{#-mal den Browser auf {site} genutzt}}",
+				"tool": "{count, plural, one{# Tool genutzt} other{# Tools genutzt}}",
+				"agent": "{count, plural, one{# Agent gestartet} other{# Agenten gestartet}}"
 			},
 			"browser": {
 				"closeTab": "Tab geschlossen",
@@ -2934,10 +2974,7 @@
 				"request": "Sendet eine Anfrage an {url}"
 			},
 			"exit": "Exit-Code {code}",
-			"showAll": {
-				"one": "Alle {count} Zeile anzeigen",
-				"other": "Alle {count} Zeilen anzeigen"
-			},
+			"showAll": "{count, plural, one{Alle # Zeile anzeigen} other{Alle # Zeilen anzeigen}}",
 			"showLess": "Nur die letzten Zeilen anzeigen"
 		},
 		"turn": {
@@ -2945,10 +2982,7 @@
 			"stopped": "Gestoppt",
 			"refusalTitle": "Das Modell hat abgelehnt, fortzufahren",
 			"refusalHint": "Seine Schutzmechanismen haben diesen Schritt gestoppt, manchmal auch bei legitimer Arbeit. Formuliere die Anfrage um oder wähle unten ein anderes Modell.",
-			"files": {
-				"one": "{count} Datei geändert",
-				"other": "{count} Dateien geändert"
-			},
+			"files": "{count, plural, one{# Datei geändert} other{# Dateien geändert}}",
 			"review": "Prüfen",
 			"copy": "Antwort kopieren",
 			"copied": "Kopiert"

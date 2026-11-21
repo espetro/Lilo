@@ -11,6 +11,10 @@ extension Comparable {
 }
 
 private final class LiloWindow: NSWindow {
+    // Headless: a window the web views live in, never one the user sees, clicks or types into.
+    override var canBecomeKey: Bool { !Headless.isOn && super.canBecomeKey }
+    override var canBecomeMain: Bool { !Headless.isOn && super.canBecomeMain }
+
     override var contentLayoutRect: NSRect {
         contentView?.bounds ?? super.contentLayoutRect
     }
@@ -92,9 +96,12 @@ final class MainWindowController: NSWindowController {
     nonisolated static let logger = Logger(liloCategory: "MainWindowController")
 
     static let defaultSidebarWidth: CGFloat = 260
-    static let sidebarWidthRange: ClosedRange<CGFloat> = 203...480
-    /// The icon rail's width: with the content inset, the traffic lights sit centered on it, 15pt from either side.
-    static let sidebarRailWidth: CGFloat = 76
+    /// Continuous down to the rail: past `narrowSidebarWidth` the traffic lights take the toolbar row (as on
+    /// the rail) so the header keeps its line whole while the tab rows' titles truncate to nothing.
+    static let sidebarWidthRange: ClosedRange<CGFloat> = sidebarRailWidth...480
+    static let narrowSidebarWidth: CGFloat = 203
+    /// The icon rail's width, the content inset aside: its icons' column.
+    static let sidebarRailWidth: CGFloat = 40
     static let contentInset: CGFloat = 8
     /// Matches the 320px of `--sidebar-fitted-width` in the chrome UI's global.css.
     static let minimumContentWidth: CGFloat = 320
@@ -258,11 +265,15 @@ final class MainWindowController: NSWindowController {
     var storedWindowBackgroundColor: String?
     /// The CSS background of the system screen covering the page, which the bar takes over the page's color.
     var systemScreenBarColor: String?
+    /// A system screen (Settings, History, Downloads, ...) covers the page in the chrome; ⌘W closes it first.
+    var pageShellOpen = false
     /// Set while the chrome shows a Space that follows the wallpaper.
     var wallpaperColorObservers: [(NotificationCenter, NSObjectProtocol)] = []
     var sentWallpaperKey: String?
     /// The color applyWindowChromeColors last painted everywhere, so a resend of it is a no-op.
     var lastAppliedWindowChromeColor: NSColor?
+    /// The frame color last sent to the window frame and the dividers, glass wash included.
+    var currentFrameColor = MainWindowController.defaultSidebarBackgroundColor()
     var didStartChromeUILoad = false
     var didReceiveChromeReady = false
     var didChromeVisualReady = false
@@ -650,6 +661,11 @@ final class MainWindowController: NSWindowController {
             window.center()
         }
         window.identifier = NSUserInterfaceItemIdentifier("LiloMainWindow")
+        if Headless.isOn {
+            window.alphaValue = 0
+            window.ignoresMouseEvents = true
+            window.collectionBehavior = [.transient, .ignoresCycle, .stationary]
+        }
         window.restorationClass = MainWindowController.self
         return window
     }
@@ -868,7 +884,13 @@ extension MainWindowController: NSWindowDelegate {
     }
 
     func windowDidResize(_ notification: Notification) {
-        if fittedSidebarWidth != sidebarWidth { applySidebarLayout(animated: false) }
+        // A fitted width crossing the lights' threshold or the narrow range moves them too; every
+        // resize asks for the sync anyway, so the lights follow the frame the window changed.
+        if fittedSidebarWidth != sidebarWidth {
+            applySidebarLayout(animated: false, syncTrafficLights: true)
+        } else {
+            syncTrafficLights(animated: false)
+        }
         if window?.inLiveResize == false { scheduleWindowFrameSave() }
     }
 

@@ -19,5 +19,5 @@
 		"allowImportingTsExtensions": true,
 		"noEmit": true
 	},
-	"include": ["src/**/*.ts", "src/**/*.svelte", "preview/**/*.ts", "e2e/**/*.ts", "playwright.config.ts"]
+	"include": ["src/**/*.ts", "src/**/*.svelte", "preview/**/*.ts", "e2e/**/*.ts", "captures/**/*.ts", "playwright.config.ts"]
 }

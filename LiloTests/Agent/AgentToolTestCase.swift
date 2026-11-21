@@ -32,9 +32,7 @@ class AgentToolTestCase: XCTestCase {
         // Transparent, off screen and never key: nothing shows to whoever runs the tests, and their
         // keyboard stays theirs. A titled window ordered in is pulled on screen, so it moves out after.
         let nsWindow = try XCTUnwrap(window.window)
-        nsWindow.alphaValue = 0
-        nsWindow.orderFrontRegardless()
-        nsWindow.setFrame(NSRect(x: -20000, y: -20000, width: 1000, height: 700), display: false)
+        nsWindow.orderFrontOffscreen(frame: NSRect(x: 0, y: 0, width: 1000, height: 700))
         let container = NSView(frame: NSRect(x: 0, y: 0, width: 1000, height: 650))
         try XCTUnwrap(nsWindow.contentView).addSubview(container)
         window.contentContainerView = container

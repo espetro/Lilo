@@ -33,6 +33,8 @@ struct Tab: Sendable, Equatable {
     /// Pinned and bookmarked tabs: the user's name for the tab, shown in the sidebar and previews; the window title, history and
     /// extensions keep `title`.
     var customTitle: String?
+    /// The user asked to keep this tab loaded: lifecycle never freezes or discards it, and auto-archive skips it.
+    var neverSleep = false
     var isAudioPlaying: Bool = false
     var lastAudioStoppedAt: Date?
     /// Runtime only: paused from the sidebar media card, which keeps it there ready to play again.
@@ -49,6 +51,8 @@ struct Tab: Sendable, Equatable {
     /// Runtime only: a video of the page is in the system PiP window, so lifecycle never freezes or discards it.
     var isInPictureInPicture = false
     var hasPopup: Bool = false
+    /// Runtime only: the page is suspended in place or its engine was discarded; the sidebar dims the tab.
+    var isSleeping = false
     /// Runtime only: an agent drives this tab, so lifecycle never freezes or discards it.
     var isAgentControlled = false
     /// When capture (mic/camera/screen) last transitioned from on to off. Drives a retention grace
@@ -216,6 +220,8 @@ struct Tab: Sendable, Equatable {
                 put(field, canGoForward)
             case .isPinned:
                 put(field, isPinned)
+            case .neverSleep:
+                put(field, neverSleep)
             case .isBookmarked:
                 put(field, isBookmarked)
             case .isClosed:
@@ -234,6 +240,8 @@ struct Tab: Sendable, Equatable {
                 put(field, isScreenSharing)
             case .hasPopup:
                 put(field, hasPopup)
+            case .isSleeping:
+                put(field, isSleeping)
             case .hasNavigationError:
                 put(field, hasNavigationError)
             case .navigationErrorCode:
@@ -324,6 +332,7 @@ private struct TabRuntimeState: Equatable, Sendable {
     let isInCall: Bool
     let isInPictureInPicture: Bool
     let hasPopup: Bool
+    let isSleeping: Bool
     let isAgentControlled: Bool
     let hasNavigationError: Bool; let navigationErrorCode: Int
     let navigationErrorDomain: String; let navigationErrorDescription: String; let navigationErrorURL: String
@@ -355,6 +364,7 @@ private struct TabRuntimeState: Equatable, Sendable {
         isInCall = tab.isInCall
         isInPictureInPicture = tab.isInPictureInPicture
         hasPopup = tab.hasPopup
+        isSleeping = tab.isSleeping
         isAgentControlled = tab.isAgentControlled
         hasNavigationError = tab.hasNavigationError; navigationErrorCode = tab.navigationErrorCode
         navigationErrorDomain = tab.navigationErrorDomain; navigationErrorDescription = tab.navigationErrorDescription; navigationErrorURL = tab.navigationErrorURL
@@ -389,6 +399,7 @@ private struct TabRuntimeState: Equatable, Sendable {
         tab.isInCall = isInCall
         tab.isInPictureInPicture = isInPictureInPicture
         tab.hasPopup = hasPopup
+        tab.isSleeping = isSleeping
         tab.isAgentControlled = isAgentControlled
         tab.hasNavigationError = hasNavigationError; tab.navigationErrorCode = navigationErrorCode
         tab.navigationErrorDomain = navigationErrorDomain; tab.navigationErrorDescription = navigationErrorDescription; tab.navigationErrorURL = navigationErrorURL
@@ -438,15 +449,16 @@ final class RuntimeOverlayStore {
     /// A discarded engine takes its runtime state along; the favicon's address, still shown, and what the user or an agent
     /// set on the tab (mute, agent control, a pause from the media card) stay for the engine that replaces it.
     func discardRuntimeState(for id: UUID) {
-        guard let state = states[id] else { return }
+        let state = states[id] ?? TabRuntimeState(Tab(id: id))
         var kept = Tab(id: id)
+        kept.isSleeping = true
         kept.faviconURL = state.faviconURL
         kept.isMuted = state.isMuted
         kept.isAgentControlled = state.isAgentControlled
         kept.pausedFromCardAt = state.pausedFromCardAt
         let next = TabRuntimeState(kept)
         guard next != state else { return }
-        states[id] = next == TabRuntimeState(Tab(id: id)) ? nil : next
+        states[id] = next
         version &+= 1
     }
 

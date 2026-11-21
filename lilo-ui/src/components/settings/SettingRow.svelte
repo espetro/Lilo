@@ -1,6 +1,7 @@
 <script lang="ts">
+  import CommandBarLayoutPicker from "./CommandBarLayoutPicker.svelte";
   import LayoutPicker from "./LayoutPicker.svelte";
-  import { extensionActions, profileActions, settingsActions } from "../../lib/bridge/actions";
+  import { extensionActions, profileActions, settingsActions, tabActions } from "../../lib/bridge/actions";
   import { isAgentsSpace } from "../../stores/agents.svelte";
   import { getFormatLocale, getLocale, setLocale, t } from "../../lib/i18n/state.svelte";
   import { isSupportedLocale, SUPPORTED_LOCALES } from "../../lib/i18n/translate";
@@ -73,6 +74,7 @@
     shortcuts: () => openSettingsSubpage("general", "shortcuts"),
     sites: () => openSettingsSubpage("privacy", "sites"),
     agentSystemPromptText: () => openSettingsSubpage("agents", "agentPrompt"),
+    agentInstances: () => openSettingsSubpage("agents", "agentInstances"),
     blockerSites: () => openSettingsSubpage("privacy", "blockerSites"),
     processManager: openProcessManager,
     diagnostics: openDiagnostics,
@@ -93,6 +95,18 @@
   function clickVersion(event: MouseEvent): void {
     if ((event.target as HTMLElement).closest("button") || ++versionClicks !== 7) return;
     settingsActions.unlockDeveloperTools();
+  }
+
+  // The beta check spins until the checker publishes the check it was asked for, which always moves lastCheck.
+  let betaCheckAtClick = $state<number | null>(null);
+  let betaChecking = $state(false);
+  $effect(() => {
+    if (betaChecking && (updater?.betaLastCheck ?? null) !== betaCheckAtClick) betaChecking = false;
+  });
+  function checkForBetas(): void {
+    betaCheckAtClick = updater?.betaLastCheck ?? null;
+    betaChecking = true;
+    settingsActions.checkForUpdates();
   }
 
   // Remounts the new-profile field once a profile is created, which empties it.
@@ -133,6 +147,7 @@
   const title = $derived.by(() => {
     if (id === "deviceSetup") return deviceSetup.label || t("settings.devices.builtinOnly");
     if (id === "appUpdates") return t("settings.items.appUpdates.title", { version: updater?.version ?? "" });
+    if (id === "betaUpdateRelease") return t("settings.items.betaUpdateRelease.title", { tag: updater?.betaAvailable?.tag ?? "" });
     if (passwordManagers.length > 0) return t("settings.items.passwordManager.installedTitle");
     return t(settingTitleKey(id));
   });
@@ -148,6 +163,12 @@
       if (!updater?.lastCheck) return t(settingDescriptionKey(id)) + engine;
       const time = new Intl.DateTimeFormat(getFormatLocale(), { dateStyle: "medium", timeStyle: "short" }).format(updater.lastCheck * 1000);
       return t("settings.items.appUpdates.lastChecked", { time }) + engine;
+    }
+    if (id === "betaUpdateCheck") {
+      if (!updater?.betaFeed) return t("settings.items.betaUpdateCheck.absent");
+      if (!updater.betaLastCheck) return t(settingDescriptionKey(id));
+      const time = new Intl.DateTimeFormat(getFormatLocale(), { dateStyle: "medium", timeStyle: "short" }).format(updater.betaLastCheck * 1000);
+      return t("settings.items.betaUpdateCheck.lastChecked", { time });
     }
     if (id === "checkExtensionUpdates") {
       if (updateCheck.checking) return t("settings.extensionUpdates.checking");
@@ -216,6 +237,20 @@
       {/snippet}
     </UiListRow>
   </div>
+{:else if id === "betaUpdateCheck"}
+  <UiListRow {title} {description}>
+    {#snippet action()}
+      <UiButton disabled={!updater?.betaFeed || betaChecking} busy={betaChecking} onclick={checkForBetas}>{t("settings.items.betaUpdateCheck.check")}</UiButton>
+    {/snippet}
+  </UiListRow>
+{:else if id === "betaUpdateRelease"}
+  <UiListRow {title} {description}>
+    {#snippet action()}
+      <UiButton disabled={!updater?.betaAvailable} onclick={() => updater?.betaAvailable && tabActions.create(updater.betaAvailable.url)}>
+        {t("settings.items.betaUpdateRelease.open")}
+      </UiButton>
+    {/snippet}
+  </UiListRow>
 {:else}
 <UiListRow {title} {description} icon={id === "newSpace" || id === "deviceSetup" ? objectIcon : undefined}>
   {#if id === "appIcon"}
@@ -224,6 +259,8 @@
     <ThemePicker />
   {:else if id === "tabPosition"}
     <LayoutPicker />
+  {:else if id === "commandBarLayout"}
+    <CommandBarLayoutPicker />
   {:else if id === "addressPlacement"}
     <LayoutPicker kind="address" />
   {:else if id === "defaultZoom"}
@@ -238,6 +275,13 @@
       placeholder={t("settings.items.blockerAllowedDomains.placeholder")}
       ariaLabel={title}
       oncommit={(value) => setSetting("contentBlockerAllowedDomains", value.trim())}
+    />
+  {:else if id === "tabSleepAllowlist"}
+    <UiTextField
+      value={getSetting("tabSleepAllowlist", "")}
+      placeholder={t("settings.items.tabSleepAllowlist.placeholder")}
+      ariaLabel={title}
+      oncommit={(value) => setSetting("tabSleepAllowlist", value.trim())}
     />
   {:else if id === "agentSystemPrompt"}
     <AgentPromptPicker />
@@ -293,7 +337,7 @@
         <UiBadge tone="success">{t("settings.defaultBrowserActive")}</UiBadge>
       {:else}
         <UiButton variant="primary" onclick={() => settingsActions.setDefaultBrowser()}>
-          {t("settings.defaultBrowserSet")}
+          {t("urlBar.defaultBrowserSet")}
         </UiButton>
       {/if}
     {:else if id === "importBrowsers"}

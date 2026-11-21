@@ -1,0 +1,35 @@
+# Host tools for working on Lilo with an AI agent. `mise install` fetches them; none is needed to
+# build Lilo itself, so the Makefile stays the only command surface the project requires.
+#
+#   mise install    # fetch the tools below
+#   mise exec -- rtk git status    # run one with the project's versions
+#
+# scripts/lockf.py is not here: it needs only Python, which comes with Xcode, and it is in the
+# repository so every machine runs the same lock.
+
+[tools]
+# The Node.js version the website and the documentation site need (site/.nvmrc pins the same one).
+node = "22.23.4"
+
+# The package manager of the website, the documentation site and the interface (`pnpm-workspace.yaml`).
+# Keep it equal to the `packageManager` field of the root package.json: Corepack and Cloudflare read that one.
+pnpm = "12.16.1"
+
+# rtk summarizes the output of git, gh, rg and the other commands an agent runs most, which keeps
+# their output out of the model's context. It is a host convenience: no Makefile target needs it.
+rtk = "1.2.0"
+
+# jq reads the JSON that the energy and extension benchmarks write. The benchmarks need it.
+jq = "1.8.2"
+
+# Zig compiles libghostty-vt from source, which `make vt-build-source` asks for when the prebuilt
+# download is unavailable. The version is the one the Ghostty pin builds with.
+zig = "0.16.0"
+
+# shellcheck lints the shell scripts in scripts/.
+shellcheck = "0.11.0"
+
+[settings]
+# The lockfile pins the checksums of what the tools above download, so a version can never be
+# swapped for another build of the same version.
+lockfile = true

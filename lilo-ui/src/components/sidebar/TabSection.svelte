@@ -21,9 +21,11 @@
   import TabItem from "./TabItem.svelte";
   import SavedTabEditor from "./SavedTabEditor.svelte";
   import { closeTabEditor, getEditingTab } from "../../stores/tabRename.svelte";
+  import { clearTabSelection, getSelectedTabIds } from "../../stores/tabSelection.svelte";
   import { MAX_SPLIT_PANES, type BridgeSplitLayout } from "../../lib/bridge/protocol";
   import type { TabState } from "../../stores/tabs.svelte";
   import TabFolderItem from "./TabFolderItem.svelte";
+  import Icon from "../ui/Icon.svelte";
   import { getActiveTab, getActiveTabId, getTabsById, isBlankTab } from "../../stores/tabs.svelte";
   import { getSetting, setSetting } from "../../stores/settings.svelte";
   import { hostOf } from "../../lib/url";
@@ -32,6 +34,7 @@
     arrangeRows,
     keepSameGroups,
     nextStackHosts,
+    pinnedAreaCollapsed,
     stackEntries,
     windowRows,
     VIRTUAL_ROW_GAP,
@@ -224,6 +227,9 @@
     const next = [...foldedTrays].filter((entry) => entry !== tray);
     setSetting(foldedTraysKey, (folded ? [...next, tray] : next).join(","));
   }
+
+  const pinnedFoldedKey = $derived(`sidebarPinnedFolded.${spaceId}`);
+  const pinnedFolded = $derived(isPinned && getSetting(pinnedFoldedKey, "false") === "true");
 
   // The heads load once a list has a stack or a tray: most first frames have neither. Their slots
   // keep the heads' 32px height meanwhile, so nothing moves when they land.
@@ -437,6 +443,50 @@
     (!isPinned && (pinnedRootCount > 0 || canClear || dragActive)) || pinnedTransferGateActive,
   );
   const pinnedDividerHidden = $derived(pinnedRootCount === 0 && !dragActive);
+  // The pinned area's head shows while there is something to fold; on an empty list the drag's
+  // own drop label does the talking, so the head only joins then.
+  const showPinnedHead = $derived(isPinned && (hasTabs || dragActive));
+  // A drag aiming at the folded pinned area opens it so the drop can aim inside, and a pinned
+  // active tab keeps it open: a fold never hides the tab in use.
+  const pinnedCollapsed = $derived(
+    pinnedAreaCollapsed(
+      pinnedFolded,
+      activeTab?.isPinned === true && activeTab.isClosed !== true,
+      sidebarDrag?.target?.id === rootZone.id,
+    ),
+  );
+  const pinnedRowsId = $derived(`pinned-rows-${spaceId}`);
+
+  function setPinnedFolded(folded: boolean): void {
+    setSetting(pinnedFoldedKey, String(folded));
+  }
+
+  function handlePinnedHeadKeydown(event: KeyboardEvent): void {
+    if (event.key === "Enter" || event.key === " ") setPinnedFolded(!pinnedFolded);
+    else if (event.key === "ArrowRight" && pinnedCollapsed) setPinnedFolded(false);
+    else if (event.key === "ArrowLeft" && !pinnedCollapsed) setPinnedFolded(true);
+    else return;
+    event.preventDefault();
+    event.stopPropagation();
+  }
+
+  // Folded like a tray: the rows stay mounted through the fold, then leave the tree.
+  let lastPinnedCollapsed: boolean | null = null;
+  $effect(() => {
+    const collapsed = pinnedCollapsed;
+    if (lastPinnedCollapsed === null || collapsed === lastPinnedCollapsed) {
+      lastPinnedCollapsed = collapsed;
+      return;
+    }
+    lastPinnedCollapsed = collapsed;
+    startGroupMotion("pinned", !collapsed);
+  });
+  const pinnedMotion = $derived.by(() => {
+    const motion: typeof groupMotion = groupMotion;
+    return motion?.key === "pinned" ? motion : null;
+  });
+  const pinnedRowsMounted = $derived(!pinnedCollapsed || !!pinnedMotion);
+
   const folderContentUnmountDelayMs = MOTION.folderCollapseMs;
   let renamingFolderId: string | null = $state(null);
   // The color picked in a folder's editor, painted on its block and rail before it is applied, and kept until the
@@ -912,6 +962,8 @@
   // The tree is one Tab stop, as in a Finder sidebar: the focused row, else the active tab when
   // every folder above it is open, else the first row.
   const tabStopId = $derived.by((): string | null => {
+    // Folded, the head carries the pinned tree's one Tab stop: its rows are out of the tree.
+    if (isPinned && pinnedCollapsed) return null;
     if (focusedItemId) return focusedItemId;
     let rootId: string | undefined = activeTabId;
     for (let id = parentFolderIdById.get(activeTabId); id; id = parentFolderIdById.get(id)) {
@@ -1003,6 +1055,11 @@
     const row = event.target instanceof HTMLElement ? event.target : null;
     if (!row?.matches("[role=treeitem]")) return;
     const isFolder = row.matches(".folder-row");
+    if (event.key === "Escape" && getSelectedTabIds().size) {
+      event.preventDefault();
+      clearTabSelection();
+      return;
+    }
     if ((event.key === "F10" && event.shiftKey) || event.key === "ContextMenu") {
       event.preventDefault();
       const rect = row.getBoundingClientRect();
@@ -1399,6 +1456,7 @@
           tooltipAnchor=".split-row"
           actionsInert={dragActive}
           splitDropTarget={splitDropTabId === tab.id}
+          inSplit
           tabStop={tab.id === tabStopId}
         />
       </div>
@@ -1412,6 +1470,7 @@
     </svg>
   </span>
   <span class="new-tab-label">{t("tabSection.newTab")}</span>
+  <span class="new-tab-label-short">{t("tabSection.newTabShort")}</span>
 {/snippet}
 
 {#snippet newTabRow()}
@@ -1426,6 +1485,7 @@
       <div class="new-tab-line" bind:this={newTabLineEl}>
         <button
           class="new-tab-row"
+          aria-label={t("tabSection.newTab")}
           disabled={!interactive}
           use:tooltip={{ text: t("tabSection.newTab"), shortcut: shortcutKeys("tab.new") }}
           onclick={toggleNewTab}
@@ -1695,6 +1755,7 @@
         data-drop-label={t("tabSection.dropToPin")}
         bind:this={pinnedListEl}
         role="tree"
+        aria-multiselectable="true"
         tabindex="-1"
         aria-label={t("tabSection.pinnedTabs")}
         onkeydown={handleListKeydown}
@@ -1711,7 +1772,46 @@
           onCancel: resetSidebarDrag,
         }}
       >
-        {@render zoneItems()}
+        {#if showPinnedHead}
+          <div
+            class="pinned-head"
+            class:folded={pinnedCollapsed}
+            role="treeitem"
+            aria-level={1}
+            aria-selected={false}
+            aria-expanded={!pinnedCollapsed}
+            aria-controls={pinnedRowsId}
+            aria-label={t("tabSection.pinnedTabs")}
+            tabindex={interactive && pinnedCollapsed ? 0 : -1}
+            onclick={() => interactive && setPinnedFolded(!pinnedFolded)}
+            onkeydown={handlePinnedHeadKeydown}
+          >
+            <span class="pinned-head-label">{t("tabSection.pinnedTabs")}</span>
+            <span class="pinned-head-count">{rootItems.length}</span>
+            <span class="pinned-head-chevron" aria-hidden="true">
+              <svg width="10" height="10" viewBox="0 0 10 10" fill="none">
+                <path d="M3.75 2.25 6.5 5 3.75 7.75" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" />
+              </svg>
+            </span>
+          </div>
+        {/if}
+        <div
+          class="folder-contents-shell pinned-shell"
+          class:open={!pinnedCollapsed}
+          class:collapsed={pinnedCollapsed}
+          class:expanding={pinnedMotion?.open === true}
+          id={pinnedRowsId}
+          aria-hidden={pinnedCollapsed}
+          style={`--folder-collapse-duration: ${folderContentUnmountDelayMs}ms;`}
+        >
+          <div class="folder-contents-clip">
+            {#if pinnedRowsMounted}
+              <div class="pinned-rows" role="group">
+                {@render zoneItems()}
+              </div>
+            {/if}
+          </div>
+        </div>
       </div>
     </div>
   </div>
@@ -1753,6 +1853,15 @@
           ></div>
           {#if !dragActive && !pinnedDividerHidden}
             <button
+              class="divider-action search-tabs"
+              disabled={!interactive}
+              use:tooltip={{ text: t("tabSection.searchTabs") }}
+              aria-label={t("tabSection.searchTabs")}
+              onclick={() => openCommandBar("@")}
+            >
+              <Icon name="search" size={12} />
+            </button>
+            <button
               class="divider-action list-options"
               disabled={!interactive}
               use:tooltip={{ text: t("tabSection.listOptions") }}
@@ -1791,6 +1900,7 @@
         class:is-empty={listIsEmpty}
         class:pinned-transfer-source={pinnedTransferSourceActive}
         role="tree"
+        aria-multiselectable="true"
         tabindex="-1"
         aria-label={t("tabSection.openTabs")}
         onkeydown={handleListKeydown}
@@ -1907,6 +2017,95 @@
     letter-spacing: 0;
     white-space: nowrap;
     text-overflow: ellipsis;
+  }
+
+  /* With its head showing, an empty pinned list needs no second label: the head is the
+     affordance, laid out as the row it is rather than centered like the label it replaces. */
+  .pinned-list.drag-active.is-empty:has(> .pinned-head) {
+    display: block;
+    height: auto;
+    min-height: 32px;
+    padding: 0;
+  }
+
+  .pinned-list.drag-active.is-empty:has(> .pinned-head)::before,
+  .pinned-list.drag-active.is-empty:has(> .pinned-head)::after {
+    content: none;
+  }
+
+  /* A tray head's quiet row: same 32px, same hover, its chevron turning on the fold. */
+  .pinned-head {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    height: 32px;
+    padding: 0 8px;
+    box-sizing: border-box;
+    border-radius: var(--radius-md);
+    font-size: var(--font-size-md);
+    font-weight: var(--font-weight-medium);
+    color: var(--text-secondary);
+    cursor: pointer;
+    transition:
+      background var(--transition-fast),
+      color var(--transition-fast);
+  }
+
+  .pinned-head:hover {
+    background: var(--bg-hover);
+  }
+
+  .pinned-head:focus-visible {
+    outline: var(--focus-outline);
+    outline-offset: -2px;
+  }
+
+  .pinned-head.folded {
+    color: var(--text-primary);
+  }
+
+  .pinned-head-label {
+    flex: 1;
+    min-width: 0;
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+  }
+
+  .pinned-head-count {
+    flex: none;
+    font-weight: var(--font-weight-regular);
+    font-variant-numeric: tabular-nums;
+    color: var(--text-muted);
+  }
+
+  .pinned-head-chevron {
+    flex: none;
+    display: grid;
+    place-items: center;
+    width: 20px;
+    height: 20px;
+    margin-right: -2px;
+    color: var(--text-muted);
+    transform: rotate(90deg);
+    transition: transform var(--motion-duration-normal) var(--motion-ease-spring);
+  }
+
+  .pinned-head.folded .pinned-head-chevron {
+    transform: none;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .pinned-head-chevron {
+      transition: none;
+    }
+  }
+
+  /* The folding shell's rows keep the list's own grid and gap. */
+  .pinned-rows {
+    display: grid;
+    gap: var(--sidebar-tab-row-gap);
+    min-width: 0;
   }
 
   .tab-list-shell {
@@ -2240,6 +2439,9 @@
   .new-tab-line {
     display: flex;
     align-items: center;
+    /* Below ~110 px of container the buttons run past the row's end: they clip here,
+       progressively, so the space pager's scroller never sees the overflow. */
+    overflow: clip;
   }
 
   .new-tab-row {
@@ -2351,7 +2553,8 @@
     justify-content: center;
   }
 
-  .new-tab-label {
+  .new-tab-label,
+  .new-tab-label-short {
     min-width: 0;
     overflow: hidden;
     white-space: nowrap;
@@ -2522,9 +2725,13 @@
       color var(--transition-fast);
   }
 
-  /* Centered on the rows' 16px favicons, 8px into the row. */
-  .list-options {
+  /* The leftmost sits centered on the rows' 16px favicons, 8px into the row. */
+  .search-tabs {
     left: 6px;
+  }
+
+  .list-options {
+    left: 26px;
   }
 
   .clear-unpinned {
@@ -2585,12 +2792,12 @@
 
   .tab-list-shell:hover .with-actions .pinned-tab-divider,
   .with-actions:focus-within .pinned-tab-divider {
-    clip-path: inset(0 0 0 24px);
+    clip-path: inset(0 0 0 44px);
   }
 
   .tab-list-shell:hover .with-actions.with-clear .pinned-tab-divider,
   .with-actions.with-clear:focus-within .pinned-tab-divider {
-    clip-path: inset(0 24px);
+    clip-path: inset(0 24px 0 44px);
   }
 
   @media (prefers-reduced-motion: reduce) {

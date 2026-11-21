@@ -134,6 +134,8 @@ final class TabBridgeHandler: BridgeHandler {
         "showNextWaitingTerminal",
         "showChanges",
         "splitTab",
+        "unsplitTab",
+        "maximizeSplitPane",
         "splitURL",
         "openDroppedLinks",
         "peekURL",
@@ -407,6 +409,15 @@ final class TabBridgeHandler: BridgeHandler {
             if let tabId = message.uuid("tabId"), let side = SplitDropSide(message.string("side")) {
                 windowController?.dropTab(tabId, at: message.uuid("targetTabId"), side: side)
             }
+
+        case "unsplitTab":
+            if let tabId = message.uuid("tabId"),
+               let spaceId = tabManager.context(for: tabId)?.spaceId ?? tabManager.currentSpaceId {
+                _ = tryApplyStateCommand(.unsplitTab(spaceId: spaceId, tabId: tabId))
+            }
+
+        case "maximizeSplitPane":
+            if let tabId = message.uuid("tabId") { windowController?.maximizeSplitPane(tabId) }
 
         case "closeSplitView":
             windowController?.closeSplitView(nil)

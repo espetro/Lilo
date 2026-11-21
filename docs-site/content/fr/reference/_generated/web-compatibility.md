@@ -1,5 +1,7 @@
 ## API web [#web-apis]
 
+- **Espaces privés :** chaque onglet privé a ses propres cookies, son propre stockage et ses propres service workers, comme dans Safari, alors que les fenêtres de navigation privée de Chrome partagent les leurs. Un onglet que l'utilisateur ouvre depuis un onglet privé (Commande-clic, « Ouvrir dans un nouvel onglet ») démarre sans session ouverte ; une fenêtre contextuelle de page conserve la session de son ouvreur.
+
 `navigator.serial`, `window.EyeDropper` et `window.documentPictureInPicture` n'existent que dans les
 contextes sécurisés, comme dans Chrome, mais Safari n'en a aucune : une page qui teste leur présence peut distinguer un onglet Lilo de
 Safari, dont Lilo affiche l'agent utilisateur.

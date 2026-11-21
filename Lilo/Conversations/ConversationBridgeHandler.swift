@@ -59,10 +59,15 @@ final class ConversationBridgeHandler: BridgeHandler {
             }
         case "loadAgentCatalog":
             if payload["refresh"] as? Bool ?? false { await host.catalog.load() }
+            let featuredIds = Set(ACPAgentCatalog.featured.map(\.id))
             window.bridgeRouter.send(event: "agentCatalog", data: [
                 "agents": await host.catalog.runnableAgents().map { agent in
                     var data: [String: Any] = ["id": agent.id, "name": agent.name, "description": agent.description]
+                    if featuredIds.contains(agent.id) || agent.isCommand { data["featured"] = true }
+                    if agent.isCommand { data["command"] = true }
                     if let icon = host.catalog.iconDataURL(for: agent.id) { data["icon"] = icon }
+                    if !agent.repository.isEmpty { data["repository"] = agent.repository }
+                    if !agent.license.isEmpty { data["license"] = agent.license }
                     return data
                 },
                 "projects": projects(),
@@ -168,6 +173,14 @@ final class ConversationBridgeHandler: BridgeHandler {
         }
         guard host.announce(tabId, text: text, context: chips) else { return }
         var blocks: [[String: Any]] = [["type": "text", "text": text]] + images
+        // The saved-flows skill rides the first prompt the way a tab or a selection does: every agent
+        // that can read an attachment learns the flow tools exist, whichever ACP agent the user picked.
+        if let conversation = host.conversations[tabId], !conversation.flowsSkillSent {
+            conversation.flowsSkillSent = true
+            blocks.append(["type": "resource", "resource": [
+                "uri": "lilo://skills/saved-flows.md", "text": AgentFlows.skill, "mimeType": "text/markdown"
+            ]])
+        }
         for (kind, path, tab) in attachments {
             if let path {
                 let file = URL(fileURLWithPath: (path as NSString).expandingTildeInPath)

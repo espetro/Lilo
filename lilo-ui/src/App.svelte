@@ -29,7 +29,9 @@
     isSidebarRail,
     isSidebarShown,
     isSidebarVisible,
+    narrowSidebarWidth,
     setSidebarRail,
+    setSidebarWidth,
     showSidebarOverlay,
   } from "./stores/ui.svelte";
   import { reportInteractiveZone } from "./lib/actions/interactiveZone";
@@ -122,20 +124,28 @@
   let lastThemeVars: Record<string, string> = {};
   let sidebarOverlayHideTimeout: ReturnType<typeof setTimeout> | null = null;
   const sidebarResizeFrame = createFrameScheduler();
-  // The narrowest sidebar whose top line holds every button whole; Swift's range keeps the lowest of them.
-  // With the address hidden the line also holds the page's overflow button.
-  const sidebarMinWidth = $derived(getTabPosition() === "left" && !isAddressVisible() ? 215 : 203);
+  // The narrowest sidebar whose top line holds every button whole with the lights over it. Below it the
+  // lights take the toolbar row's place past the column (as on the rail), and the tab rows' titles
+  // truncate: the drag runs on to the rail's width. With the address hidden the line also holds the
+  // page's overflow button.
+  const sidebarMinWidth = $derived(getTabPosition() === "left" && !isAddressVisible() ? 215 : narrowSidebarWidth());
+  // Finder's detent: a drag under this width folds the sidebar to its icon rail, and back past it unfolds it.
+  const SIDEBAR_RAIL_THRESHOLD = 150;
+  const SIDEBAR_RAIL_WIDTH = 40;
+  const SIDEBAR_MAX_WIDTH = 480;
 
   // What the resize handle reports to VoiceOver, read from the stylesheet when it takes focus.
   let handleWidth = $state(0);
 
-  // A width kept from a roomier layout widens to the new one's minimum.
+  // A width a roomier layout kept, between the lights' threshold and the minimum, widens to the
+  // minimum; anything narrower is already inside the continuous range and holds.
   $effect(() => {
     const root = document.documentElement;
-    if (!(parseInt(getComputedStyle(root).getPropertyValue("--sidebar-width")) < sidebarMinWidth)) return;
+    const width = parseInt(getComputedStyle(root).getPropertyValue("--sidebar-width"));
+    if (!(width < sidebarMinWidth && width > SIDEBAR_RAIL_WIDTH && width >= narrowSidebarWidth())) return;
     root.style.setProperty("--sidebar-width", `${sidebarMinWidth}px`);
     handleWidth = sidebarMinWidth;
-    chromeActions.sidebarResized(sidebarMinWidth);
+    setSidebarWidth(sidebarMinWidth);
   });
   let pendingSidebarWidth = 260;
 
@@ -149,21 +159,16 @@
   });
   let isSidebarResizing = $state(false);
 
-  // Finder's detent: a drag under this width folds the sidebar to its icon rail, and back past it unfolds it.
-  const SIDEBAR_RAIL_THRESHOLD = 150;
-  const SIDEBAR_RAIL_WIDTH = 76;
-  const SIDEBAR_MAX_WIDTH = 480;
-
   // The arrows move the edge they point to, 8 px a step, inside the range a drag keeps.
   function resizeWithKeys(e: KeyboardEvent) {
     if (e.key !== "ArrowLeft" && e.key !== "ArrowRight") return;
     e.preventDefault();
     const grow = (e.key === "ArrowRight") !== (getTabPosition() === "right");
-    const width = Math.max(sidebarMinWidth, Math.min(SIDEBAR_MAX_WIDTH, handleWidth + (grow ? 8 : -8)));
+    const width = Math.max(SIDEBAR_RAIL_WIDTH, Math.min(SIDEBAR_MAX_WIDTH, handleWidth + (grow ? 8 : -8)));
     if (width === handleWidth) return;
     handleWidth = width;
     document.documentElement.style.setProperty("--sidebar-width", `${width}px`);
-    chromeActions.sidebarResized(width);
+    setSidebarWidth(width);
   }
 
   // Hidden, the rail is what the edge reveals over the page, as the full sidebar is outside the rail.
@@ -284,7 +289,8 @@
     function applyPendingSidebarWidth() {
       handleWidth = pendingSidebarWidth;
       root.style.setProperty("--sidebar-width", `${pendingSidebarWidth}px`);
-      chromeActions.sidebarResized(pendingSidebarWidth);
+      // While the drag holds the sidebar folded, the pending width is the fold's kept width: writing it must not unfold the rail.
+      if (!isSidebarRail()) setSidebarWidth(pendingSidebarWidth);
     }
 
     function scheduleSidebarWidth(width: number) {
@@ -303,8 +309,8 @@
         return;
       }
       setSidebarRail(false);
-      // Out of the rail, the sidebar comes back at its width, and grows once the drag goes past it.
-      scheduleSidebarWidth(Math.max(sidebarMinWidth, Math.min(SIDEBAR_MAX_WIDTH, startRail ? Math.max(startWidth, width) : width)));
+      // Out of the rail the sidebar narrows continuously to its floor before it widens again.
+      scheduleSidebarWidth(Math.max(SIDEBAR_RAIL_WIDTH, Math.min(SIDEBAR_MAX_WIDTH, startRail ? Math.max(startWidth, width) : width)));
     }
 
     function onUp() {
@@ -471,7 +477,7 @@
         role="separator"
         aria-orientation="vertical"
         aria-label={t("sidebar.resize")}
-        aria-valuemin={sidebarMinWidth}
+        aria-valuemin={SIDEBAR_RAIL_WIDTH}
         aria-valuemax={SIDEBAR_MAX_WIDTH}
         aria-valuenow={handleWidth || undefined}
         tabindex="0"

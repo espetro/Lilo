@@ -60,10 +60,14 @@ export type SettingId =
   | "autoDevices"
   | "deviceSetup"
   | "appUpdates"
+  | "betaUpdateCheck"
+  | "betaUpdateRelease"
   | "autoUpdate"
   | "shortcuts"
+  | "holdToQuit"
   | "theme"
   | "tabPosition"
+  | "commandBarLayout"
   | "addressPlacement"
   | "appIcon"
   | "seasonalAppIcon"
@@ -74,6 +78,7 @@ export type SettingId =
   | "newSpace"
   | "newProfile"
   | "lifecyclePreset"
+  | "tabSleepAllowlist"
   | "singleWindow"
   | "emptyWindowOnLaunch"
   | "littleWindowHotKey"
@@ -109,10 +114,13 @@ export type SettingId =
   | "agentsNotifyDone"
   | "agentSystemPrompt"
   | "agentSystemPromptText"
+  | "agentInstances"
   | "agentControl"
   | "agentAskBeforeActions"
+  | "agentActionLog"
   | "agentAlwaysAllowed"
   | "agentOther"
+  | "agentActivity"
   | "processManager"
   | "diagnostics"
   | "designSystem"
@@ -142,6 +150,7 @@ export const SETTING_TOGGLES: Partial<Record<SettingId, { key: string; fallback:
   dockCallsInSidebar: { key: "dockCallsInSidebar", fallback: true },
   autoDevices: { key: "autoDeviceSwitching", fallback: false },
   singleWindow: { key: "singleWindow", fallback: false },
+  holdToQuit: { key: "holdToQuit", fallback: false },
   emptyWindowOnLaunch: { key: "emptyWindowOnLaunch", fallback: false },
   littleWindowHotKey: { key: "littleWindowHotKey", fallback: true },
   peekPinnedTabLinks: { key: "peekPinnedTabLinks", fallback: true },
@@ -165,6 +174,7 @@ export const SETTING_TOGGLES: Partial<Record<SettingId, { key: string; fallback:
   agentsNotifyDone: { key: "agentsNotifyDone", fallback: true },
   agentControl: { key: "agentControlEnabled", fallback: false },
   agentAskBeforeActions: { key: "agentAskBeforeActions", fallback: true },
+  agentActionLog: { key: "agentActionLog", fallback: true },
   developMenu: { key: "showDevelopMenu", fallback: true },
 };
 
@@ -193,12 +203,16 @@ export const SETTINGS: SettingModel[] = [
   { id: "autoDevices", section: "media", groupKey: "settings.groups.calls" },
   { id: "deviceSetup", section: "media", groupKey: "settings.groups.calls", requires: "autoDevices" },
   { id: "appUpdates", section: "general", groupKey: "settings.groups.lilo" },
+  { id: "betaUpdateCheck", section: "advanced", groupKey: "settings.groups.beta" },
+  { id: "betaUpdateRelease", section: "advanced", groupKey: "settings.groups.beta" },
   { id: "autoUpdate", section: "general", groupKey: "settings.groups.lilo" },
   { id: "shortcuts", section: "general", groupKey: "settings.groups.lilo" },
+  { id: "holdToQuit", section: "general", groupKey: "settings.groups.lilo" },
   { id: "theme", section: "appearance", groupKey: "settings.groups.theme" },
   { id: "appIcon", section: "appearance", groupKey: "settings.groups.theme" },
   { id: "seasonalAppIcon", section: "appearance", groupKey: "settings.groups.theme" },
   { id: "tabPosition", section: "appearance", groupKey: "settings.groups.tabLayout" },
+  { id: "commandBarLayout", section: "appearance", groupKey: "settings.groups.tabLayout" },
   { id: "addressPlacement", section: "appearance", groupKey: "settings.groups.tabLayout" },
   { id: "hideSpaceNames", section: "appearance", groupKey: "settings.groups.tabLayout" },
   { id: "defaultZoom", section: "appearance", groupKey: "settings.groups.pages" },
@@ -207,6 +221,7 @@ export const SETTINGS: SettingModel[] = [
   { id: "newSpace", section: "tabs", groupKey: "settings.groups.spaces" },
   { id: "newProfile", section: "tabs", groupKey: "settings.groups.profiles" },
   { id: "lifecyclePreset", section: "tabs", groupKey: "settings.groups.tabsWindows" },
+  { id: "tabSleepAllowlist", section: "tabs", groupKey: "settings.groups.tabsWindows" },
   { id: "singleWindow", section: "tabs", groupKey: "settings.groups.tabsWindows" },
   { id: "emptyWindowOnLaunch", section: "tabs", groupKey: "settings.groups.tabsWindows" },
   { id: "littleWindowHotKey", section: "tabs", groupKey: "settings.groups.tabsWindows" },
@@ -239,10 +254,13 @@ export const SETTINGS: SettingModel[] = [
   { id: "agentsNotifyDone", section: "agents", groupKey: "settings.groups.agentConversations", requires: "agentsEnabled" },
   { id: "agentSystemPrompt", section: "agents", groupKey: "settings.groups.agentConversations", requires: "agentsEnabled" },
   { id: "agentSystemPromptText", section: "agents", groupKey: "settings.groups.agentConversations", requires: "agentsEnabled" },
+  { id: "agentInstances", section: "agents", groupKey: "settings.groups.agentConversations", requires: "agentsEnabled" },
   { id: "agentControl", section: "agents", groupKey: "settings.groups.agentAccess" },
   { id: "agentAskBeforeActions", section: "agents", groupKey: "settings.groups.agentAccess", requires: "agentControl" },
+  { id: "agentActionLog", section: "agents", groupKey: "settings.groups.agentAccess", requires: "agentControl" },
   { id: "agentAlwaysAllowed", section: "agents", groupKey: "settings.groups.agentAccess", requires: "agentControl" },
   { id: "agentOther", section: "agents", groupKey: "settings.groups.agentClients", requires: "agentControl" },
+  { id: "agentActivity", section: "agents", groupKey: "settings.groups.agentActivity", requires: "agentControl" },
   { id: "developMenu", section: "advanced", groupKey: "settings.groups.tools" },
   { id: "processManager", section: "advanced", groupKey: "settings.groups.tools" },
   { id: "diagnostics", section: "advanced", groupKey: "settings.groups.tools" },

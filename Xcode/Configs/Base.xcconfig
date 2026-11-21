@@ -4,6 +4,12 @@ MARKETING_VERSION = 0.21.0
 // Sparkle EdDSA public key (base64). Empty disables update checks, as in local builds.
 SPARKLE_PUBLIC_ED_KEY = YvWz9GUSPSl6HzwXHJ3+bNmenKa1y+luUBeT36dmjTI=
 
+// The Sparkle appcast the release watches; LILO_BETA_UPDATE_FEED_URL is the beta's plain release feed (see scripts/build-app.sh).
+LILO_UPDATE_FEED_URL = https://github.com/Alexays/Lilo/releases/latest/download/appcast.xml
+LILO_BETA_UPDATE_FEED_URL =
+// The beta-N tag this beta was published as, stamped by the workflow; empty on local beta builds.
+LILO_BETA_TAG =
+
 // Ad-hoc by default; make and scripts/build-app.sh pass a team and identity when one is configured.
 CODE_SIGN_STYLE = Manual
 CODE_SIGN_IDENTITY = -

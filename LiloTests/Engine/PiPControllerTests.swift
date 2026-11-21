@@ -59,7 +59,7 @@ final class PiPControllerTests: XCTestCase {
         window.isReleasedWhenClosed = false
         tab.view.frame = window.contentView!.bounds
         window.contentView!.addSubview(tab.view)
-        window.orderFront(nil)
+        window.orderFrontOffscreen()
         addTeardownBlock { @MainActor in
             window.orderOut(nil)
             tab.teardown()
@@ -201,7 +201,7 @@ final class PiPControllerTests: XCTestCase {
         let window = NSWindow(contentRect: controller.contentContainerView.frame, styleMask: [.titled], backing: .buffered, defer: false)
         window.isReleasedWhenClosed = false
         window.contentView = controller.contentContainerView
-        window.orderFront(nil)
+        window.orderFrontOffscreen()
         defer {
             window.orderOut(nil)
             browserContext.tearDown()

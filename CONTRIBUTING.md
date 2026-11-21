@@ -23,12 +23,60 @@ extensions.
 |------|---------|------------|
 | macOS | 26 or later | running Lilo |
 | Xcode | 27, selected with `xcode-select`, and its Metal toolchain | building the app (Swift 6, the macOS 27 SDK) |
-| Node.js | 22.23.4+ (`.nvmrc` pins 22) | the Svelte interface, extension bridge and Astro website; all `make ui-preview` needs |
+| Node.js | 22.23.4+ (`.nvmrc` pins 22.23.4) | the Svelte interface, extension bridge and Astro website; all `make ui-preview` needs |
 | Changie | 1.26.0 (downloaded by Make) | release notes and app versioning |
 | SwiftLint, XcodeGen | 0.65.0 and 2.46.0 (downloaded by Make) | `make validate` and `make project-sync` |
 | Zig | 0.16.x (`brew install zig`) | only `make vt-build-source`, which compiles libghostty-vt instead of downloading it |
+| mise | any recent release (`curl https://mise.run | sh`) | optional: the agent conveniences and pinned versions in `mise.toml` |
 
 Python 3 comes with Xcode. No Apple Developer account is needed.
+
+### With mise (optional)
+
+[`mise.toml`](mise.toml) pins the host tools that are useful around the build but that no `make`
+target requires: [rtk](https://www.rtk-ai.app/) (summarizes `git`, `gh` and `rg` output for AI
+agents), `jq`, Zig 0.16, shellcheck and the Node.js version the websites need. Everything is also
+listed in the requirements table above under its plain name, and CI installs none of it.
+
+```bash
+mise install          # fetch what mise.toml pins; mise.lock fixes their checksums
+mise exec -- rtk git status   # run a tool with the project's version
+```
+
+An activated mise (`mise activate` in your shell) also reads `.nvmrc`, so `node` resolves to
+the pinned version outside a `mise exec` too.
+
+### Package manager
+
+The interface (`lilo-ui`), the website (`site`) and the documentation site (`docs-site`) are one pnpm
+workspace (`pnpm-workspace.yaml`) with one lockfile, `pnpm-lock.yaml`. The root `package.json` pins
+`pnpm@12.16.1` in `packageManager`, the version `mise.toml` installs, so CI, Cloudflare's builds and
+your machine install with one version. Corepack (`corepack enable`, which comes with Node.js 22)
+fetches it on first use, and pnpm refuses to install with another version. `make` installs a project
+alone (`pnpm install --frozen-lockfile --ignore-scripts --filter ./site...`), so `make ui-test` never
+downloads the website's dependencies, and pnpm clones every package from its one store on your
+disk: a second worktree installs in about a second and costs almost no space.
+
+The extension bridge (`Lilo/Extensions/bridge-src`) and `release-media` stay separate npm projects:
+each sets `packageManager` to `npm@10.9.9`, the npm Node.js 22.23.4 ships with, and keeps its own
+`package-lock.json`. To change a dependency of a workspace project, run `pnpm --dir site add ...`
+(or `make site-lock` for an update) and commit `package.json` and `pnpm-lock.yaml` together.
+`.nvmrc` holds the one Node.js version CI and mise both read.
+
+### Locking across machines
+
+`scripts/lockf.py` runs a command while holding a lock on a file, with only the Python standard
+library, so a rule written as `flock /tmp/tsc.lock <command>` runs on macOS and Linux alike:
+
+```bash
+scripts/lockf.py /tmp/tsc.lock make validate      # one validate at a time machine-wide
+scripts/lockf.py -n /tmp/tsc.lock make validate   # fail instead of waiting
+scripts/lockf.py -w 60 /tmp/tsc.lock make validate  # wait at most a minute
+```
+
+It is a lockf(3) byte-range lock: it interoperates with macOS's `lockf` (which the Makefile's test
+lock uses) and Linux's `lockf`, not with the `flock(2)` system call behind GNU `flock` and
+`discoteq/flock`. Keep the two lock families on separate lock files.
 
 ## Setup
 
@@ -36,20 +84,30 @@ Python 3 comes with Xcode. No Apple Developer account is needed.
 git clone https://github.com/Alexays/Lilo.git
 cd Lilo
 make hooks-install     # enable commit-message checks once per clone
-make bootstrap         # checks the tools above, then npm deps, libghostty-vt, interface bundle, extension bridge
+make bootstrap         # checks the tools above, then JavaScript deps, libghostty-vt, interface bundle, extension bridge
 make app               # Debug build in build/debug/export/Lilo.app
 open build/debug/export/Lilo.app
 ```
 
-`make bootstrap` says what is missing and how to install it, and is a no-op once everything is
-in place. It downloads libghostty-vt, the terminal library, prebuilt for the pinned Ghostty commit
+`make bootstrap` runs every check first (macOS, Xcode 27, the Metal toolchain, Developer mode, Node.js against the `engines` of all five packages, free disk space, Zig when libghostty-vt cannot be downloaded) and installs nothing until they all pass, so a broken setup fails in under a second instead of after the downloads. It says what is missing and how to fix it, and is a no-op once everything is in place. It downloads libghostty-vt, the terminal library, prebuilt for the pinned Ghostty commit
 and checked against the sha256 in the `Makefile`; `make vt-build-source` (or `VT_FROM_SOURCE=1`)
 compiles it with Zig instead, which is also what happens, with a message, when the download is
 not available. `make install-debug` installs the Debug build into `~/Applications`, and
 `make install` a Release build into `/Applications`.
 
-Run `sudo DevToolsSecurity -enable` once: otherwise `xcodebuild` eventually fails to launch the test
+Options go in `BOOTSTRAP_ARGS`: `--with-sites` also installs the website and documentation dependencies and Changie, which `make validate` otherwise fetches on its first run (about 1.4 GB); `--json` prints one JSON object with a status per check and sends make's output to stderr, for scripts and agents. The exit code tells what to do next: `0` ready, `1` a build step failed, `2` a tool is missing and installs without an account (Node.js, Zig), `3` a person must act (a `sudo` command, the Apple ID download of the Metal toolchain, a system update, free disk space). On Linux it checks Node.js and disk, installs the JavaScript dependencies and lists the `make` targets that work there.
+
+```bash
+make bootstrap BOOTSTRAP_ARGS="--with-sites --json"
+```
+
+Developer mode is one of those checks: without `sudo DevToolsSecurity -enable`, `xcodebuild` eventually fails to launch the test
 host with `INTERNAL ERROR: childPID > 0`, once its cached debugger authorization expires.
+The Metal toolchain is a separate Apple-ID-authenticated download of a few GB (`xcodebuild -downloadComponent MetalToolchain`, about 10 minutes).
+
+Every `make` build shares one compilation cache, `~/.cache/lilo/xcc` (capped at 10 GB by `XCC_LIMIT`,
+in bytes), so a new worktree's first build reuses what another compiled. Delete the folder to reset
+it; Xcode's own builds and CI don't use it.
 
 ### Interface only
 
@@ -86,7 +144,7 @@ Xcode) and the test host never touch its data:
 |-------|-----------|------|
 | Release | `fr.arouillard.lilo` | `~/Library/Application Support/Lilo` |
 | Debug | `fr.arouillard.lilo.debug` | `~/Library/Application Support/Lilo-Debug` |
-| `make swift-test` host | `fr.arouillard.lilo.tests` | temporary folders per test |
+| `make swift-test` host | `fr.arouillard.lilo.tests` | temporary folders per test, and `.derived.noindex/test-data` in the worktree for what falls back to the default folder |
 
 The bundle id also separates the preferences (`~/Library/Preferences/<bundle id>.plist`), the
 WebKit data (`~/Library/WebKit/<bundle id>`) and the launch-at-login item;
@@ -94,6 +152,12 @@ WebKit data (`~/Library/WebKit/<bundle id>`) and the launch-at-login item;
 power helper's launch daemon). `LILO_APP_SUPPORT_DIR` overrides the data folder, agent socket
 included. Tests wipe the WebKit stores they create when the run ends, and the next run removes
 what an interrupted one left under `~/Library/WebKit/fr.arouillard.lilo.tests`.
+
+`make` sets `LILO_APP_SUPPORT_DIR` for the test host (through `TEST_RUNNER_LILO_APP_SUPPORT_DIR`, which
+`xcodebuild` passes on) to `.derived.noindex/test-data`, so two worktrees' test runs never share a
+database or an agent socket; delete the folder to start from nothing. CI keeps the default. The
+keychain is not per worktree: an ad-hoc signed host asks once more for the WebCrypto key in each
+worktree, which a stable signing identity (`LILO_DEBUG_TEAM_ID`, above) avoids.
 
 ## Development workflow
 
@@ -136,6 +200,23 @@ make validate
 tests; SwiftLint; the Xcode build and the Swift tests; commit hook and perf summary tests; website
 checks and tests; documentation site checks and tests; release-note and version sync checks.
 Run it once your change is done, and confirm it passes before you open a pull request.
+It prints one line per check, `ok  ui-lint 12.3s` or `FAIL ui-lint 12.3s`, then the full log of the failed
+checks only and a count of the bytes printed; a green run is a dozen short lines. `make validate JSON=1` prints
+one JSON object per check instead (`check`, `ok`, `dur_s`, `bytes`, and the last 20 log lines as `log_tail` when
+it failed), for scripts and agents. `make validate-scope` prints the same lines for the checks a diff needs.
+
+Three tiers run less than `make validate`, each with a time budget, so a mistake shows up where it is cheapest to fix:
+
+| Tier | When | Budget | Runs |
+|------|------|--------|------|
+| `make check` | in your session, by hand or by an agent | under 10 s | no builds: eslint on the changed UI files and the tests beside them (the catalog tests for a locale), SwiftLint on the changed Swift files, the documentation site check, the release-note check. A Swift-only change runs SwiftLint alone. It stops at the first failure |
+| pre-commit hook | `git commit` | under 15 s | the same on the staged files, without the tests, plus `sync-check`: the tab bridge outputs match `make bridge-gen`, and a Swift file added or deleted, or a change to `project.yml`, comes with `Lilo.xcodeproj` (`make project-sync`) |
+| pre-push hook | `git push` | about 30 s warm | `make validate-scope` under `/tmp/tsc.lock` |
+
+`make check BASE=<ref>` compares with another ref (default `origin/main`); without that ref it checks the whole tree. A diff with no quick check (the Makefile, scripts, the websites) prints so and leaves it to pre-push.
+`svelte-check` type-checks the whole UI in about 7 s, so it waits for `make ui-lint` in pre-push.
+`make hooks-install` enables the hooks. `git commit --no-verify` and `git push --no-verify` skip them, and CI runs the full gate either way; the hooks never skip on their own. `BASE=origin/develop git push` makes pre-push compare with another ref.
+Each tier sets `LILO_CHECK_TIER` (`check`, `pre-commit`, `pre-push`) and `LILO_CHECK_TRIGGER` (`hook`, `agent`, `manual`; `agent` is the default when `CLAUDECODE` is set, otherwise export it), which `make metrics-on` records beside the check (see [docs/build-baseline.md](docs/build-baseline.md)).
 Editing an English page of the documentation site fails `make docs-check` until its French
 translation is refreshed with `make docs-translate`, which needs Claude Code; without it, ask a
 maintainer to run it on your branch. A change to `COMPATIBILITY.md` or to an agent tool definition
@@ -143,12 +224,19 @@ only makes the French reference tables stale, which warns.
 
 | Command | Runs |
 |---------|------|
+| `make check` | the quick tier above: lint and the related tests of the changed files, no builds |
+| `make tier-test` | the quick tiers and their Git hooks, in temporary repositories with a stub Makefile |
+| `make scope-test` | the diff scoping behind `validate-scope` and the tiers |
 | `make ui-lint` | ESLint and svelte-check over `lilo-ui/` |
 | `make ui-test` | UI unit tests, including the catalog key and placeholder parity checks |
 | `make e2e` | Playwright end-to-end tests of the interface, in Chromium |
 | `make ext-bridge-test` | extension bridge TypeScript tests |
 | `make hooks-test` | commit-message validation and real Git hook/range checks in temporary repositories |
 | `make perf-summary-test` | tests of the performance recording summary and comparison script |
+| `make metrics-test` | tests of the opt-in recipe timing recorder (`make metrics-on`, `make metrics`) |
+| `make ci-metrics-test` | tests of the CI timing summary (`make ci-metrics`) |
+| `make agent-eval-test` | tests of the fixture agent tasks' server and grading (no browser, no model); `make agent-eval` runs them with Claude Code against the Debug app |
+| `make retried-tests-test` | tests of the failed and retried test report CI writes |
 | `make lint-commit-message` | checks a commit header or PR title read from stdin |
 | `make lint-commits` | checks non-merge commit headers in `BASE..COMMIT_HEAD` (default `origin/main..HEAD`) |
 | `make release-status` | pending release notes, changelog and app version consistency |
@@ -173,6 +261,18 @@ Heavier checks, run when your change touches their area:
 | `make startup-bench` | launch times of a Release build against a throwaway profile |
 | `make ext-bench` | a Release build with 20 store extensions: restore, worker starts, API latency and idle CPU, failing when idle CPU % goes over `MAX_IDLE_CPU=35,25` (Lilo, its WebKit processes; `MAX_IDLE_CPU=` only measures) |
 | `make e2e-energy` | idle energy guard on a Release build (about 3 minutes, see [DEBUGGING.md](docs/DEBUGGING.md#9-measuring-energy)) |
+
+### Capturing UI media
+
+`make ui-capture` records the chrome interface (`lilo-ui/`) through the e2e fake host and writes a PNG and a webm per named scenario and browser to `build/captures/<browser>/` (git-ignored), plus an mp4 and a gif of each recording when `ffmpeg` is on PATH.
+The scenarios are the sidebar at narrow, default and wide widths in light and dark, the spaces switch and the command bar.
+It needs no macOS: it runs headless on a Debian VPS or in CI with `pnpm --dir lilo-ui exec playwright install --with-deps webkit chromium`.
+`OUT=dir` changes the output directory and `PROJECT="--project=webkit"` (or `chromium`) limits the browser.
+WebKit is the faithful engine (the app runs on it); headless Chromium is the quick one.
+Add a scenario by appending to `lilo-ui/captures/scenarios.ts`; it is a named state: a world, a color scheme and the steps that reach it.
+
+The harness shows the chrome only.
+The native AppKit app (window, menus, real web content, terminal tabs) cannot run on Debian, so media of it needs a Mac: with a Debug build, `make agent-app`, then `make agent-call CALLS=calls.json` with the `computer` tool's `screenshot` action and a `savePath`, or the `gif_creator` tool.
 
 ### Where tests go
 
@@ -306,6 +406,22 @@ Edit `bridge-schema/tab.json`, then run `make bridge-gen` to regenerate
 - Query website data with `WKWebsiteDataStore.testDataTypes`, not `allWebsiteDataTypes()`: Screen Time's type waits on a system service, for seconds when several runs ask at once.
 - Size fixtures for the behavior, not for realism, and guard scaling by comparing a run with one twice its size (CPU time, not wall time), as `ImportScaleTests` does.
 
+### Capture the main window for a pull request
+
+A change to native chrome (window buttons, sidebar, split panes) needs a screenshot from the real window. Never use
+`screencapture` or give an agent Screen Recording or Accessibility: the Debug build renders its own window from inside
+the app (`Lilo/Agent/AgentWindowCapture.swift`), so it needs no permission, sees no other app and never takes focus.
+
+```bash
+make window-capture OUT=/tmp/shot.png                                  # 1280x800 content
+make window-capture OUT=/tmp/shot.png SIZE=900x600 WIDTHS="260 203 150 rail" GIF=/tmp/widths.gif
+```
+
+`WIDTHS` drags the sidebar to each width the way a user does and writes `shot-<width>.png` per width (`GIF` joins them
+into one animation); the sidebar returns to its width after. The tool is the Debug-only `window_capture` agent tool, so
+it also answers `make agent-call`, and `AgentWindowCaptureTests` fails if a Release build could hold it. The window
+is drawn by AppKit and each web view by WebKit's own snapshot, so vibrancy and the window shadow are not part of it.
+
 ## Pull requests
 
 1. Fork the repository and branch from `main`.
@@ -318,8 +434,10 @@ Edit `bridge-schema/tab.json`, then run `make bridge-gen` to regenerate
    file with your code. Documentation, tests and build tooling usually need no fragment.
    `CHANGELOG.md` is updated when a maintainer prepares the release. CI warns on a pull request that
    changes `Lilo/` or `lilo-ui/src/` without a note.
-5. Open the pull request. The template asks what it does, how to test it, and for a screenshot or
-   recording of any UI change.
+5. Open the pull request. The template asks what it does, how to test it, and for before and after
+   captures (light and dark; a gif or short video for motion) of any UI change: see
+   [Capturing UI media](#capturing-ui-media) and [Capture the main window for a pull request](#capture-the-main-window-for-a-pull-request).
+   Review needs them: a reviewer cannot judge spacing, alignment or motion from a diff.
 
 Commit messages and pull request titles follow
 [Conventional Commits](https://www.conventionalcommits.org/en/v1.0.0/):
@@ -329,7 +447,7 @@ and `!` before the colon for a breaking change. Types: `feat`, `fix`, `perf`, `r
 `extensions`, `agent`, `terminal`, `window`, `bridge`, `import`, `ui`.
 
 `make hooks-install` points this clone's Git `core.hooksPath` at the tracked `.githooks/`
-directory. It refuses when `core.hooksPath` is already set or `.git/hooks` holds a hook that
+directory (`commit-msg`, `pre-commit` and `pre-push`; see [Tests and validation](#tests-and-validation)). It refuses when `core.hooksPath` is already set or `.git/hooks` holds a hook that
 would stop running. The native `commit-msg` hook and CI share a shell validator for the
 header's type, syntax, lowercase scope, lowercase nonempty description and absence of trailing
 whitespace or a final period. Git's `Revert "..."` and `Reapply "..."` headers are accepted.

@@ -49,6 +49,7 @@ export const chromeActions = {
 	setSidebarRail: (rail: boolean): void => emit("setSidebarRail", { rail }),
 	sidebarOverlayChanged: (visible: boolean): void =>
 		emit("sidebarOverlayChanged", { visible }),
+	pageShellChanged: (open: boolean): void => emit("pageShellChanged", { open }),
 	permissionResponse: (requestId: string, granted: boolean): void =>
 		emit("permissionResponse", { requestId, granted }),
 	dismissPermissionRequest: (requestId: string): void =>
@@ -75,6 +76,14 @@ export const chromeActions = {
 	): void => emit("traceSpaceDnd", payload),
 };
 
+/** The Little window's own commands; its command bar's navigations go through `tabActions`. */
+export const littleActions = {
+	ready: emitEmpty("littleReady"),
+	openInSpace: (spaceId?: string): void => emit("littleOpenInSpace", spaceId ? { spaceId } : {}),
+	copyLink: emitEmpty("littleCopyLink"),
+	close: emitEmpty("littleClose"),
+};
+
 export const tabActions = {
 	create: (url?: string, typed?: boolean, background?: boolean): void =>
 		url ? emit("createTab", background ? { url, typed, background } : { url, typed }) : emit("createTab"),
@@ -93,8 +102,8 @@ export const tabActions = {
 	returnHome: emitId("returnTabHome"),
 	setMuted: (id: string, muted: boolean): void =>
 		emit(muted ? "muteTab" : "unmuteTab", { id }),
-	showContextMenu: (id: string, x: number, y: number, width: number, height: number): void =>
-		emit("showTabContextMenu", { id, x, y, width, height }),
+	showContextMenu: (id: string, x: number, y: number, width: number, height: number, selectedIds?: string[]): void =>
+		emit("showTabContextMenu", { id, x, y, width, height, selectedIds }),
 	navigate: (url: string, typed?: boolean): void => emit("navigate", { url, typed }),
 	goBack: emitEmpty("goBack"),
 	goForward: emitEmpty("goForward"),
@@ -120,6 +129,8 @@ export const tabActions = {
 	newTerminal: emitEmpty("newTerminal"),
 	splitTab: (tabId: string, side: SplitDropSide, targetTabId?: string): void =>
 		emit("splitTab", { tabId, side, targetTabId }),
+	unsplitTab: (tabId: string): void => emit("unsplitTab", { tabId }),
+	maximizeSplitPane: (tabId: string): void => emit("maximizeSplitPane", { tabId }),
 	splitURL: (url: string, side: SplitDropSide, targetTabId?: string): void =>
 		emit("splitURL", { url, side, targetTabId }),
 	openDroppedLinks: (urls: string[], target: BridgeLinkDropTarget): void =>
@@ -232,8 +243,12 @@ export const settingsActions = {
 	loadTerminalOptions: emitEmpty("getTerminalOptions"),
 	importTerminalTheme: emitEmpty("importTerminalTheme"),
 	connectAgentClient: (client: string): void => emit("connectAgentClient", { client }),
+	previewAgentClient: (client: string, remove: boolean): void => emit("previewAgentClient", { client, remove }),
+	removeAgentClient: (client: string): void => emit("removeAgentClient", { client }),
 	loadAgentClients: emitEmpty("getAgentClients"),
 	revokeAgentClient: (name: string): void => emit("revokeAgentClient", { name }),
+	loadAgentActionLog: emitEmpty("getAgentActionLog"),
+	openAgentActionLog: emitEmpty("openAgentActionLog"),
 	loadUpdaterStatus: emitEmpty("getUpdaterStatus"),
 	checkForUpdates: emitEmpty("checkForUpdates"),
 	installUpdate: emitEmpty("installUpdate"),

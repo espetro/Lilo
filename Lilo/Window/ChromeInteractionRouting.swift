@@ -215,7 +215,8 @@ final class ChromeInteractionShieldView: NSView {
         )
         let (target, effects) = input.coordinator.routePositional(sample, family: family)
         switch target {
-        case .chrome: input.router.chromeView.map { forward($0, event) }
+        case .chrome:
+            input.router.chromeView.map { forward($0, event) }
         case .content: (input.controller.splitPanes.view(for: event) ?? input.router.currentContentView()).map { forward($0, event) }
         case .none: break
         }
@@ -263,7 +264,7 @@ final class ChromeInputController {
         // No .cursorUpdate: real mouseMoved events already carry every positional change, and
         // feeding cursor updates too doubles the synthetic moves into WebKit while hovering chrome.
         hoverMonitor = NSEvent.addLocalMonitorForEvents(
-            matching: [.mouseMoved, .leftMouseDown, .rightMouseDown, .otherMouseDown, .leftMouseUp, .otherMouseUp]
+            matching: [.mouseMoved, .mouseExited, .leftMouseDown, .rightMouseDown, .otherMouseDown, .leftMouseUp, .otherMouseUp]
         ) { [weak self] event in
             MainActor.assumeIsolated {
                 // Every window sees each move: reject other windows' events before allocating anything.
@@ -352,11 +353,16 @@ final class ChromeInputController {
         // never sees scroll or zoom gestures (those reach the shield), so this feed carries no fling phase.
         let sample = PointerSample(target: target, isMouseDown: event.isMouseDown, scrollPhase: .none)
         apply(coordinator.updatePointer(sample), for: event)
+        // Every move, press or not: the split panes' hover handles and divider pills follow the pointer.
+        controller.splitPanes.updateHover(atWindowPoint: event.type == .mouseExited ? nil : event.locationInWindow)
         // A press on a pane goes straight to its view, never through the shield: this is where it
         // makes that pane's tab the active one.
         if event.isMouseDown, target == .content {
             _ = controller.splitPanes.view(for: event)
             controller.tabManager.activeEngineTab?.logUserInteraction()
+        } else if event.isMouseDown, target == .chrome {
+            // A conversation pane is all chrome zone: the press still focuses the pane's tab.
+            controller.splitPanes.activatePaneForChromePress(atWindowPoint: event.locationInWindow)
         }
     }
 

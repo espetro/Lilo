@@ -13,7 +13,8 @@ final class BuildIdentityTests: XCTestCase {
         XCTAssertEqual(BuildIdentity.appIdentifier, "fr.arouillard.lilo.debug")
         let support = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask)[0]
         XCTAssertEqual(BuildIdentity.appSupportDirectory, support.appending(path: "Lilo-Debug").path)
-        XCTAssertEqual(AgentControl.defaultSocketURL.deletingLastPathComponent().lastPathComponent, "Lilo-Debug")
+        // The socket URL is computed once per process, so a run under make's per-worktree data folder has it already.
+        if override == nil { XCTAssertEqual(AgentControl.defaultSocketURL.deletingLastPathComponent().lastPathComponent, "Lilo-Debug") }
         XCTAssertEqual(PowerHelperIdentity.machService, "fr.arouillard.lilo.debug.power")
 
         setenv("LILO_APP_SUPPORT_DIR", "/tmp/lilo-elsewhere", 1)

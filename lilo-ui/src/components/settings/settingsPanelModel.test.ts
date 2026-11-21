@@ -40,13 +40,24 @@ test("groups a section's settings in display order", () => {
     { groupKey: "settings.groups.otherAppLinks", settings: ["externalLinkDefault", "externalLinkRules"] },
     { groupKey: "settings.groups.search", settings: ["searchEngine", "searchSuggestions", "preloadTopHit", "searchEngines"] },
     { groupKey: "settings.groups.downloads", settings: ["downloadsFolder", "askDownloadLocation"] },
-    { groupKey: "settings.groups.lilo", settings: ["appUpdates", "autoUpdate", "shortcuts"] },
+    { groupKey: "settings.groups.lilo", settings: ["appUpdates", "autoUpdate", "shortcuts", "holdToQuit"] },
   ]);
   assert.deepEqual(sectionGroups("media"), [
     { groupKey: "settings.groups.playback", settings: ["autoPictureInPicture", "autoplay"] },
     { groupKey: "settings.groups.calls", settings: ["dockCallsInSidebar", "autoDevices", "deviceSetup"] },
   ]);
   assert.deepEqual(sectionGroups("terminal"), []);
+});
+
+test("beta mode sits in Advanced; the chrome hides the release row until a newer beta exists", () => {
+  assert.deepEqual(sectionGroups("advanced").find((group) => group.groupKey === "settings.groups.beta"), {
+    groupKey: "settings.groups.beta",
+    settings: ["betaUpdateCheck", "betaUpdateRelease"],
+  });
+  const hidden = sectionGroups("advanced", (setting) => setting.id !== "betaUpdateRelease").find(
+    (group) => group.groupKey === "settings.groups.beta",
+  );
+  assert.deepEqual(hidden?.settings, ["betaUpdateCheck"]);
 });
 
 test("settings under a switch that is off drop out of their group", () => {
@@ -61,8 +72,8 @@ test("settings under a switch that is off drop out of their group", () => {
   values.agentControlEnabled = "true";
   values.agentsEnabled = "true";
   const shown = sectionGroups("agents", (setting) => !setting.requires || isToggleOn(setting.requires, get));
-  assert.equal(shown.length, 3);
-  assert.deepEqual(shown[0].settings, ["agentsEnabled", "agentsNotifyDone", "agentSystemPrompt", "agentSystemPromptText"]);
+  assert.deepEqual(shown.map((group) => group.groupKey).slice(2), ["settings.groups.agentClients", "settings.groups.agentActivity"]);
+  assert.deepEqual(shown[0].settings, ["agentsEnabled", "agentsNotifyDone", "agentSystemPrompt", "agentSystemPromptText", "agentInstances"]);
 });
 
 test("cross-site tracking prevention is a protection switch, on until turned off", () => {
@@ -117,7 +128,7 @@ test("settings search reaches hidden keywords and section names", () => {
   const resolve = (key: string) => catalog[key] ?? "";
 
   assert.deepEqual(searchSettings("cookies", resolve).map((setting) => setting.id), ["clearData"]);
-  assert.deepEqual(searchSettings("appearance", resolve).map((setting) => setting.id), ["theme", "appIcon", "seasonalAppIcon", "tabPosition", "addressPlacement", "hideSpaceNames", "defaultZoom", "minimumFontSize", "fullRefreshRate"]);
+  assert.deepEqual(searchSettings("appearance", resolve).map((setting) => setting.id), ["theme", "appIcon", "seasonalAppIcon", "tabPosition", "commandBarLayout", "addressPlacement", "hideSpaceNames", "defaultZoom", "minimumFontSize", "fullRefreshRate"]);
 });
 
 test("folds permissions, data, and zoom into one row per site", () => {

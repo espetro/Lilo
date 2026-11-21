@@ -22,7 +22,7 @@ A technical deep-dive into Lilo's internals: where code lives, how the interface
 | `Lilo/Favicons/` | FaviconService (cache, extraction) and FaviconCoordinator (request coalescing) |
 | `Lilo/Generated/` | Generated Swift: the tab bridge schema (committed), native strings and embedded chrome UI assets (git-ignored, written by `make ui-build`) |
 | `Lilo/Import/` | Importing from other browsers (Safari, Firefox and Zen, Chromium browsers): bookmarks, open tabs and Spaces (Chromium session files, Arc's sidebar), history, cookies (Chromium cookie decryption) and extensions, and its bridge handler |
-| `Lilo/LittleWindow/` | Little windows: one page in a small window outside every Space, and the global hot key that opens one |
+| `Lilo/LittleWindow/` | Little windows: one page in a small panel outside every Space, opening on the command bar (its own chrome view and bridge handler), and the global hot key that opens one |
 | `Lilo/Onboarding/` | The first-run onboarding bridge handler |
 | `Lilo/PictureInPicture/` | An in-call tab kept in view: docked at the bottom of the sidebar, or floated in an always-on-top panel |
 | `Lilo/Power/` | Keep-awake and lid-closed power management, the privileged helper's protocol and its bridge handler |
@@ -76,7 +76,7 @@ User-facing docs and the interface capitalize these names as below; code identif
 | Term | Meaning |
 |------|---------|
 | **Space** | A set of tabs in the sidebar with its own name, emoji and color, signed in as one profile (`Space`, `SpaceManager`). Plural "Spaces". |
-| **Private Space** | A Space whose browsing is forgotten when it closes. Agents never see one. |
+| **Private Space** | A Space whose browsing is forgotten when it closes. Agents never see one. Each of its tabs browses in a data store of its own (see [Private tabs](#private-tabs)). |
 | **Agents Space** | The Space where AI agents open their tabs, one folder per agent task. |
 | **profile** | A set of website data, history, bookmarks and extensions (`Profile`, `ProfileContext`). Several Spaces can share one. |
 | **pinned tab**, **favorite** | Tabs kept across launches: pinned tabs sit at the top of a Space's list, favorites in the tiles above it. |
@@ -402,6 +402,15 @@ Web pages get what Lilo adds to WebKit (notifications, geolocation, Web Serial, 
 - A module patches WebKit's own prototypes with `lilo.methods` / `lilo.accessors` and defines new interfaces with `lilo.nativeClass` / `lilo.global`: functions print as native code (in every same-origin frame), members keep WebIDL's descriptors, and no own property lands on `window`, `navigator` or `document`.
 - A replaced method runs in a user script, and JSC prints that frame (`user-script:N:L:C`) in every stack it is on, which no Safari page without an extension shows; nothing hides it. Replace a method only when no other way exists: read state from `bridgeWorld` (the freeze sweep asks `navigator.locks.query()` there) or from events. The methods replaced today have none: they implement an API WebKit leaves to the app (notifications, geolocation, tab sharing) or observe what WebKit reports nowhere else (`MediaSession` actions and capture, `RTCPeerConnection.setRemoteDescription`, `RTCRtpReceiver` audio levels), or hold a value the page must not read back (`HTMLMediaElement.playbackRate` beside 1 after a live player's catch-up), so their frame stays.
 - `LiloTests/Engine/PageWorldTests.swift` compares a tab with the same engine settings without Lilo's scripts and fails on any added, missing or reshaped property, any function that prints its source, any `window.webkit` and any user-script frame in the stacks it collects. A deliberate new global (a Chrome API pages use) goes in its `addedGlobals`.
+
+## Private tabs
+
+As in Safari, every tab of a Private Space has its own `WKWebsiteDataStore.nonPersistent()`: cookies, local storage, IndexedDB, caches, service workers and logins are not shared between private tabs. `TabManager.dataStore(forTab:nativeConfiguration:)` asks `ProfileManager.ephemeralDataStore(forTab:in:)` for the store when it builds an engine, and `discardPreparedTabRuntime` hands it back with `releaseEphemeralDataStore(forTab:)` when the tab closes. A tab put to sleep keeps its store, so waking it restores the session.
+
+- **Opener relationships:** a page popup or `target=_blank` link that WebKit opens with the opener's configuration (`nativeConfiguration`) shares its opener's store, which keeps `window.opener` and OAuth sign-in popups working. `adoptEphemeralDataStore` records that store for the popup's tab. A tab the user opens (Cmd-click, "Open in new tab", a new tab) gets a fresh store, as in Safari.
+- **Content controllers:** the stores of a space's tabs carry the space's identifier (`ephemeral:<space id>`), so `ContentControllerKey` stays per space: the tabs share one injected world. A tab's release only drops its certificate exceptions; deleting the Space releases every store and the shared controller (`releaseEphemeralDataStore(for:)`).
+- **No warm view:** a warm `WKWebView` is bound to one store, so private stores keep none.
+- **Still per Space:** the Space's own store (peeks, Little windows and the agents' hidden engines use it), history (none), downloads, site permissions and favicons. Per-site zoom follows the tab's store.
 
 ## Private WebKit API
 

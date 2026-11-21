@@ -4,7 +4,8 @@ import WebKit
 /// The tools an agent sees, named and shaped like Claude in Chrome's so agents need nothing new.
 @MainActor
 enum AgentTools {
-    static let definitions: [[String: Any]] = tabAndPageDefinitions + AgentInteractionTools.definitions + AgentDevTools.definitions
+    static let definitions: [[String: Any]] = tabAndPageDefinitions + AgentInteractionTools.definitions + AgentDevTools.definitions + AgentFlows.definitions + AgentBrowserConfig.definitions
+    static let toolNames = Set(definitions.compactMap { $0["name"] as? String })
 
     private static let tabAndPageDefinitions: [[String: Any]] = [
         tool("tabs_context_mcp", """
@@ -41,13 +42,15 @@ enum AgentTools {
         tool("read_page", """
             Get an accessibility tree of the page: each element as role, name and a ref like [ref_N] that the other \
             tools accept. Use filter "interactive" for clickable and typable elements only. Iframes follow the page, \
-            their refs prefixed by their frame (f1a2b3_ref_N).
+            their refs prefixed by their frame (f1a2b3_ref_N). viewport: true keeps only the elements on or near \
+            the screen, each with its box.
             """, [
                 "tabId": prop("number", "The tab to read."),
                 "filter": ["type": "string", "enum": ["interactive", "all"], "description": "\"all\" (default) or \"interactive\"."],
                 "ref_id": prop("string", "Read only this element's subtree."),
                 "depth": prop("number", "Maximum tree depth (default 15)."),
-                "max_chars": prop("number", "Maximum characters of output (default 50000).")
+                "max_chars": prop("number", "Maximum characters of output (default 50000)."),
+                "viewport": prop("boolean", "Only elements on or within 100 px of the screen's edge, each line ending in box=\"x,y,w,h\" in viewport pixels.")
             ], required: ["tabId"]),
         tool("find", "Find elements whose role, name or text contains `query`, case-insensitively. Returns up to 20 refs, of shown elements only.", [
             "query": prop("string", "Text to look for."), "tabId": prop("number", "The tab to search.")
@@ -76,7 +79,8 @@ enum AgentTools {
             Set the value of a form element (input, textarea, select, checkbox, contenteditable) by ref. A native date, time \
             or color picker draws outside the page and never shows in a screenshot: set those inputs here instead of clicking. \
             The reply gives what the element holds right after its input and change events, with a warning when the page \
-            changed or rejected the value; for a password, card or one-time code field, only whether it holds the value.
+            changed or rejected the value; for a password, card or one-time code field, only whether it holds the value. \
+            The reply also lists the page's structure changes the set caused.
             """, [
             "ref": prop("string", "The element's ref from read_page or find."),
             "value": ["type": ["string", "boolean", "number"], "description": "The value; a boolean for a checkbox."],
@@ -202,6 +206,7 @@ enum AgentTools {
             options["refId"] = arguments["ref_id"]
             options["depth"] = arguments["depth"]
             options["maxChars"] = arguments["max_chars"]
+            options["viewport"] = arguments["viewport"]
             return [.text(try await readFrames(engine, options))]
         case "find":
             let (_, engine) = try control.agentTab(arguments["tabId"], session: session)
@@ -261,7 +266,11 @@ enum AgentTools {
             let (_, engine) = try control.agentTab(arguments["tabId"], session: session)
             let ref = arguments["ref"] as? String ?? ""
             let frame = try await frame(holding: ref, in: engine)
-            return [.text(try await page(engine, "setValue", ["ref": ref, "value": arguments["value"] ?? ""], in: frame) as? String ?? "")]
+            await snapshot(engine)
+            let urlBefore = engine.currentURL
+            var reply = try await page(engine, "setValue", ["ref": ref, "value": arguments["value"] ?? ""], in: frame) as? String ?? ""
+            reply += "\n" + (await deltaReport(engine, urlBefore: urlBefore))
+            return [.text(reply)]
         case "javascript_tool":
             let (_, engine) = try control.agentTab(arguments["tabId"], session: session)
             return [.text(try await runJavaScript(arguments["text"] as? String ?? "", in: engine))]
@@ -272,7 +281,10 @@ enum AgentTools {
             // In one of the user's profiles the request carries their cookies: it may act for them, as a click does.
             if !["GET", "HEAD"].contains(method), !engine.isPrivateBrowsing, session.profileId != nil {
                 let target = URL(string: url, relativeTo: engine.currentURL)?.absoluteString ?? url
-                try await control.approveConsequentialAction("fetch", label: "\(method) \(target)", frame: nil, engine: engine, session: session)
+                // A request to another origin hands the user's data to a third party: asked of every client.
+                let page = engine.currentURL
+                let crossOrigin = URL(string: target).map { ($0.scheme, $0.host(), $0.port) != (page?.scheme, page?.host(), page?.port) } ?? true
+                try await control.approveConsequentialAction("fetch", label: "\(method) \(target)", structural: crossOrigin, frame: nil, engine: engine, session: session)
             }
             var options: [String: Any] = [
                 "url": url, "method": method,
@@ -287,6 +299,11 @@ enum AgentTools {
         default:
             if let content = try await AgentInteractionTools.call(name, arguments: arguments, session: session, control: control) { return content }
             if let content = try await AgentDevTools.call(name, arguments: arguments, session: session, control: control) { return content }
+            if let content = try await AgentFlows.call(name, arguments: arguments, session: session, control: control) { return content }
+            if let content = try await AgentBrowserConfig.call(name, arguments: arguments, session: session, control: control) { return content }
+            #if DEBUG
+            if let content = try await AgentWindowCapture.call(name, arguments: arguments, control: control) { return content }
+            #endif
             throw AgentToolError("Unknown tool: \(name)")
         }
     }
@@ -321,6 +338,33 @@ enum AgentTools {
         } catch {
             throw AgentToolError(scriptErrorMessage(error))
         }
+    }
+
+    /// The page's interactive structure in the main frame and each subframe, kept for the delta an
+    /// action reports. Best effort: a page mid-navigation simply has none.
+    static func snapshot(_ engine: WKWebViewTab) async {
+        _ = try? await page(engine, "snapshot", [:])
+        for (_, frame) in await subframes(of: engine) { _ = try? await page(engine, "snapshot", [:], in: frame) }
+    }
+
+    /// What the page's structure changed since `snapshot`, as compact +/- /~ lines, one block per frame
+    /// that changed; nil when nothing did anywhere.
+    static func delta(_ engine: WKWebViewTab) async -> String? {
+        var parts: [String] = []
+        if let text = try? await page(engine, "delta", [:]) as? String, !text.isEmpty { parts.append(text) }
+        for (_, frame) in await subframes(of: engine) {
+            if let text = try? await page(engine, "delta", [:], in: frame) as? String, !text.isEmpty { parts.append(text) }
+        }
+        return parts.isEmpty ? nil : parts.joined(separator: "\n\n")
+    }
+
+    /// The report an action's reply ends with: the tab's new URL when it navigated, then the structure
+    /// delta, or that nothing changed.
+    static func deltaReport(_ engine: WKWebViewTab, urlBefore: URL?) async -> String {
+        var parts: [String] = []
+        if engine.currentURL != urlBefore, let url = engine.currentURL { parts.append("The page is now at \(url.absoluteString)") }
+        if let delta = await delta(engine) { parts.append(delta) }
+        return parts.isEmpty ? "No page changes" : parts.joined(separator: "\n")
     }
 
     /// The tab's live subframes, once each, by the ref prefix their script took. A frame that went

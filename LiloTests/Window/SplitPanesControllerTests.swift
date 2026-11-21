@@ -77,4 +77,49 @@ final class SplitPanesControllerTests: XCTestCase {
         XCTAssertTrue(unsafe inspector.superview === container, "the inspector docks beside the page again")
         XCTAssertTrue(controller.splitPanes.docks.isEmpty)
     }
+
+    func testPanesKeepAMarginOffTheContainerEdges() throws {
+        let left = try openTab("left"), right = try openTab("right")
+        controller.activateTabStateFirst(id: left)
+        controller.dropTab(right, at: nil, side: .edge(vertical: false, before: false))
+        let bounds = controller.contentContainerView.bounds
+        let inner = bounds.insetBy(dx: SplitMarginView.width, dy: SplitMarginView.width)
+
+        var tiled = try XCTUnwrap(controller.splitPanes.dividers.values.first?.frame)
+        for id in [left, right] { tiled = tiled.union(try view(id).frame) }
+        XCTAssertEqual(tiled, inner, "the panes and the divider tile the container inside the margin")
+
+        controller.closeSplitView(nil)
+
+        let active = try XCTUnwrap(controller.tabManager.activeOpenTabId)
+        XCTAssertEqual(try view(active).frame, bounds, "a single page keeps the whole container")
+    }
+
+    func testCloseSplitPaneReturnsThePaneToTheList() throws {
+        let left = try openTab("left"), right = try openTab("right")
+        controller.activateTabStateFirst(id: left)
+        controller.dropTab(right, at: nil, side: .edge(vertical: false, before: false))
+        XCTAssertNotNil(controller.tabManager.activeSplit)
+
+        controller.closeActiveSplitPane(nil)
+
+        XCTAssertNil(controller.tabManager.activeSplit)
+        XCTAssertNotNil(controller.tabManager.tab(for: left))
+        XCTAssertNotNil(controller.tabManager.tab(for: right))
+    }
+
+    func testMaximizeSplitPaneLeavesItAsTheOnlyTab() throws {
+        let first = try openTab("first"), second = try openTab("second"), third = try openTab("third")
+        controller.activateTabStateFirst(id: first)
+        controller.dropTab(second, at: nil, side: .edge(vertical: false, before: false))
+        controller.dropTab(third, at: first, side: .edge(vertical: true, before: false))
+        XCTAssertEqual(controller.tabManager.activeSplit?.layout.paneIds.count, 3)
+
+        controller.activateTabStateFirst(id: second)
+        controller.maximizeActiveSplitPane(nil)
+
+        XCTAssertNil(controller.tabManager.activeSplit)
+        XCTAssertEqual(controller.tabManager.activeOpenTabId, second)
+        for id in [first, second, third] { XCTAssertNotNil(controller.tabManager.tab(for: id)) }
+    }
 }

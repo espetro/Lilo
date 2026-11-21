@@ -16,6 +16,7 @@ export interface BridgeTabSnapshot {
 	canGoBack: boolean;
 	canGoForward: boolean;
 	isPinned: boolean;
+	neverSleep?: boolean;
 	isBookmarked: boolean;
 	isClosed: boolean;
 	isAudioPlaying: boolean;
@@ -25,6 +26,7 @@ export interface BridgeTabSnapshot {
 	isCameraActive: boolean;
 	isScreenSharing: boolean;
 	hasPopup?: boolean;
+	isSleeping?: boolean;
 	spaceId?: string;
 	groupId?: string;
 	faviconDataURL?: string;
@@ -73,6 +75,7 @@ export function coerceTabSnapshot(data: TabLike): BridgeTabSnapshot {
 		canGoBack: data.canGoBack ?? false,
 		canGoForward: data.canGoForward ?? false,
 		isPinned: data.isPinned ?? false,
+		neverSleep: data.neverSleep ?? false,
 		isBookmarked: data.isBookmarked ?? false,
 		isClosed: data.isClosed ?? false,
 		isAudioPlaying: data.isAudioPlaying ?? false,
@@ -82,6 +85,7 @@ export function coerceTabSnapshot(data: TabLike): BridgeTabSnapshot {
 		isCameraActive: data.isCameraActive ?? false,
 		isScreenSharing: data.isScreenSharing ?? false,
 		hasPopup: data.hasPopup ?? false,
+		isSleeping: data.isSleeping ?? false,
 		spaceId: data.spaceId,
 		groupId: data.groupId,
 		faviconDataURL,
@@ -131,6 +135,7 @@ export function coerceTabPatch(data: TabLike): Partial<BridgeTabSnapshot> {
 	if (data.canGoBack !== undefined) out.canGoBack = data.canGoBack;
 	if (data.canGoForward !== undefined) out.canGoForward = data.canGoForward;
 	if (data.isPinned !== undefined) out.isPinned = data.isPinned;
+	if (data.neverSleep !== undefined) out.neverSleep = data.neverSleep;
 	if (data.isBookmarked !== undefined) out.isBookmarked = data.isBookmarked;
 	if (data.isClosed !== undefined) out.isClosed = data.isClosed;
 	if (data.isAudioPlaying !== undefined) out.isAudioPlaying = data.isAudioPlaying;
@@ -140,6 +145,7 @@ export function coerceTabPatch(data: TabLike): Partial<BridgeTabSnapshot> {
 	if (data.isCameraActive !== undefined) out.isCameraActive = data.isCameraActive;
 	if (data.isScreenSharing !== undefined) out.isScreenSharing = data.isScreenSharing;
 	if (data.hasPopup !== undefined) out.hasPopup = data.hasPopup;
+	if (data.isSleeping !== undefined) out.isSleeping = data.isSleeping;
 	if (data.groupId !== undefined) out.groupId = data.groupId;
 	if (data.faviconDataURL !== undefined) out.faviconDataURL = coerceTrimmedOptional(data.faviconDataURL);
 	if (data.faviconDominantColor !== undefined) out.faviconDominantColor = coerceHexColor(data.faviconDominantColor);

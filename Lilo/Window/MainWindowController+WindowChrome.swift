@@ -54,7 +54,7 @@ extension MainWindowController {
 
     func handleSidebarOverlay(visible: Bool) {
         sidebarOverlayVisible = visible && !sidebarVisible
-        syncTrafficLights(animated: true)
+        syncTrafficLights(animated: !NSWorkspace.shared.accessibilityDisplayShouldReduceMotion)
     }
 
     /// The sidebar's width as the window lets it be: it narrows before the content gets under `minimumContentWidth`.
@@ -101,7 +101,12 @@ extension MainWindowController {
 
     func updateSidebarWidth(_ width: CGFloat) {
         sidebarExpandedWidth = width.clamped(to: Self.sidebarWidthRange)
-        applySidebarLayout(animated: false)
+        // The folded rail's edge holds still whatever width it unfolds to: only a change of the
+        // fitted width relayouts, so the width a fold remembers cannot cut its slide short.
+        // The lights move with the sidebar's edge in the narrow range; the sync is a no-op elsewhere.
+        if fittedSidebarWidth != sidebarWidth {
+            applySidebarLayout(animated: false, syncTrafficLights: true)
+        }
 
         // Persist only after the drag comes to rest (~500ms trailing) to avoid a synchronous
         // SQLite INSERT OR REPLACE + UserDefaults write on every rAF frame during live resize.
@@ -115,13 +120,13 @@ extension MainWindowController {
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.5, execute: work)
     }
 
-    /// Folding to the rail or out of it moves the page edge with it.
+    /// Folding to the rail or out of it moves the page edge with it, and the lights take their hidden-sidebar place.
     func setSidebarRail(_ rail: Bool) {
         guard rail != sidebarRail else { return }
         sidebarRail = rail
         context.settingsStore?.sidebarRail = rail
         unsafe UserDefaults.lilo.set(rail, forKey: "cachedSidebarRail")
-        applySidebarLayout(animated: false)
+        applySidebarLayout(animated: true, syncTrafficLights: true)
     }
 
     func setSidebarCollapseLocked(_ locked: Bool) {
@@ -160,11 +165,42 @@ extension MainWindowController {
         bridgeRouter.send(event: "sidebarVisibilityChanged", data: ["visible": sidebarVisible, "width": sidebarExpandedWidth])
     }
 
+    /// The folded rail and a narrowed sidebar alike leave the header's lights' spot: the lights sit
+    /// past the sidebar's column, where a toolbar row's would be.
+    var railReplacesSidebar: Bool { (sidebarRail || sidebarWidth < Self.narrowSidebarWidth) && tabLayout.position.isVertical }
+
+    /// Whether the layout leaves the lights a home. The address toolbar's row keeps them even with
+    /// the sidebar hidden, the floating overlay takes them over its corner, and a shown sidebar holds
+    /// them — folded to the rail only while a row over the page still does; merely narrowed, it keeps
+    /// them past its column rather than losing them.
+    static func showsTrafficLights(
+        layout: TabLayout,
+        toolbarVisible: Bool,
+        sidebarVisible: Bool,
+        sidebarRail: Bool,
+        overlayCoversLights: Bool,
+        isFullscreen: Bool
+    ) -> Bool {
+        if isFullscreen { return false }
+        if layout.canHideToolbar && toolbarVisible { return true }
+        if overlayCoversLights { return true }
+        guard sidebarVisible else { return false }
+        if sidebarRail && layout.position.isVertical {
+            return layout.showsPageToolbar(toolbarVisible: toolbarVisible)
+        }
+        return true
+    }
+
     /// A floating overlay covers the lights' top-left corner only when it comes from the left or the top.
     func areTrafficLightsVisible() -> Bool {
-        let overlayCoversLights = sidebarOverlayVisible && (tabLayout.position == .left || tabLayout.position == .top)
-        let toolbarHoldsLights = tabLayout.canHideToolbar && toolbarVisible
-        return window?.styleMask.contains(.fullScreen) != true && (sidebarVisible || overlayCoversLights || toolbarHoldsLights)
+        Self.showsTrafficLights(
+            layout: tabLayout,
+            toolbarVisible: toolbarVisible,
+            sidebarVisible: sidebarVisible,
+            sidebarRail: sidebarRail,
+            overlayCoversLights: sidebarOverlayVisible && (tabLayout.position == .left || tabLayout.position == .top),
+            isFullscreen: window?.styleMask.contains(.fullScreen) == true
+        )
     }
 
     func showActiveTabSecurityInfo() {
@@ -215,10 +251,15 @@ extension MainWindowController {
     func placeTrafficLights() {
         guard let window else { return }
         let overlayCoversLights = sidebarOverlayVisible && (tabLayout.position == .left || tabLayout.position == .top)
-        let overSidebar = !window.styleMask.contains(.fullScreen) && ((tabLayout.position == .left && sidebarVisible) || overlayCoversLights)
+        let overSidebar = !window.styleMask.contains(.fullScreen) && ((tabLayout.position == .left && sidebarVisible && !railReplacesSidebar) || overlayCoversLights)
         let compactBar = !window.styleMask.contains(.fullScreen) && sidebarVisible && hasCompactPageToolbar
         let corner = (overSidebar && tabLayout.shown(toolbarVisible: toolbarVisible) == .default) || compactBar
-        let inset: CGFloat? = overSidebar || compactBar ? Self.trafficLightsInset : nil
+        // Docked on the left past the narrow range, the rail or the narrowed sidebar takes the sidebar's place:
+        // the lights move onto the toolbar row, past its column, as far in as they sit over the sidebar.
+        let rail = railReplacesSidebar && tabLayout.position == .left
+        let inset: CGFloat? = overSidebar || compactBar ? Self.trafficLightsInset
+            : rail ? (sidebarRail ? Self.sidebarRailWidth : sidebarWidth) + Self.contentInset + Self.trafficLightsInset
+            : nil
         trafficLightAnimator.place(window: window, inset: inset, square: corner)
     }
 
@@ -234,6 +275,8 @@ extension MainWindowController {
         sentArchiveFavicons = [:]
         searchHandler?.sentFaviconHosts = []
         historyPageHandler?.sentFaviconHosts = []
+        // A reloaded chrome starts with no system screen open, and reports one only when it opens.
+        pageShellOpen = false
         // A reloaded chrome has lost its capture cards: nothing can open their captures any more.
         copiedCaptures.keys.forEach(ChromeUISchemeHandler.discardScreenshot)
         copiedCaptures = [:]

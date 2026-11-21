@@ -14,7 +14,7 @@ export const read = (path) => readFileSync(`${repo}${path}`, "utf-8");
 export const SOURCES = {
   shortcuts: "Lilo/App/KeyboardShortcuts.swift",
   settings: "lilo-ui/src/components/settings/settingsPanelModel.ts",
-  tools: ["Lilo/Agent/AgentTools.swift", "Lilo/Agent/AgentInteractionTools.swift", "Lilo/Agent/AgentDevTools.swift"],
+  tools: ["Lilo/Agent/AgentTools.swift", "Lilo/Agent/AgentInteractionTools.swift", "Lilo/Agent/AgentDevTools.swift", "Lilo/Agent/AgentFlows.swift", "Lilo/Agent/AgentBrowserConfig.swift"],
   summaries: "docs-site/scripts/mcp-tools.json",
   compatibility: "COMPATIBILITY.md",
   catalog: (locale) => `lilo-ui/src/lib/i18n/locales/${locale}.json`,
@@ -115,11 +115,12 @@ export function shortcutsPartial(actions, catalog, locale) {
 const lookup = (catalog, locale, key) =>
   key.split(".").reduce((node, part) => node?.[part], catalog) ?? fail(SOURCES.catalog(locale), `no string "${key}"`);
 
-/** A catalog string whose `{placeholders}` are Blume variables (`{version}` becomes `{{version}}`). */
+/** A catalog string whose `{placeholders}` are Blume variables (`{version}` becomes `{{version}}`); a runtime-only one like `{tag}` stays, as inline code. */
 function catalogText(catalog, locale, key) {
   const text = lookup(catalog, locale, key);
   if (typeof text !== "string") fail(SOURCES.catalog(locale), `"${key}" is not a string`);
   return cell(text).replace(/\\\{(\w+)\\\}/gu, (_, name) => {
+    if (name === "tag") return "`{tag}`";
     if (name !== "version") fail(SOURCES.catalog(locale), `"${key}" has a placeholder {${name}} the reference cannot fill`);
     return `{{${name}}}`;
   });
@@ -282,9 +283,9 @@ function checkSchema(schema, where, file) {
   }
 }
 
-const COMPOSED = "tabAndPageDefinitions + AgentInteractionTools.definitions + AgentDevTools.definitions";
+const COMPOSED = "tabAndPageDefinitions + AgentInteractionTools.definitions + AgentDevTools.definitions + AgentFlows.definitions + AgentBrowserConfig.definitions";
 
-/** The tools a file defines in its `static let …: [[String: Any]] = [ … ]` lists, and its browser pickers. */
+/** The tools a file defines in its `static let …: [[String: Any]] = [ … ]` lists. */
 export function parseTools(source, file) {
   const tools = [];
   for (const match of source.matchAll(/static let \w+: \[\[String: Any\]\] = \[/gu)) {
@@ -307,8 +308,7 @@ export function parseTools(source, file) {
     }
   }
   if (tools.length === 0) fail(file, "no tool definitions found");
-  const pickers = source.match(/static let browserPickers: Set = (\[[^\]]*\])/u);
-  return { tools, pickers: pickers ? new SwiftReader(pickers[1], file).value() : [] };
+  return { tools };
 }
 
 /** Every `tool("` call in the agent sources, strings left out, must be a tool the readers found, or a list or file is missed. */
@@ -338,11 +338,10 @@ function parameterRows(properties, required, prefix = "") {
   });
 }
 
-const GROUPS = { "Lilo/Agent/AgentTools.swift": "Tabs and pages", "Lilo/Agent/AgentInteractionTools.swift": "Interaction", "Lilo/Agent/AgentDevTools.swift": "Developer tools" };
+const GROUPS = { "Lilo/Agent/AgentTools.swift": "Tabs and pages", "Lilo/Agent/AgentInteractionTools.swift": "Interaction", "Lilo/Agent/AgentDevTools.swift": "Developer tools", "Lilo/Agent/AgentFlows.swift": "Flows", "Lilo/Agent/AgentBrowserConfig.swift": "Lilo" };
 
 export function mcpPartial(parsed, summaries) {
   const tools = parsed.flatMap((file) => file.tools);
-  const pickers = new Set(parsed.flatMap((file) => file.pickers));
   const names = new Set();
   for (const tool of tools) {
     if (names.has(tool.name)) fail(tool.file, `two tools are named "${tool.name}"`);
@@ -352,23 +351,16 @@ export function mcpPartial(parsed, summaries) {
     if (typeof summaries[tool.name] !== "string" || !summaries[tool.name].trim()) fail(SOURCES.summaries, `no summary for the tool "${tool.name}" (${tool.file}): add one to ${SOURCES.summaries}`);
   }
   for (const name of Object.keys(summaries)) if (!names.has(name)) fail(SOURCES.summaries, `summary for "${name}", a tool no Swift file defines: rename or remove it in ${SOURCES.summaries}`);
-  for (const name of pickers) if (!names.has(name)) fail(SOURCES.tools[1], `browserPickers names "${name}", which is not a tool`);
   const sections = parsed.map(({ tools: own }) => {
     const file = own[0].file;
-    const body = own
-      .filter((tool) => !pickers.has(tool.name))
-      .map((tool) => {
-        const rows = parameterRows(tool.properties, tool.required);
-        const params = rows.length ? table(["Parameter", "Type", "Required", "Description"], rows) : "No parameters.";
-        return `### \`${tool.name}\` [#${tool.name}]\n\n${cell(summaries[tool.name])}\n\n${params}\n`;
-      });
+    const body = own.map((tool) => {
+      const rows = parameterRows(tool.properties, tool.required);
+      const params = rows.length ? table(["Parameter", "Type", "Required", "Description"], rows) : "No parameters.";
+      return `### \`${tool.name}\` [#${tool.name}]\n\n${cell(summaries[tool.name])}\n\n${params}\n`;
+    });
     return `## ${GROUPS[file] ?? fail(file, "no group heading for this file")} [#${anchor(GROUPS[file])}]\n\n${body.join("\n")}`;
   });
-  const closing = tools
-    .filter((tool) => pickers.has(tool.name))
-    .map((tool) => [cell(`\`${tool.name}\``), cell(Object.keys(tool.properties).map((name) => `\`${name}\``).join(", ")) || "none", cell(summaries[tool.name])]);
-  const pickerSection = closing.length ? `## Browser selection [#browser-selection]\n\n${table(["Tool", "Parameters", "Summary"], closing)}\n` : "";
-  return [...sections, pickerSection].filter(Boolean).join("\n");
+  return sections.join("\n");
 }
 
 // MARK: Compatibility

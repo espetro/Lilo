@@ -31,6 +31,7 @@
   } from "../../stores/tabPreview.svelte";
   import { subscribeHoverClear } from "../../lib/hoverClear";
   import { getSelectionTravelTarget } from "../../stores/selectionTravel.svelte";
+  import { contextSelectionIds, isTabSelected, tabClickSelection } from "../../stores/tabSelection.svelte";
   import { getRenamingTabId, setRenamingTabId } from "../../stores/tabRename.svelte";
   import { t } from "../../lib/i18n/state.svelte";
   import { getActingAgentTabIds, isAgentsSpace } from "../../stores/agents.svelte";
@@ -53,6 +54,7 @@
     tooltipAnchor,
     actionsInert = false,
     splitDropTarget = false,
+    inSplit = false,
     level = 1,
     tabStop = true,
     stackName,
@@ -65,6 +67,8 @@
     tooltipAnchor?: string;
     actionsInert?: boolean;
     splitDropTarget?: boolean;
+    /** The row is a pane of a split: its × takes the tab out of the split instead of closing it. */
+    inSplit?: boolean;
     /** Depth in the sidebar tree, 1 at the root. */
     level?: number;
     /** The one row of its tree that Tab lands on; arrows move between the others. */
@@ -117,6 +121,10 @@
 
   const tooltipURL = $derived(tooltipTabURL(tab.url));
 
+  function handleClick(event: MouseEvent) {
+    if (interactive && !tabClickSelection(event, tab.id, tabItemEl?.closest(".space-page") ?? null)) switchToTab();
+  }
+
   function switchToTab() {
     if (!interactive) return;
     // A Space's last tab outlives its dismissed bar: its row stands in for New Tab, hidden while it is active.
@@ -163,6 +171,11 @@
     // The row unmounts on close, so its mouseleave never fires.
     clearTabPreview();
 
+    if (inSplit) {
+      tabActions.unsplitTab(tab.id);
+      return;
+    }
+
     const intent = resolveTabCloseIntent(tab);
     if (intent === "unpin") {
       tabActions.unpin(tab.id);
@@ -187,6 +200,7 @@
   }
 
   const closeButtonLabel = $derived(
+    inSplit ? t("tabItem.removeFromSplit") :
     tab.isClosed && tab.isPinned ? t("tabItem.removePinnedTab") :
     tab.isClosed && tab.isBookmarked ? t("tabItem.removeBookmark") :
     t("tabItem.closeTab")
@@ -280,6 +294,9 @@
   const agentActing = $derived(getActingAgentTabIds().has(tab.id));
   const hangSeconds = $derived(getHangSeconds(tab.id));
   const hangRepeat = $derived(hangSeconds !== null && !!getPageHang(tab.id)?.repeat);
+  // A page suspended in place or discarded; a closed (saved) tab already reads "Asleep".
+  const isDozing = $derived(!!tab.isSleeping && !tab.isClosed && !isTerminal);
+  const keptLoaded = $derived(!!tab.neverSleep && !tab.isClosed && !isTerminal);
   const rowLabel = $derived(
     [
       terminalLabel || displayTitle,
@@ -291,6 +308,8 @@
       captureLabel,
       tab.isMuted ? t("tabItem.muted") : tab.isAudioPlaying ? t("tabItem.playingAudio") : "",
       tab.isClosed && !isTerminal ? t("tabItem.sleeping") : "",
+      isDozing ? t("tabItem.dozing") : "",
+      keptLoaded ? t("tabItem.keepLoaded") : "",
       awaitingInput && !isTerminal ? t("tabItem.terminalAttention") : "",
       pageUnreadCount > 0 ? t("tabItem.unreadCount", { count: String(pageUnreadCount) }) : hasPageUnread ? t("tabItem.unread") : "",
       terminalIconLabel,
@@ -339,6 +358,7 @@
   // two rows that actually flip rebuild their tooltip params.
   const isPreviewedTab = $derived(getTabPreviewTabId() === tab.id);
 
+  const isSelected = $derived(interactive && isTabSelected(tab.id));
   const isRenaming = $derived(interactive && getRenamingTabId() === tab.id);
 
   const tooltipContent = $derived({
@@ -408,6 +428,7 @@
       rect.top,
       rect.width,
       rect.height,
+      contextSelectionIds(tab.id),
     );
   }
 
@@ -437,8 +458,10 @@
   data-tab-id={tab.id}
   class="tab-item"
   class:active={isActive}
+  class:selected={isSelected}
   class:travel-hold={travelHold}
   class:closed={tab.isClosed}
+  class:dozing={isDozing}
   class:loading={tab.isLoading}
   class:split-drop-target={splitDropTarget}
   class:interactive
@@ -446,10 +469,10 @@
   role="treeitem"
   tabindex={interactive && tabStop ? 0 : -1}
   aria-level={level}
-  aria-selected={isActive}
+  aria-selected={isActive || isSelected}
   aria-label={rowLabel}
   use:tooltip={tooltipContent}
-  onclick={switchToTab}
+  onclick={handleClick}
   onauxclick={(e) => e.button === 1 && requestCloseTab()}
   oncontextmenu={handleContextMenu}
   onkeydown={(e) => {
@@ -566,9 +589,12 @@
           url={tab.url}
           size={16}
           radius={4}
-          asleep={tab.isClosed}
+          asleep={tab.isClosed || isDozing}
         />
       </div>
+    {/if}
+    {#if isDozing || keptLoaded}
+      <span class="doze-ring" class:kept={keptLoaded && !isDozing} aria-hidden={!isDozing} use:tooltip={{ text: isDozing ? t("tabItem.dozingHint") : t("tabItem.keepLoadedHint"), placement: tooltipSide() }}></span>
     {/if}
     <!-- One corner mark at a time: the orange dot for a page or an agent's action waiting on you, else what the tab captures. -->
     {#if agentActing || (awaitingInput && !isTerminal && tab.kind !== "agent")}
@@ -737,6 +763,11 @@
     box-shadow: inset 0 0 0 0.5px var(--sidebar-sel-ring);
   }
 
+  /* A selected row away from the active tab wears the same surface, a little quieter. */
+  .tab-item.selected:not(.active) {
+    background: color-mix(in srgb, var(--sidebar-sel) 65%, transparent);
+  }
+
   .tab-item.split-drop-target {
     background: var(--accent-tint-22);
     box-shadow: inset 0 0 0 1px var(--accent);
@@ -761,6 +792,25 @@
   .tab-item.closed .tab-icon:not(:has(.site-favicon)) {
     filter: grayscale(1);
     opacity: 0.55;
+  }
+
+  /* Dimmed through the secondary text color, not opacity, so the title keeps its AA contrast. */
+  .tab-item.dozing .tab-title {
+    color: var(--text-secondary);
+  }
+
+  /* Auto Tab Discard's cue: a dotted circle around the favicon. It sits outside the 16px box, so nothing shifts.
+     A kept-loaded tab shares the ring's spot and size with a solid stroke: sleeping and kept loaded stay one family of cues. */
+  .doze-ring {
+    position: absolute;
+    inset: -3px;
+    border: 1.5px dotted var(--text-secondary);
+    border-radius: 50%;
+  }
+
+  .doze-ring.kept {
+    border-style: solid;
+    border-color: var(--accent);
   }
 
   .tab-icon {

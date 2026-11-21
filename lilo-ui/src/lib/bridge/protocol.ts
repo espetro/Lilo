@@ -178,6 +178,13 @@ export interface BridgeAgentInfo {
 	description: string;
 	/** An SVG data URL from the ACP registry. */
 	icon?: string;
+	/** Offered first: one of Lilo's featured agents, or the user's custom command. */
+	featured?: boolean;
+	/** An agent the user added as a command in Settings rather than a registry entry. */
+	command?: boolean;
+	/** The repository and license the registry entry publishes. */
+	repository?: string;
+	license?: string;
 }
 
 export interface BridgeFolderLock {
@@ -552,6 +559,8 @@ export interface BridgeInitialStatePayload {
 	sidebarWidth: number;
 	sidebarVisible: boolean;
 	sidebarRail?: boolean;
+	/** MainWindowController.narrowSidebarWidth: the sidebar width under which the lights leave the header. */
+	narrowSidebarWidth?: number;
 	toolbarVisible?: boolean;
 	trafficLightsVisible?: boolean;
 	tabPosition?: TabPosition;
@@ -628,8 +637,10 @@ export interface BridgeCommandPayloadMap {
 	/** The system color sampler, answered by `screenColorSampled`. */
 	sampleScreenColor: EmptyPayload;
 	sidebarOverlayChanged: { visible: boolean };
+	/** A system screen covers the page (Settings, History, Downloads, ...); ⌘W closes it before the tab. */
+	pageShellChanged: { open: boolean };
 	showTabSecurityInfo: EmptyPayload;
-	showTabContextMenu: { id: string; x: number; y: number; width: number; height: number };
+	showTabContextMenu: { id: string; x: number; y: number; width: number; height: number; selectedIds?: string[] };
 	showFolderContextMenu: { id: string; x: number; y: number; width: number; height: number };
 	showTabStackContextMenu: { ids: string[]; host: string; name: string; x: number; y: number; width: number; height: number };
 	showSidebarContextMenu: { x: number; y: number; width: number; height: number; spaceId?: string };
@@ -698,6 +709,12 @@ export interface BridgeCommandPayloadMap {
 	dismissFind: EmptyPayload;
 	/** A chrome bar closed: the keyboard goes back to the page. */
 	focusPage: EmptyPayload;
+	/** The Little window's chrome is up and wants its state. */
+	littleReady: EmptyPayload;
+	/** Files the Little window's page as a tab: of `spaceId`, else of the Space the window was opened for. */
+	littleOpenInSpace: { spaceId?: string };
+	littleCopyLink: EmptyPayload;
+	littleClose: EmptyPayload;
 	screenshotPage: { mode: "full" | "viewport" | "region" };
 	/** Opens the editor on a copied capture, which it holds from then on. */
 	editCapture: { captureId: string };
@@ -715,6 +732,10 @@ export interface BridgeCommandPayloadMap {
 	newSplitView: EmptyPayload;
 	newTerminal: EmptyPayload;
 	splitTab: { tabId: string; side: SplitDropSide; targetTabId?: string };
+	/** Takes a split pane's tab out of the split, back into the list; the tab stays open. */
+	unsplitTab: { tabId: string };
+	/** Leaves a split pane's tab as the split's only pane; the others return to the list. */
+	maximizeSplitPane: { tabId: string };
 	splitURL: { url: string; side: SplitDropSide; targetTabId?: string };
 	openDroppedLinks: { urls: string[] } & BridgeLinkDropTarget;
 	peekURL: { url: string };
@@ -833,6 +854,9 @@ export interface BridgeCommandPayloadMap {
 	showChanges: { tabId?: string };
 	importTerminalTheme: EmptyPayload;
 	connectAgentClient: { client: string };
+	/** Asks what Connect (or Remove) would write to the app's configuration: answered with `agentClientPreview`. */
+	previewAgentClient: { client: string; remove: boolean };
+	removeAgentClient: { client: string };
 	startConversation: {
 		agentId: string;
 		cwd: string;
@@ -869,6 +893,10 @@ export interface BridgeCommandPayloadMap {
 	previewConversationArtifact: { tabId: string; code: string; language: string };
 	getAgentClients: EmptyPayload;
 	revokeAgentClient: { name: string };
+	/** Asks for each agent's latest calls: answered with `agentActionLog`. */
+	getAgentActionLog: EmptyPayload;
+	/** Reveals the folder of the action log in Finder. */
+	openAgentActionLog: EmptyPayload;
 	getAppNames: { ids: string[] };
 	getUpdaterStatus: EmptyPayload;
 	checkForUpdates: EmptyPayload;
@@ -1002,6 +1030,7 @@ export interface BridgeEventPayloadMap {
 	/** A drag entered the chrome: its links (file URLs included), else its text. */
 	linkDrag: { urls: string[]; text: string };
 	openCommandBar: { createOnSubmit?: boolean; newTab?: boolean; prefill?: string; selectAll?: boolean };
+	littleState: BridgeLittleState;
 	toggleCommandBar: { prefill?: string; selectAll?: boolean };
 	openHistory: { query?: string; host?: string; openedFrom?: string };
 	closeCommandBarAfterNavigation: EmptyPayload;
@@ -1013,6 +1042,8 @@ export interface BridgeEventPayloadMap {
 	openDiagnostics: EmptyPayload;
 	openProcessManager: EmptyPayload;
 	openDownloads: EmptyPayload;
+	// ⌘W while a system screen covers the page: close it, leaving the tab behind.
+	closePageShell: EmptyPayload;
 	/** `id`: the extension whose details page opens. */
 	openExtensions: { id?: string };
 	openConfig: EmptyPayload;
@@ -1189,6 +1220,8 @@ export interface BridgeEventPayloadMap {
 		moods: Record<string, BridgeAgentMood>;
 	};
 	agentClientsLoaded: BridgeAgentClientsSnapshot;
+	agentClientPreview: BridgeAgentClientPreview;
+	agentActionLog: BridgeAgentActionLog;
 	appNames: { names: Record<string, string> };
 	updaterStatus: BridgeUpdaterStatus;
 	/** The downloaded update waiting for a relaunch; null once dismissed. */
@@ -1216,6 +1249,8 @@ export interface BridgeEventPayloadMap {
 	processSnapshotUpdated: BridgeProcessSnapshot;
 	tabMemoryUpdated: { tabId: string; bytes: number; cpuPercent?: number };
 	splitPanesChanged: { panes: BridgeSplitPaneFrame[] };
+	/** A split pane dragged by its handle, at the content-area point (fractions, as the pane frames). */
+	splitPaneDrag: { tabId: string; phase: "move" | "end" | "cancel"; x: number; y: number };
 	/** Width the extension side panel and its divider take right of the content; 0 when closed. */
 	sidePanelWidthChanged: { width: number };
 	processManagerActionCompleted: BridgeProcessManagerActionStatusPayload;
@@ -1264,6 +1299,19 @@ export interface BridgeEventPayloadMap {
 	openAddSpaceEditor: EmptyPayload;
 	urlCopied: EmptyPayload;
 	urlCopyFailed: EmptyPayload;
+}
+
+/** What a Little window's chrome shows: the start search, or the page's address and where it can be filed. */
+export interface BridgeLittleState {
+	mode: "start" | "page";
+	/** The page's address; empty before its first navigation. */
+	url: string;
+	loading: boolean;
+	/** The Space the window was opened for, its accent color for the strip's palette. */
+	space: { id: string; name: string; icon: string; color: string };
+	otherSpaces: { id: string; name: string; icon: string }[];
+	/** Width the traffic lights take at the strip's start. */
+	leadingInset: number;
 }
 
 export type BridgeCommandName = keyof BridgeCommandPayloadMap;
@@ -1325,10 +1373,37 @@ export interface BridgeRunningApp {
 	name: string;
 }
 
-/** Agent apps installed or naming Lilo in their configuration, and the agents the user let in. */
+/** What Connect or Remove writes to an agent app's configuration, before it does. Native sends only the lines that
+ * change: `number` is the line in the file as it is (`removed`) or as it will be. Claude Code has a `command` instead. */
+export interface BridgeAgentClientPreview {
+	client: string;
+	remove: boolean;
+	/** The file, with the home as `~`. */
+	path: string;
+	command: string | null;
+	lines: { number: number; removed: boolean; text: string }[];
+	/** What to paste by hand: the configuration, empty for a removal. */
+	snippet: string;
+	/** Why Lilo will not write the file; null when it can. */
+	blocked: string | null;
+}
+
+/** Each agent's latest calls from the action log: what the writer kept, never an argument. */
+export interface BridgeAgentActionLog {
+	/** Most recently active first. `name` is how people know the agent; `calls` run newest first. */
+	clients: {
+		name: string;
+		/** `time` is ISO 8601; `host` the page's host when the call named a tab; `code` the failure's, when it failed. */
+		calls: { time: string; tool: string; host: string | null; ok: boolean; code: string | null }[];
+	}[];
+}
+
+/** The catalog's agent apps, which are installed or name Lilo in their configuration, and the agents the user let in. */
 export interface BridgeAgentClientsSnapshot {
-	/** `icon` is a PNG data URL of the app (Terminal's for a command-line tool), null when it is not installed. */
-	clients: { id: string; configured: boolean; icon: string | null }[];
+	/** Every app of the catalog. `installed` is what the scan of the home found; `icon` is a PNG data URL of the app
+	 * (Terminal's for a command-line tool), null when it is not installed. `stale` is a configuration naming a
+	 * Lilo at another path, which Connect repoints. */
+	clients: { id: string; configured: boolean; installed: boolean; stale?: boolean; icon: string | null }[];
 	/** `name` is what the agent calls itself; `displayName` is how people know it ("Claude Code"); `client` the
 	 * entry of `clients` it is, null for an agent Lilo has no configuration for. */
 	allowed: { name: string; displayName: string; lastSeen: number | null; client: string | null }[];
@@ -1343,6 +1418,11 @@ export interface BridgeUpdaterStatus {
 	available: boolean;
 	automatic: boolean;
 	lastCheck: number | null;
+	/** True when an unsigned build watches a plain release feed (the fork beta); the beta fields then apply. */
+	betaFeed: boolean;
+	/** The newer beta release found: tag and release page; null while this build is the newest or none checked yet. */
+	betaAvailable: { tag: string; url: string } | null;
+	betaLastCheck: number | null;
 }
 
 /** One menu's actions, keys already spelled with their symbols; `custom` when the user changed them. */

@@ -208,16 +208,19 @@ extension MainWindowController {
         // The visible frame paint: fades over ~0.34s to match the chrome sidebar's own background-color transition.
         // Space swipes take `applySwipeFrameColor` instead, frame by frame without a fade.
         windowFrameView?.setFrameColor(frameColor)
+        currentFrameColor = frameColor
         syncPageBar()
         (contentContainerView as? ContentContainerView)?.stageColor = resolvedColor
-        for divider in splitPanes.dividers.values { divider.setFrameColor(resolvedColor, animated: true) }
-        sidePanel.setFrameColor(resolvedColor)
+        splitPanes.setFrameColor(frameColor, animated: true)
+        sidePanel.setFrameColor(resolvedColor, frameColor: frameColor)
         // A Changes view paints the frame color under its cards.
         for case let view as ChangesView in contentContainerView.subviews { view.needsDisplay = true }
         changesPeek?.view.needsDisplay = true
 
         guard let contentLayer = contentContainerView.layer else { return }
-        contentLayer.backgroundColor = surfaceColor.cgColor
+        // On glass the hole stays clear so the dividers and the frame's corner bites composite over the
+        // same glass as the bands; the opaque surface would show through a translucent divider instead.
+        contentLayer.backgroundColor = glassView == nil ? surfaceColor.cgColor : nil
         contentLayer.borderColor = resolvedColor.contentSurfaceBorderColor.cgColor
 
         // Only the visible engines (the active tab, or every pane of its split) need the new surface color now;
@@ -235,7 +238,11 @@ extension MainWindowController {
         guard let color = NSColor(cssHex: cssColor) else { return }
         // Without glass the opaque frame bands hide the window background, so only the glass tint needs the color.
         glassView?.tintColor = color.withAlphaComponent(0.2)
-        windowFrameView?.setFrameColor(glassView == nil ? color : color.withAlphaComponent(0.06), animated: false)
+        let frameColor = glassView == nil ? color : color.withAlphaComponent(0.06)
+        windowFrameView?.setFrameColor(frameColor, animated: false)
+        splitPanes.setFrameColor(frameColor, animated: false)
+        sidePanel.setDividerFrameColor(frameColor, animated: false)
+        currentFrameColor = frameColor
         lastAppliedWindowChromeColor = nil
     }
 
@@ -323,6 +330,7 @@ extension MainWindowController {
             }
         }
         context.applyLifecyclePreset(settingsStore.lifecyclePreset)
+        context.browserState.neverSleepHosts = settingsStore.tabSleepAllowlist
         applyTerminalSettings()
         Task { @MainActor [context] in await context.startContentBlocker() }
         let permissionDecisionHandler: GeolocationBridge.PermissionDecisionHandler = { [weak context] webView, type, origin, completion in
@@ -796,6 +804,7 @@ extension MainWindowController {
             "sidebarWidth": sidebarExpandedWidth,
             "sidebarVisible": sidebarVisible,
             "sidebarRail": sidebarRail,
+            "narrowSidebarWidth": Self.narrowSidebarWidth,
             "toolbarVisible": toolbarVisible,
             "trafficLightsVisible": areTrafficLightsVisible(),
             "tabPosition": tabLayout.position.rawValue,
@@ -888,13 +897,7 @@ extension MainWindowController {
     var hasCompactPageToolbar: Bool { tabLayout.position == .bottom && shownTabLayout.address != .page }
 
     /// Right and bottom always keep a toolbar over the page: the traffic lights stay top-left.
-    var hasPageToolbar: Bool {
-        switch tabLayout.position {
-        case .left: shownTabLayout.address == .page
-        case .right, .bottom: true
-        case .top: false
-        }
-    }
+    var hasPageToolbar: Bool { tabLayout.showsPageToolbar(toolbarVisible: toolbarVisible) }
 
     /// Where the page sits, side panel excluded. Hidden tabs leave the page every edge but the address's own
     /// toolbar, which hides on its own; an overlay floats over it.

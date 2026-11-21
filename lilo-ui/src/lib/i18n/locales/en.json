@@ -23,6 +23,10 @@
 		"terabyte": "TB"
 	},
 	"settings": {
+		"commandBarLayout": {
+			"default": "Default",
+			"compact": "Compact"
+		},
 		"terminalEnabled": "Terminal tabs",
 		"terminalEnabledDescription": "Open shells as tabs next to your pages. When off, the terminal shortcuts, buttons and menus are hidden; open terminals stay until closed.",
 		"terminalTheme": "Theme",
@@ -79,11 +83,6 @@
 		"passwordManagerAction": "Choose",
 		"passwordManagerChange": "Change",
 		"replayOnboardingAction": "Replay",
-		"defaultBrowserSet": "Set as Default",
-		"defaultBrowserLater": "Later",
-		"defaultBrowserBannerText": "Make Lilo your default browser?",
-		"defaultBrowserSetSuccess": "Lilo is now your default browser.",
-		"defaultBrowserSetFailed": "Lilo was not set as the default browser. You can change this in System Settings.",
 		"engineName": "Name",
 		"engineUrlTemplate": "Search URL (%s = query)",
 		"engineKeyword": "Keyword",
@@ -167,13 +166,15 @@
 			"passwords": "Passwords",
 			"agentAccess": "Agents using Lilo",
 			"agentClients": "Apps that can use Lilo",
+			"agentActivity": "Activity",
 			"lilo": "Lilo",
 			"tabsWindows": "Tabs and windows",
 			"sitePermissions": "Site permissions",
 			"profiles": "Profiles",
 			"otherAppLinks": "Links from other apps",
 			"blockerExceptions": "Lists and exceptions",
-			"agentConversations": "Conversations"
+			"agentConversations": "Conversations",
+			"beta": "Beta mode"
 		},
 		"searchPlaceholder": "Search settings",
 		"searchResultsTitle": "Search results",
@@ -203,7 +204,7 @@
 		"sites": {
 			"permissionSummary": "{type}: {decision}",
 			"zoomSummary": "Zoom {zoom}",
-			"hiddenSummary": {"one": "{count} hidden element", "other": "{count} hidden elements"},
+			"hiddenSummary": "{count, plural, one{# hidden element} other{# hidden elements}}",
 			"dataSummary": "Stored data",
 			"permissionUpdated": "{origin} · Updated {time}",
 			"emptyTitle": "No site settings yet",
@@ -211,6 +212,24 @@
 			"more": "{count} more. Search to narrow the list."
 		},
 		"items": {
+			"agentInstances": {
+				"title": "Agents",
+				"description": "Registry agents and commands of your own that the ask bar offers; turn one off and it leaves the picker.",
+				"keywords": "agents acp registry custom command provider instance enable disable picker"
+			},
+			"customAgent": {
+				"name": "Name",
+				"namePlaceholder": "My agent",
+				"executable": "Command",
+				"arguments": "Arguments, one per line",
+				"environment": "Environment, NAME=value per line",
+				"note": "The command is the full path of an executable file that speaks the Agent Client Protocol over standard input and output."
+			},
+			"commandBarLayout": {
+				"title": "Command bar layout",
+				"description": "Choose the default or compact command bar.",
+				"keywords": "Command bar layout Default Compact"
+			},
 			"appIcon": {
 				"title": "App icon",
 				"description": "Only Classic follows the macOS dark, tinted and clear icon styles."
@@ -319,6 +338,12 @@
 				"title": "Idle tabs",
 				"description": "How quickly inactive tabs are frozen and unloaded.",
 				"keywords": "memory performance battery freeze unload sleep"
+			},
+			"tabSleepAllowlist": {
+				"title": "Sites kept loaded",
+				"description": "Tabs on these sites, subdomains included, are never frozen or unloaded, so they keep using memory and battery. Separated by commas.",
+				"keywords": "keep loaded allowlist whitelist exception never sleep freeze unload discard",
+				"placeholder": "mail.example.com, example.org"
 			},
 			"singleWindow": {
 				"title": "Keep everything in one window",
@@ -497,6 +522,11 @@
 				"description": "The agent waits for your answer.",
 				"keywords": "agent approval confirm payment purchase order delete send publish"
 			},
+			"agentActionLog": {
+				"title": "Keep a log of agent actions",
+				"description": "A local file lists each call, never typed text or page content.",
+				"keywords": "agent log history audit actions replay record"
+			},
 			"agentAlwaysAllowed": {
 				"title": "Always allowed",
 				"description": "Agents act on these sites without asking.",
@@ -505,6 +535,11 @@
 			"agentOther": {
 				"title": "Other agents",
 				"description": "Any other MCP client, with Lilo's configuration."
+			},
+			"agentActivity": {
+				"title": "Recent agent calls",
+				"description": "The latest calls each app made, newest first. Read when you open this page or refresh.",
+				"keywords": "agent log history audit actions recent calls activity"
 			},
 			"autoplay": {
 				"title": "Autoplay",
@@ -530,6 +565,11 @@
 				"title": "Keyboard shortcuts",
 				"description": "Change any shortcut, or start from Arc's.",
 				"keywords": "keyboard shortcut hotkey keys command"
+			},
+			"holdToQuit": {
+				"title": "Hold ⌘Q to quit",
+				"description": "Pressing ⌘Q shows a prompt; Lilo quits only when the keys are held down.",
+				"keywords": "quit exit command q accidental hold"
 			},
 			"newProfile": {
 				"title": "New profile",
@@ -598,6 +638,19 @@
 				"reset": "Restore Default",
 				"resetTitle": "Restore Lilo's prompt?",
 				"resetMessage": "Your changes are replaced by the default prompt."
+			},
+			"betaUpdateCheck": {
+				"title": "Beta updates",
+				"description": "This beta compares its build with the fork's newest release page on its own once, on launch.",
+				"keywords": "beta update release fork",
+				"check": "Check for Betas",
+				"lastChecked": "Checked {time}",
+				"absent": "This build has no beta feed."
+			},
+			"betaUpdateRelease": {
+				"title": "Beta {tag} is out",
+				"description": "Downloaded from the release page and installed by hand; Lilo never replaces itself.",
+				"open": "Open Release"
 			}
 		},
 		"devices": {
@@ -610,28 +663,16 @@
 		},
 		"filterLists": {
 			"update": "Update Now",
-			"summary": {
-				"one": "{count} list",
-				"other": "{count} lists"
-			},
+			"summary": "{count, plural, one{# list} other{# lists}}",
 			"updated": "updated {time}"
 		},
 		"extensionUpdates": {
 			"checkNow": "Check Now",
 			"checking": "Checking for updates...",
 			"upToDate": "Up to date",
-			"updated": {
-				"one": "{count} updated",
-				"other": "{count} updated"
-			},
-			"available": {
-				"one": "{count} update available",
-				"other": "{count} updates available"
-			},
-			"failed": {
-				"one": "{count} could not be checked",
-				"other": "{count} could not be checked"
-			},
+			"updated": "{count, plural, one{# updated} other{# updated}}",
+			"available": "{count, plural, one{# update available} other{# updates available}}",
+			"failed": "{count, plural, one{# could not be checked} other{# could not be checked}}",
 			"lastChecked": "Last checked {time}"
 		},
 		"folderAutoLock": {
@@ -642,12 +683,34 @@
 				"claudeCode": "Claude Code",
 				"claudeDesktop": "Claude Desktop",
 				"codex": "Codex",
-				"cursor": "Cursor"
+				"cursor": "Cursor",
+				"zed": "Zed",
+				"vscode": "VS Code",
+				"opencode": "OpenCode",
+				"gemini": "Gemini CLI"
 			},
 			"connect": "Connect",
 			"copy": "Copy Configuration",
 			"clientDescription": "Adds Lilo to its MCP servers.",
 			"revoke": "Remove",
+			"repair": "Repair",
+			"moreFor": "More actions for {client}",
+			"removeFrom": "Remove Lilo from {client}…",
+			"sheet": {
+				"addTitle": "Add Lilo to {client}",
+				"repairTitle": "Repair Lilo in {client}",
+				"removeTitle": "Remove Lilo from {client}",
+				"diff": "Lilo will change these lines and nothing else.",
+				"runs": "Lilo will run this command.",
+				"unchanged": "Nothing in this file changes.",
+				"addedLine": "Added",
+				"removedLine": "Removed",
+				"add": "Add Lilo",
+				"repair": "Repair",
+				"remove": "Remove Lilo",
+				"copy": "Copy",
+				"copied": "Copied"
+			},
 			"status": {
 				"acting": "Acting now",
 				"connected": "Connected",
@@ -656,7 +719,32 @@
 				"ready": "Configured"
 			},
 			"allowedSeen": "Allowed, last seen {time}",
-			"readyLine": "Configured. Lilo asks you the first time it connects."
+			"readyLine": "Configured. Lilo asks you the first time it connects.",
+			"detectedLine": "Found on this Mac. Not set up yet.",
+			"moreApps": "More apps",
+			"permissions": {
+				"button": "Permissions",
+				"group": "Permissions of {client}",
+				"act": "Acting on pages",
+				"actHint": "Clicks and requests that send, pay, buy, delete or publish.",
+				"askingOff": "Questions are turned off for every agent, in the setting above.",
+				"ask": "Ask each time",
+				"always": "Always allow",
+				"sites": "Allowed on these sites",
+				"addSite": "Add a site",
+				"addSiteLabel": "Add a site {client} may act on without asking",
+				"removeSite": "Remove {site}",
+				"floor": "Signing in, paying and sending data to another site are always asked."
+			}
+		},
+		"agentActivity": {
+			"refresh": "Refresh",
+			"open": "Open Action Log",
+			"off": "The action log is off",
+			"offDescription": "Lilo is not recording agent calls. Turn it on to see them here.",
+			"turnOn": "Turn On",
+			"empty": "No calls recorded yet.",
+			"failed": "Failed"
 		},
 		"navGroups": {
 			"tools": "Tools"
@@ -682,10 +770,7 @@
 			"clearData": "Clear data...",
 			"remove": "Remove...",
 			"lastProfile": "Your last profile stays: every Space needs one.",
-			"extensionCount": {
-				"one": "{count} extension",
-				"other": "{count} extensions"
-			},
+			"extensionCount": "{count, plural, one{# extension} other{# extensions}}",
 			"newProfile": "New Profile...",
 			"newProfileDetail": "Fresh cookies, sign-ins and extensions",
 			"namePlaceholder": "Profile name",
@@ -760,34 +845,42 @@
 		},
 		"notes": {
 			"live": "Changes apply as you pick",
-			"spaces": {
-				"one": "{count} Space",
-				"other": "{count} Spaces"
-			},
-			"profiles": {
-				"one": "{count} profile",
-				"other": "{count} profiles"
-			},
+			"spaces": "{count, plural, one{# Space} other{# Spaces}}",
+			"profiles": "{count, plural, one{# profile} other{# profiles}}",
 			"blocking": "Blocking {count} of {total} kinds",
 			"blockingOff": "Blocking is off",
 			"profile": "{name} profile",
-			"extensions": {
-				"one": "{count} extension in {profile}",
-				"other": "{count} extensions in {profile}"
-			},
+			"extensions": "{count, plural, one{# extension in {profile}} other{# extensions in {profile}}}",
 			"terminal": "Changes apply to every terminal tab",
 			"agents": "Lilo has no AI of its own",
 			"advanced": "For developers and testing",
-			"searchMatches": {
-				"one": "{count} setting matches \"{query}\"",
-				"other": "{count} settings match \"{query}\""
-			}
+			"searchMatches": "{count, plural, one{# setting matches \"{query}\"} other{# settings match \"{query}\"}}"
 		},
 		"callDock": {
 			"sidebar": "In the sidebar",
 			"floating": "Floating window"
 		},
-		"terminalImportCaption": "Import takes an iTerm2 color preset (.itermcolors), a VS Code color theme (.json) or a Ghostty theme file."
+		"terminalImportCaption": "Import takes an iTerm2 color preset (.itermcolors), a VS Code color theme (.json) or a Ghostty theme file.",
+		"agentInstances": {
+			"registry": "Registry",
+			"command": "Command",
+			"add": "Add Agent",
+			"hint": "A registry agent the list does not name still appears in the picker; add it here to turn it off.",
+			"menu": "Actions for {name}",
+			"edit": "Edit"
+		},
+		"agentSheet": {
+			"addTitle": "Add Agent",
+			"editTitle": "Edit Agent",
+			"registryTab": "From Registry",
+			"commandTab": "Custom Command",
+			"sourceLabel": "Agent source",
+			"searchPlaceholder": "Search agents",
+			"add": "Add",
+			"added": "Added",
+			"loading": "Loading the registry…",
+			"none": "No agents match."
+		}
 	},
 	"nav": {
 		"navigationControls": "Navigation controls",
@@ -864,6 +957,10 @@
 		"unreadCount": "{count} unread",
 		"previewOpen": "Open",
 		"sleeping": "Asleep",
+		"dozing": "Sleeping",
+		"dozingHint": "Sleeping to save memory. Wakes when you open it.",
+		"keepLoaded": "Kept loaded",
+		"keepLoadedHint": "Never sleeps; always ready.",
 		"pinned": "Pinned",
 		"loading": "Loading",
 		"muted": "Muted",
@@ -874,6 +971,7 @@
 		"terminalFailedDetail": "{command} failed (exit {code}) after {duration}",
 		"terminalSucceededDetail": "{command} finished in {duration}",
 		"closeTab": "Close tab",
+		"removeFromSplit": "Remove from Split View",
 		"removePinnedTab": "Remove pinned tab",
 		"tabName": "Tab name",
 		"removeBookmark": "Remove bookmark",
@@ -927,23 +1025,36 @@
 		"bottom": "Open below",
 		"replace": "Replace"
 	},
+	"paneMove": {
+		"left": "Move left",
+		"right": "Move right",
+		"top": "Move above",
+		"bottom": "Move below",
+		"replace": "Swap"
+	},
+	"splitPane": {
+		"close": "Close Split Pane",
+		"maximize": "Maximize Split Pane"
+	},
 	"tabSection": {
 		"splitView": "Split view",
 		"folderEmpty": "Folder empty",
 		"newTab": "New Tab",
+		"newTabShort": "New",
 		"newTerminal": "New Terminal",
 		"clearUnpinnedTooltip": "Archive unpinned tabs",
 		"listOptions": "Sort and Group",
+		"searchTabs": "Search tabs",
 		"pinnedTabs": "Pinned tabs",
 		"openTabs": "Open tabs",
 		"dropToPin": "Drop to pin",
-		"stackLabel": {"one": "{name}, {count} tab", "other": "{name}, {count} tabs"},
+		"stackLabel": "{count, plural, one{{name}, # tab} other{{name}, # tabs}}",
 		"closeStack": "Close Stack",
 		"trayAgents": "Agents",
 		"trayTerminals": "Terminals",
-		"trayNeedsInput": {"one": "{count} needs input", "other": "{count} need input"},
-		"trayWorking": {"one": "{count} working", "other": "{count} working"},
-		"trayRunning": {"one": "{count} running", "other": "{count} running"},
+		"trayNeedsInput": "{count, plural, one{# needs input} other{# need input}}",
+		"trayWorking": "{count, plural, one{# working} other{# working}}",
+		"trayRunning": "{count, plural, one{# running} other{# running}}",
 		"trayShow": "Show {name}",
 		"trayHide": "Hide {name}"
 	},
@@ -1199,6 +1310,7 @@
 		"terminalProgram": "Program",
 		"hintRun": "Run",
 		"hintSplit": "Split",
+		"splitFull": "Split view is full ({count} panes)",
 		"scopeTabs": "Tabs",
 		"scopeBookmarks": "Bookmarks",
 		"scopeHistory": "History",
@@ -1234,6 +1346,8 @@
 		"sectionOpenTabs": "Open Tabs",
 		"sectionBookmarks": "Bookmarks",
 		"sectionRecentHistory": "Recent History",
+		"sectionFrequentSites": "Frequent Sites",
+		"sectionRecentConversations": "Recent Conversations",
 		"sectionHistory": "History",
 		"sectionSwitchToTab": "Switch to Tab",
 		"sectionGoTo": "Go To",
@@ -1348,7 +1462,7 @@
 		"tabStartup": "Startup",
 		"tabMemory": "Memory",
 		"tabLog": "Log",
-		"errorCount": {"one": "{count} error", "other": "{count} errors"},
+		"errorCount": "{count, plural, one{# error} other{# errors}}",
 		"copyReport": "Copy Report",
 		"recordSession": "Record Session",
 		"stopRecording": "Stop Recording",
@@ -1390,23 +1504,11 @@
 		"navLabel": "Process Manager views",
 		"searchPlaceholder": "Search tabs",
 		"memoryAriaLabel": "Memory use",
-		"tabsCount": {
-			"one": "{count} tab",
-			"other": "{count} tabs"
-		},
+		"tabsCount": "{count, plural, one{# tab} other{# tabs}}",
 		"cpu": "CPU {value}",
-		"others": {
-			"one": "{count} other",
-			"other": "{count} others"
-		},
-		"reclaim": {
-			"one": "{count} hidden tab uses {size}",
-			"other": "{count} hidden tabs use {size}"
-		},
-		"reclaimNoSize": {
-			"one": "{count} hidden tab is still loaded",
-			"other": "{count} hidden tabs are still loaded"
-		},
+		"others": "{count, plural, one{# other} other{# others}}",
+		"reclaim": "{count, plural, one{# hidden tab uses {size}} other{# hidden tabs use {size}}}",
+		"reclaimNoSize": "{count, plural, one{# hidden tab is still loaded} other{# hidden tabs are still loaded}}",
 		"sleep": "Put to Sleep",
 		"groupTabs": "Tabs",
 		"groupSleeping": "Sleeping",
@@ -1416,10 +1518,7 @@
 		"audioPlaying": "Playing audio",
 		"frozen": "Frozen",
 		"sharedEstimate": "Shares its process with other tabs, so this is an estimate",
-		"sharedWith": {
-			"one": "shared with {count} other tab",
-			"other": "shared with {count} other tabs"
-		},
+		"sharedWith": "{count, plural, one{shared with # other tab} other{shared with # other tabs}}",
 		"pid": "PID {pid}",
 		"focus": "Show",
 		"details": "Show details",
@@ -1445,19 +1544,22 @@
 		"resetTitle": "Changed flags",
 		"reloadNote": "Reload a page for a change to take effect"
 	},
+	"little": {
+		"openIn": "Open in {space}",
+		"openInMenu": "Open in another Space",
+		"copyLink": "Copy link",
+		"linkCopied": "Link copied",
+		"placeholder": "Search or enter URL...",
+		"emptyTitle": "Search the web or enter a URL",
+		"emptySubtitle": "Type / to search the pages you visited."
+	},
 	"urlToast": {
 		"pageActions": "Page actions",
 		"reEnableBlocking": "Re-enable blocking on this site",
-		"trackersBlockedOnPage": {
-			"one": "{count} tracker blocked on this page",
-			"other": "{count} trackers blocked on this page"
-		},
+		"trackersBlockedOnPage": "{count, plural, one{# tracker blocked on this page} other{# trackers blocked on this page}}",
 		"disableBlocking": "Disable blocking on this site",
 		"adsAllowed": "Ads allowed",
-		"trackersBlockedLabel": {
-			"one": "{count} tracker blocked",
-			"other": "{count} trackers blocked"
-		},
+		"trackersBlockedLabel": "{count, plural, one{# tracker blocked} other{# trackers blocked}}",
 		"adsBlocked": "Ads blocked",
 		"extensionAlreadyInstalled": "Extension already installed",
 		"installChromeExtension": "Install this Chrome extension",
@@ -1501,10 +1603,7 @@
 		"stop": "Stop Debugging"
 	},
 	"notices": {
-		"moreNotices": {
-			"one": "{count} more notice",
-			"other": "{count} more notices"
-		},
+		"moreNotices": "{count, plural, one{# more notice} other{# more notices}}",
 		"more": "{count} more"
 	},
 	"crashRecovery": {
@@ -1545,7 +1644,7 @@
 	},
 	"archivedTabs": {
 		"title": "Archived",
-		"buttonLabel": {"one": "{count} recently archived tab", "other": "{count} recently archived tabs"},
+		"buttonLabel": "{count, plural, one{# recently archived tab} other{# recently archived tabs}}",
 		"restore": "Restore",
 		"showAll": "Show all archived tabs",
 		"showAllDownloads": "Show all downloads"
@@ -1556,7 +1655,7 @@
 		"undo": "Undo",
 		"reopen": "Reopen",
 		"archived": "\"{title}\" archived",
-		"archivedCount": {"one": "{count} tab archived", "other": "{count} tabs archived"}
+		"archivedCount": "{count, plural, one{# tab archived} other{# tabs archived}}"
 	},
 	"updateCard": {
 		"ready": "Ready to install",
@@ -1589,6 +1688,11 @@
 		"placeholder": "Search or enter URL...",
 		"addressBar": "Address bar: {url}",
 		"noProject": "No project",
+		"defaultBrowserSet": "Set as Default",
+		"defaultBrowserLater": "Later",
+		"defaultBrowserBannerText": "Make Lilo your default browser?",
+		"defaultBrowserSetSuccess": "Lilo is now your default browser.",
+		"defaultBrowserSetFailed": "Lilo was not set as the default browser. You can change this in System Settings.",
 		"details": {
 			"branch": "Branch",
 			"command": "Command",
@@ -1646,6 +1750,7 @@
 		"allow": "Allow",
 		"allowOnce": "Allow Once",
 		"alwaysAllowOnSite": "Always Allow on This Site",
+		"agentWaitsForAnswer": "The agent waits for your answer.",
 		"popup": {
 			"blocked": "Pop-up blocked",
 			"tried": "tried to open a pop-up window",
@@ -1767,26 +1872,11 @@
 			"done": "Done: {list}.",
 			"nothing": "Done: nothing new to import.",
 			"count": {
-				"bookmarks": {
-					"one": "{count} bookmark",
-					"other": "{count} bookmarks"
-				},
-				"tabs": {
-					"one": "{count} open tab",
-					"other": "{count} open tabs"
-				},
-				"history": {
-					"one": "{count} page of history",
-					"other": "{count} pages of history"
-				},
-				"cookies": {
-					"one": "{count} cookie",
-					"other": "{count} cookies"
-				},
-				"extensions": {
-					"one": "{count} extension",
-					"other": "{count} extensions"
-				}
+				"bookmarks": "{count, plural, one{# bookmark} other{# bookmarks}}",
+				"tabs": "{count, plural, one{# open tab} other{# open tabs}}",
+				"history": "{count, plural, one{# page of history} other{# pages of history}}",
+				"cookies": "{count, plural, one{# cookie} other{# cookies}}",
+				"extensions": "{count, plural, one{# extension} other{# extensions}}"
 			},
 			"step": {
 				"bookmarks": "Importing bookmarks from {from}",
@@ -1904,11 +1994,11 @@
 		"sectionSites": "Most Visited Sites",
 		"sectionTerminals": "From Terminals",
 		"searchResults": "Search Results",
-		"dayPages": {"one": "{count} page", "other": "{count} pages"},
-		"daySites": {"one": "{count} site", "other": "{count} sites"},
+		"dayPages": "{count, plural, one{# page} other{# pages}}",
+		"daySites": "{count, plural, one{# site} other{# sites}}",
 		"openInNewTab": "Open in New Tab",
-		"selected": {"one": "{count} selected", "other": "{count} selected"},
-		"visits": {"one": "{count} visit", "other": "{count} visits"},
+		"selected": "{count, plural, one{# selected} other{# selected}}",
+		"visits": "{count, plural, one{# visit} other{# visits}}",
 		"openInNewTabs": "Open in New Tabs",
 		"delete": "Delete",
 		"clearSelection": "Deselect All",
@@ -2093,6 +2183,7 @@
 		"Hide Others": "Hide Others",
 		"Show All": "Show All",
 		"Quit Lilo": "Quit Lilo",
+		"Hold %@ to Quit": "Hold %@ to Quit",
 		"File": "File",
 		"New Tab": "New Tab",
 		"Back to tab": "Back to tab",
@@ -2138,9 +2229,17 @@
 		"New Split View": "New Split View",
 		"Split View": "Split View",
 		"Separate Split View": "Separate Split View",
+		"Close Split Pane": "Close Split Pane",
+		"Maximize Split Pane": "Maximize Split Pane",
+		"Move Pane Left": "Move Pane Left",
+		"Move Pane Right": "Move Pane Right",
+		"Move Pane Up": "Move Pane Up",
+		"Move Pane Down": "Move Pane Down",
 		"Open in Split View": "Open in Split View",
+		"Split view is full (%lld panes)": "Split view is full (%lld panes)",
 		"Hide Element…": "Hide Element…",
 		"Click an element to hide it on this site. Press Esc to cancel.": "Click an element to hide it on this site. Press Esc to cancel.",
+		"Click an element or drag an area. Arrow keys change the element, Return captures, Esc cancels.": "Click an element or drag an area. Arrow keys change the element, Return captures, Esc cancels.",
 		"Picture in Picture": "Picture in Picture",
 		"Develop": "Develop",
 		"Show Web Inspector": "Show Web Inspector",
@@ -2227,6 +2326,7 @@
 		"Download Complete": "Download Complete",
 		"Download Failed": "Download Failed",
 		"Keep Awake Until Done": "Keep Awake Until Done",
+		"Keep Loaded": "Keep Loaded",
 		"Sleep is back on": "Sleep is back on",
 		"The battery is below %d%%.": "The battery is below %d%%.",
 		"The Mac is too hot.": "The Mac is too hot.",
@@ -2256,6 +2356,10 @@
 		"Close": "Close",
 		"New Terminal Tab": "New Terminal Tab",
 		"Close %d terminals?": {"one": "Close %d terminal?", "other": "Close %d terminals?"},
+		"Pin %d Tabs": {"one": "Pin %d Tab", "other": "Pin %d Tabs"},
+		"Bookmark %d Tabs": {"one": "Bookmark %d Tab", "other": "Bookmark %d Tabs"},
+		"Move Tabs to Space": "Move Tabs to Space",
+		"Close %d Tabs": {"one": "Close %d Tab", "other": "Close %d Tabs"},
 		"Commands are still running in them and will be stopped.": "Commands are still running in them and will be stopped.",
 		"The terminal could not start.": "The terminal could not start.",
 		"Close the tab and try again.": "Close the tab and try again.",
@@ -2378,6 +2482,11 @@
 		"Added Lilo to Claude Desktop: quit and reopen Claude to load it": "Added Lilo to Claude Desktop: quit and reopen Claude to load it",
 		"Added Lilo to Cursor": "Added Lilo to Cursor",
 		"Added Lilo to Codex": "Added Lilo to Codex",
+		"Added Lilo to Zed": "Added Lilo to Zed",
+		"Added Lilo to VS Code": "Added Lilo to VS Code",
+		"Added Lilo to OpenCode": "Added Lilo to OpenCode",
+		"Added Lilo to Gemini CLI": "Added Lilo to Gemini CLI",
+		"Removed Lilo": "Removed Lilo",
 		"Lilo could not read %@: add this server to it yourself: %@": "Lilo could not read %@: add this server to it yourself: %@",
 		"Stop Agents": "Stop Agents",
 		"Delete %@ and its %d tabs?": {"one": "Delete %@ and its %d tab?", "other": "Delete %@ and its %d tabs?"},
@@ -2452,6 +2561,8 @@
 		"%@ did not match its checksum and was not installed.": "%@ did not match its checksum and was not installed.",
 		"%@ needs Node.js: install it from nodejs.org, then try again.": "%@ needs Node.js: install it from nodejs.org, then try again.",
 		"%@ needs uv: install it from astral.sh/uv, then try again.": "%@ needs uv: install it from astral.sh/uv, then try again.",
+		"%@ must be the full path of an executable file: %@": "%@ must be the full path of an executable file: %@",
+		"%@ has an environment line that is not NAME=value: %@": "%@ has an environment line that is not NAME=value: %@",
 		"Choose": "Choose",
 		"New Conversation": "New Conversation",
 		"Screenshot of %@": "Screenshot of %@",
@@ -2474,7 +2585,7 @@
 		"title": "What's new in Lilo",
 		"description": "A few small improvements for your everyday browsing.",
 		"allChanges": "Everything in this update",
-		"changes": { "one": "{count} change", "other": "{count} changes" },
+		"changes": "{count, plural, one{# change} other{# changes}}",
 		"originalNotes": "Original release notes.",
 		"unavailable": "Release notes aren't available in this build.",
 		"reopen": "Always here in Help > What's New.",
@@ -2650,10 +2761,7 @@
 			"ownCopyHint": "Works on its own copy of the project. Merge it from Changes.",
 			"starting": "Starting the agent...",
 			"errorHint": "Send a message to try again.",
-			"showEarlier": {
-				"one": "Show {count} earlier item",
-				"other": "Show {count} earlier items"
-			},
+			"showEarlier": "{count, plural, one{Show # earlier item} other{Show # earlier items}}",
 			"queuedTag": "Queued",
 			"sendNow": "Send now",
 			"thought": "Thought",
@@ -2663,16 +2771,10 @@
 			"restore": "Restore",
 			"undo": "Undo",
 			"undone": "Undone",
-			"moreLines": {
-				"one": "{count} more line",
-				"other": "{count} more lines"
-			},
+			"moreLines": "{count, plural, one{# more line} other{# more lines}}",
 			"plan": "Plan",
 			"planProgress": "{done}/{total}",
-			"planDone": {
-				"one": "{count} step done",
-				"other": "{count} steps done"
-			},
+			"planDone": "{count, plural, one{# step done} other{# steps done}}",
 			"planStatus": {
 				"pending": "To do",
 				"in_progress": "In progress",
@@ -2700,26 +2802,11 @@
 				"failed": "Failed"
 			},
 			"group": {
-				"read": {
-					"one": "Read {count} file",
-					"other": "Read {count} files"
-				},
-				"search": {
-					"one": "{count} search",
-					"other": "{count} searches"
-				},
-				"fetch": {
-					"one": "Fetched {count} page",
-					"other": "Fetched {count} pages"
-				},
-				"think": {
-					"one": "Thought {count} time",
-					"other": "Thought {count} times"
-				},
-				"action": {
-					"one": "{count} action",
-					"other": "{count} actions"
-				}
+				"read": "{count, plural, one{Read # file} other{Read # files}}",
+				"search": "{count, plural, one{# search} other{# searches}}",
+				"fetch": "{count, plural, one{Fetched # page} other{Fetched # pages}}",
+				"think": "{count, plural, one{Thought # time} other{Thought # times}}",
+				"action": "{count, plural, one{# action} other{# actions}}"
 			}
 		},
 		"composer": {
@@ -2751,30 +2838,22 @@
 			"noFolder": "No Folder",
 			"noFolderDetail": "The agent works in a folder of its own",
 			"backgroundHint": "{shortcut} to keep it in the background",
-			"start": "Start"
+			"start": "Start",
+			"searchAgents": "Search agents",
+			"featuredAgents": "Featured",
+			"registryAgents": "Registry",
+			"noMatches": "No matching agents"
 		},
 		"row": {
 			"untitled": "New conversation",
 			"working": "Working",
 			"failed": "Stopped with an error",
-			"linesAdded": {
-				"one": "{count} line added",
-				"other": "{count} lines added"
-			},
-			"linesRemoved": {
-				"one": "{count} line removed",
-				"other": "{count} lines removed"
-			},
-			"pages": {
-				"one": "{count} page",
-				"other": "{count} pages"
-			},
+			"linesAdded": "{count, plural, one{# line added} other{# lines added}}",
+			"linesRemoved": "{count, plural, one{# line removed} other{# lines removed}}",
+			"pages": "{count, plural, one{# page} other{# pages}}",
 			"showPages": "Show pages",
 			"hidePages": "Hide pages",
-			"morePermissions": {
-				"one": "{count} more request waiting",
-				"other": "{count} more requests waiting"
-			}
+			"morePermissions": "{count, plural, one{# more request waiting} other{# more requests waiting}}"
 		},
 		"question": {
 			"allow": "Allow",
@@ -2788,10 +2867,7 @@
 		},
 		"badge": {
 			"title": "Agents",
-			"waiting": {
-				"one": "Agents, {count} waiting for you",
-				"other": "Agents, {count} waiting for you"
-			},
+			"waiting": "{count, plural, one{Agents, # waiting for you} other{Agents, # waiting for you}}",
 			"new": "New",
 			"needsYou": "Needs you",
 			"running": "Running",
@@ -2812,10 +2888,7 @@
 			"signInOpenTerminal": "Open in Terminal"
 		},
 		"work": {
-			"images": {
-				"one": "{count} image",
-				"other": "{count} images"
-			},
+			"images": "{count, plural, one{# image} other{# images}}",
 			"verb": {
 				"read": "Read",
 				"edit": "Edited",
@@ -2833,46 +2906,16 @@
 				"fetch": "Fetching"
 			},
 			"summary": {
-				"read": {
-					"one": "read {count} file",
-					"other": "read {count} files"
-				},
-				"edit": {
-					"one": "edited {count} file",
-					"other": "edited {count} files"
-				},
-				"execute": {
-					"one": "ran {count} command",
-					"other": "ran {count} commands"
-				},
-				"search": {
-					"one": "ran {count} search",
-					"other": "ran {count} searches"
-				},
-				"fetch": {
-					"one": "fetched {count} page",
-					"other": "fetched {count} pages"
-				},
-				"think": {
-					"one": "thought {count} time",
-					"other": "thought {count} times"
-				},
-				"browser": {
-					"one": "took {count} browser action",
-					"other": "took {count} browser actions"
-				},
-				"browserOn": {
-					"one": "took {count} browser action on {site}",
-					"other": "took {count} browser actions on {site}"
-				},
-				"tool": {
-					"one": "used {count} tool",
-					"other": "used {count} tools"
-				},
-				"agent": {
-					"one": "started {count} agent",
-					"other": "started {count} agents"
-				}
+				"read": "{count, plural, one{read # file} other{read # files}}",
+				"edit": "{count, plural, one{edited # file} other{edited # files}}",
+				"execute": "{count, plural, one{ran # command} other{ran # commands}}",
+				"search": "{count, plural, one{ran # search} other{ran # searches}}",
+				"fetch": "{count, plural, one{fetched # page} other{fetched # pages}}",
+				"think": "{count, plural, one{thought # time} other{thought # times}}",
+				"browser": "{count, plural, one{took # browser action} other{took # browser actions}}",
+				"browserOn": "{count, plural, one{took # browser action on {site}} other{took # browser actions on {site}}}",
+				"tool": "{count, plural, one{used # tool} other{used # tools}}",
+				"agent": "{count, plural, one{started # agent} other{started # agents}}"
 			},
 			"browser": {
 				"closeTab": "Closed a tab",
@@ -2923,10 +2966,7 @@
 				"request": "Sending a request to {url}"
 			},
 			"exit": "Exit {code}",
-			"showAll": {
-				"one": "Show all {count} line",
-				"other": "Show all {count} lines"
-			},
+			"showAll": "{count, plural, one{Show all # line} other{Show all # lines}}",
 			"showLess": "Show the last lines"
 		},
 		"turn": {
@@ -2934,10 +2974,7 @@
 			"stopped": "Stopped",
 			"refusalTitle": "The model declined to continue",
 			"refusalHint": "Its safety checks stopped this turn, sometimes on legitimate work. Rephrase the request, or pick another model below.",
-			"files": {
-				"one": "{count} file changed",
-				"other": "{count} files changed"
-			},
+			"files": "{count, plural, one{# file changed} other{# files changed}}",
 			"review": "Review",
 			"copy": "Copy response",
 			"copied": "Copied"

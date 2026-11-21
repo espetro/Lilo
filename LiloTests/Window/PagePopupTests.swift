@@ -184,9 +184,7 @@ final class PagePopupTests: XCTestCase {
         let engine = try XCTUnwrap(controller.tabManager.engineTab(for: opener.id))
         let window = try XCTUnwrap(controller.window)
         if engine.view.window == nil {
-            window.alphaValue = 0
-            window.orderFrontRegardless()
-            window.setFrame(NSRect(x: -20000, y: -20000, width: 800, height: 600), display: false)
+            window.orderFrontOffscreen(frame: NSRect(x: 0, y: 0, width: 800, height: 600))
             engine.view.frame = NSRect(x: 0, y: 0, width: 600, height: 400)
             window.contentView?.addSubview(engine.view)
         }
@@ -329,6 +327,26 @@ final class PagePopupTests: XCTestCase {
 
         XCTAssertTrue(controller.pagePopups.isEmpty)
         XCTAssertEqual(openTabCount, tabs)
+    }
+
+    func testCloseTabWithAPageShellClosesTheShellNotTheTab() throws {
+        let tabs = openTabCount
+        controller.pageShellOpen = true
+        let events = BridgeEventRecorder(controller.bridgeRouter)
+
+        controller.closeCurrentTab(nil)
+
+        XCTAssertEqual(openTabCount, tabs, "the tab under the system screen stays")
+        XCTAssertEqual(controller.tabManager.activeOpenTabId, opener.id)
+        XCTAssertEqual(events.data("closePageShell").count, 1, "the chrome is asked to close the screen")
+    }
+
+    func testReloadedChromeForgetsTheOpenPageShell() {
+        controller.pageShellOpen = true
+
+        controller.sendInitialState()
+
+        XCTAssertFalse(controller.pageShellOpen, "a reloaded chrome has no system screen open, so ⌘W closes the tab again")
     }
 
     func testClickOutsideThePeekCardDismissesIt() async throws {

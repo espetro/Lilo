@@ -1,5 +1,6 @@
 <script lang="ts">
   import { getFormatLocale, t } from "../../lib/i18n/state.svelte";
+  import "../../lib/i18n/settingsCatalog";
   import { getAgentsProfileId, isAgentsSpace } from "../../stores/agents.svelte";
   import { getShownExtensions, getShownExtensionsProfileId, showProfileExtensions } from "../../stores/extensions.svelte";
   import {
@@ -36,6 +37,7 @@
     if (subpage === "sites") return t(settingTitleKey("sites"));
     if (subpage === "blockerSites") return t(settingTitleKey("blockerSites"));
     if (subpage === "agentPrompt") return t(settingTitleKey("agentSystemPromptText"));
+    if (subpage === "agentInstances") return t(settingTitleKey("agentInstances"));
     if (subpage?.startsWith("site:")) return subpage.slice("site:".length);
     if (subpage?.startsWith("extension:")) {
       const extension = getShownExtensions()?.find((candidate) => `extension:${candidate.id}` === subpage);
