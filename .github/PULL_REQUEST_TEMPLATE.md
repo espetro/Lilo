@@ -18,6 +18,7 @@
 
 - [ ] The title follows [Conventional Commits](https://www.conventionalcommits.org/en/v1.0.0/) (`fix(sidebar): ...`)
 - [ ] `make validate` passes locally
+- [ ] Swift tests: CI result (`make ci-swift`), not run locally
 - [ ] Tests added or updated for the change
 - [ ] A UI change has before and after captures (stills, plus a gif or video for motion)
 - [ ] A user-visible change has a release-note fragment (`make change`)

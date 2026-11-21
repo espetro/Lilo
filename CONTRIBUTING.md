@@ -175,8 +175,14 @@ make app             # Debug bundle in build/debug/export/Lilo.app
 make project-sync    # after adding or renaming a Swift file, or editing project.yml
 
 # Before opening a pull request
-make validate
+make validate      # everything but the Swift tests, which open windows and take your keyboard focus
+make ci-swift      # the Swift test verdict from CI (push the branch first)
 ```
+
+The Swift tests run in CI by default: `make swift-test`, `make swift-test-slow` and the Swift step of
+`make validate` refuse to run locally unless `LILO_LOCAL_UI_TESTS=1` is set, which CI itself does.
+`make ci-swift [REF=<branch>]` finds the CI run of the pushed branch (or dispatches one), waits at most
+`CI_SWIFT_TIMEOUT` seconds (default 1800) and prints the result per shard and the failing tests.
 
 - **`project.yml` is the source of the Xcode project.** Never edit `Lilo.xcodeproj` by hand. After
   adding or renaming a Swift file, run `make project-sync` and commit the regenerated project:
@@ -246,7 +252,8 @@ only makes the French reference tables stale, which warns.
 | `make site-test` | website build, release notes, routes, links and metadata |
 | `make docs-check` | documentation site links and anchors, and the French translation gate |
 | `make docs-test` | documentation site build, headers, routes and metadata, and `blume audit` |
-| `make swift-test` | Swift tests in parallel app instances, the slow ones aside |
+| `make ci-swift` | the Swift test verdict of the branch's CI run (REF=branch); dispatches a run when there is none |
+| `make swift-test` | Swift tests in parallel app instances, the slow ones aside (refuses to run unless `LILO_LOCAL_UI_TESTS=1`: CI sets it) |
 | `make swift-test-slow` | the few Swift tests that wait out real clocks, WebKit's or Lilo's (`SLOW_TESTS` in the Makefile) |
 | `make check-commits` | builds every commit of `BASE..HEAD` (default `origin/main`) in a throwaway worktree |
 
@@ -291,7 +298,7 @@ rather than carving out a helper just to reach it.
 
 ### CI
 
-`.github/workflows/build.yml` runs on every push to `main` and every pull request:
+`.github/workflows/build.yml` runs on every push to `main`, every pull request to `main` or `develop`, and by hand (`workflow_dispatch`, which `make ci-swift` uses):
 
 - **Release tooling and website** (ubuntu): Changie fragments, version sync, Ultracite and Astro checks, website and documentation site checks and tests, and a Cloudflare deployment dry run of each.
 - **UI** (ubuntu): `make validate-ui` and `make e2e`.
