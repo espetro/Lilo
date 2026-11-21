@@ -871,6 +871,7 @@
 		"dozing": "Uyuyor",
 		"dozingHint": "Bellek tasarrufu için uyuyor. Açtığınızda uyanır.",
 		"keepLoaded": "Yüklü tutuluyor",
+		"keepLoadedHint": "Hiç uyumaz, her zaman hazır.",
 		"pinned": "Sabitlenmiş",
 		"loading": "Yükleniyor",
 		"muted": "Sesi kapalı",

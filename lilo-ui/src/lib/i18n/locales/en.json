@@ -871,6 +871,7 @@
 		"dozing": "Sleeping",
 		"dozingHint": "Sleeping to save memory. Wakes when you open it.",
 		"keepLoaded": "Kept loaded",
+		"keepLoadedHint": "Never sleeps; always ready.",
 		"pinned": "Pinned",
 		"loading": "Loading",
 		"muted": "Muted",

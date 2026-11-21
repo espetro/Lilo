@@ -871,6 +871,7 @@
 		"dozing": "Schläft",
 		"dozingHint": "Schläft, um Speicher zu sparen. Wacht beim Öffnen auf.",
 		"keepLoaded": "Bleibt geladen",
+		"keepLoadedHint": "Schläft nie und ist immer bereit.",
 		"pinned": "Angeheftet",
 		"loading": "Wird geladen",
 		"muted": "Stumm",

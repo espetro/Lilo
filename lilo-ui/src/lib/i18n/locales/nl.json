@@ -871,6 +871,7 @@
 		"dozing": "Slaapt",
 		"dozingHint": "Slaapt om geheugen te besparen. Wordt wakker zodra je het opent.",
 		"keepLoaded": "Blijft geladen",
+		"keepLoadedHint": "Slaapt nooit en is altijd klaar.",
 		"pinned": "Vastgemaakt",
 		"loading": "Laden",
 		"muted": "Gedempt",

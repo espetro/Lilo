@@ -871,6 +871,7 @@
 		"dozing": "Dormindo",
 		"dozingHint": "Dormindo para economizar memória. Acorda ao abrir.",
 		"keepLoaded": "Mantida carregada",
+		"keepLoadedHint": "Nunca dorme; sempre pronta.",
 		"pinned": "Fixada",
 		"loading": "Carregando",
 		"muted": "Sem som",

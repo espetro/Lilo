@@ -17,14 +17,14 @@ for (const colorScheme of ["light", "dark"] as const) {
 		await bootChrome(page, world);
 		const tab = world.tabsBySpace[SPACE_1][1];
 		const row = page.locator(`.tab-item[data-tab-id="${tab.id}"]`);
-		await expect(row.locator(".keep-loaded")).toHaveCount(0);
+		await expect(row.locator(".doze-ring.kept")).toHaveCount(0);
 
 		await setNeverSleep(page, tab, true);
-		await expect(row.locator(".keep-loaded")).toHaveCount(1);
+		await expect(row.locator(".doze-ring.kept")).toHaveCount(1);
 		await expect(row).toHaveAccessibleName("Beta Mail, Kept loaded");
 
 		await setNeverSleep(page, tab, false);
-		await expect(row.locator(".keep-loaded")).toHaveCount(0);
+		await expect(row.locator(".doze-ring.kept")).toHaveCount(0);
 		await expect(row).toHaveAccessibleName("Beta Mail");
 	});
 }

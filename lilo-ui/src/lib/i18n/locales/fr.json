@@ -871,6 +871,7 @@
 		"dozing": "Endormi",
 		"dozingHint": "Endormi pour économiser la mémoire. Se réveille à l'ouverture.",
 		"keepLoaded": "Gardé chargé",
+		"keepLoadedHint": "Ne s'endort jamais ; toujours prête.",
 		"pinned": "Épinglé",
 		"loading": "Chargement",
 		"muted": "Son coupé",
