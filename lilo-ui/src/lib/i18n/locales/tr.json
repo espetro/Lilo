@@ -166,6 +166,7 @@
 			"passwords": "Parolalar",
 			"agentAccess": "Lilo'yu kullanan ajanlar",
 			"agentClients": "Lilo'yu kullanabilen uygulamalar",
+			"agentActivity": "Etkinlik",
 			"lilo": "Lilo",
 			"tabsWindows": "Sekmeler ve pencereler",
 			"sitePermissions": "Site izinleri",
@@ -533,6 +534,11 @@
 				"title": "Diğer ajanlar",
 				"description": "Lilo'nun yapılandırmasıyla diğer tüm MCP istemcileri."
 			},
+			"agentActivity": {
+				"title": "Son aracı çağrıları",
+				"description": "Her uygulamanın son çağrıları, en yenisi başta. Bu sayfa açıldığında veya yenilendiğinde okunur.",
+				"keywords": "aracı günlük geçmiş denetim eylemler son çağrılar etkinlik"
+			},
 			"autoplay": {
 				"title": "Otomatik oynatma",
 				"description": "Bundan sonra açılan sayfalara uygulanır.",
@@ -714,6 +720,15 @@
 			"readyLine": "Yapılandırıldı. Lilo ilk bağlantıda size sorar.",
 			"detectedLine": "Bu Mac'te bulundu. Henüz yapılandırılmadı.",
 			"moreApps": "Diğer uygulamalar"
+		},
+		"agentActivity": {
+			"refresh": "Yenile",
+			"open": "Eylem günlüğünü aç",
+			"off": "Eylem günlüğü kapalı",
+			"offDescription": "Lilo aracı çağrılarını kaydetmiyor. Burada görmek için açın.",
+			"turnOn": "Aç",
+			"empty": "Henüz kaydedilmiş çağrı yok.",
+			"failed": "Başarısız"
 		},
 		"navGroups": {
 			"tools": "Araçlar"
