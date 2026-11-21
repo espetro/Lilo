@@ -446,14 +446,19 @@
   // The pinned area's head shows while there is something to fold; on an empty list the drag's
   // own drop label does the talking, so the head only joins then.
   const showPinnedHead = $derived(isPinned && (hasTabs || dragActive));
-  // A drag aiming at the folded pinned area opens it so the drop can aim inside, and a pinned
-  // active tab keeps it open: a fold never hides the tab in use.
+  // A drag aiming at the folded pinned area opens it so the drop can aim inside. A pinned active
+  // tab keeps its own row shown in the fold, as a folded tray keeps its active row.
   const pinnedCollapsed = $derived(
     pinnedAreaCollapsed(
       pinnedFolded,
-      activeTab?.isPinned === true && activeTab.isClosed !== true,
       sidebarDrag?.target?.id === rootZone.id,
     ),
+  );
+  // What the folded pinned area keeps shown: its active row.
+  const pinnedActiveEntry = $derived(
+    isPinned && activeTab?.isPinned === true
+      ? dndItemsForSidebarItems(rootItems.filter((item) => item.id === activeTab.id), section)[0]
+      : undefined,
   );
   const pinnedRowsId = $derived(`pinned-rows-${spaceId}`);
 
@@ -667,6 +672,33 @@
 
   $effect(() => {
     if (showNewTabRow) newTabRowExiting = false;
+  });
+
+  // The New Tab label shows the longest of its forms that fits its room, else none: the row's
+  // buttons never give way. Each form is measured once, on the label's own font. A locale with no
+  // shorter form repeats the full one as its short form.
+  let newTabLabelEl: HTMLElement | undefined = $state();
+  let newTabLabelRoom = $state(0);
+  // eslint-disable-next-line svelte/prefer-svelte-reactivity -- a cache: a text's width never changes
+  const newTabLabelWidths = new Map<string, number>();
+  let newTabLabelContext: CanvasRenderingContext2D | null = null;
+  function newTabLabelFits(text: string): boolean {
+    let width = newTabLabelWidths.get(text);
+    if (width === undefined && newTabLabelEl) {
+      newTabLabelContext ??= document.createElement("canvas").getContext("2d");
+      if (!newTabLabelContext) return true;
+      const style = getComputedStyle(newTabLabelEl);
+      newTabLabelContext.font = `${style.fontWeight} ${style.fontSize} ${style.fontFamily}`;
+      width = newTabLabelContext.measureText(text).width;
+      newTabLabelWidths.set(text, width);
+    }
+    return width === undefined || width <= newTabLabelRoom;
+  }
+  const newTabLabel = $derived.by(() => {
+    const full = t("tabSection.newTab");
+    if (!newTabLabelRoom || newTabLabelFits(full)) return full;
+    const short = t("tabSection.newTabShort");
+    return newTabLabelFits(short) ? short : "";
   });
 
   // A closing row leaves the flow at once (Svelte fixes outroing rows of an animated each), so the
@@ -1073,8 +1105,9 @@
       return;
     }
     if (event.altKey || event.metaKey || event.ctrlKey || event.shiftKey) return;
-    // The shown rows of the whole Space, pinned and unpinned, as in a Finder sidebar.
-    const rows = Array.from((row.closest(".space-page") ?? document).querySelectorAll<HTMLElement>("[role=treeitem]"))
+    // The shown rows of the whole Space, pinned and unpinned, as in a Finder sidebar. The pinned
+    // fold head is a control over the rows, not a row: the walk skips it so Home lands on a tab.
+    const rows = Array.from((row.closest(".space-page") ?? document).querySelectorAll<HTMLElement>("[role=treeitem]:not(.pinned-head)"))
       .filter((candidate) => candidate.getClientRects().length > 0 && !candidate.closest("[aria-hidden=true], [inert]"));
     const index = rows.indexOf(row);
     let next: HTMLElement | null | undefined;
@@ -1469,8 +1502,7 @@
       <path d="M6 1.5v9M1.5 6h9" />
     </svg>
   </span>
-  <span class="new-tab-label">{t("tabSection.newTab")}</span>
-  <span class="new-tab-label-short">{t("tabSection.newTabShort")}</span>
+  <span class="new-tab-label" bind:this={newTabLabelEl} bind:clientWidth={newTabLabelRoom}>{newTabLabel}</span>
 {/snippet}
 
 {#snippet newTabRow()}
@@ -1793,6 +1825,20 @@
                 <path d="M3.75 2.25 6.5 5 3.75 7.75" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" />
               </svg>
             </span>
+          </div>
+        {/if}
+        {#if pinnedCollapsed && !pinnedRowsMounted && pinnedActiveEntry}
+          <div
+            class={slotClass}
+            use:dndItem={{
+              item: pinnedActiveEntry,
+              zoneId: rootZone.id,
+              disabled: isShadowItem(pinnedActiveEntry) || !interactive,
+              onCancel: resetSidebarDrag,
+              onDropOutsideWindow: moveTabOutOfWindow,
+            }}
+          >
+            {@render rootItemContent(pinnedActiveEntry, null)}
           </div>
         {/if}
         <div
@@ -2439,9 +2485,6 @@
   .new-tab-line {
     display: flex;
     align-items: center;
-    /* Below ~110 px of container the buttons run past the row's end: they clip here,
-       progressively, so the space pager's scroller never sees the overflow. */
-    overflow: clip;
   }
 
   .new-tab-row {
@@ -2553,8 +2596,8 @@
     justify-content: center;
   }
 
-  .new-tab-label,
-  .new-tab-label-short {
+  .new-tab-label {
+    flex: 1;
     min-width: 0;
     overflow: hidden;
     white-space: nowrap;

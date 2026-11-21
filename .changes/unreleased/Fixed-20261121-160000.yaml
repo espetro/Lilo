@@ -1,0 +1,3 @@
+kind: Fixed
+body: 'Closing a pane of a split now keeps the rest of the split on the page, Maximize dissolves the split in one step, and a pane''s controls reveal only in a strip along its top edge under the pointer'
+time: 2026-11-21T16:00:00+01:00

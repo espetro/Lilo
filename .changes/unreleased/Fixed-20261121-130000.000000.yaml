@@ -1,0 +1,3 @@
+kind: Fixed
+body: 'The pinned tabs'' fold keeps the row of the tab in use and its head still unfolds while a pinned tab is active, and Home in the tab list lands on the first tab row instead of the fold head'
+time: 2026-11-21T13:00:00.000000+01:00
