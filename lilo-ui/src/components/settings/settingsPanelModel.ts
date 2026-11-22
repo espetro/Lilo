@@ -60,8 +60,10 @@ export type SettingId =
   | "autoDevices"
   | "deviceSetup"
   | "appUpdates"
+  | "updateChannel"
   | "betaUpdateCheck"
   | "betaUpdateRelease"
+  | "betaFeedURL"
   | "autoUpdate"
   | "shortcuts"
   | "holdToQuit"
@@ -201,11 +203,13 @@ export const SETTINGS: SettingModel[] = [
   { id: "autoDevices", section: "media", groupKey: "settings.groups.calls" },
   { id: "deviceSetup", section: "media", groupKey: "settings.groups.calls", requires: "autoDevices" },
   { id: "appUpdates", section: "general", groupKey: "settings.groups.lilo" },
-  { id: "betaUpdateCheck", section: "advanced", groupKey: "settings.groups.beta" },
-  { id: "betaUpdateRelease", section: "advanced", groupKey: "settings.groups.beta" },
   { id: "autoUpdate", section: "general", groupKey: "settings.groups.lilo" },
   { id: "shortcuts", section: "general", groupKey: "settings.groups.lilo" },
   { id: "holdToQuit", section: "general", groupKey: "settings.groups.lilo" },
+  { id: "updateChannel", section: "general", groupKey: "settings.groups.updateChannel" },
+  { id: "betaUpdateCheck", section: "general", groupKey: "settings.groups.updateChannel" },
+  { id: "betaUpdateRelease", section: "general", groupKey: "settings.groups.updateChannel" },
+  { id: "betaFeedURL", section: "general", groupKey: "settings.groups.updateChannel" },
   { id: "theme", section: "appearance", groupKey: "settings.groups.theme" },
   { id: "appIcon", section: "appearance", groupKey: "settings.groups.theme" },
   { id: "seasonalAppIcon", section: "appearance", groupKey: "settings.groups.theme" },

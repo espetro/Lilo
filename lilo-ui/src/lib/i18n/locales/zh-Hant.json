@@ -170,7 +170,7 @@
 			"otherAppLinks": "來自其他 App 的連結",
 			"blockerExceptions": "清單與例外",
 			"agentConversations": "對話",
-			"beta": "Beta 模式"
+			"updateChannel": "更新頻道"
 		},
 		"searchPlaceholder": "搜尋設定",
 		"searchResultsTitle": "搜尋結果",
@@ -638,13 +638,25 @@
 				"description": "此 Beta 於啟動時自動將自身建置與分支的最新發布比較一次。",
 				"keywords": "Beta 更新",
 				"check": "檢查 Beta",
-				"lastChecked": "已於 {time} 檢查",
-				"absent": "此建置沒有 Beta 更新來源。"
+				"lastChecked": "已於 {time} 檢查"
 			},
 			"betaUpdateRelease": {
 				"title": "Beta {tag} 已發布",
 				"description": "從發布頁面手動下載並安裝；Lilo 從不自行替換。",
 				"open": "開啟發布頁"
+			},
+			"updateChannel": {
+				"title": "更新頻道",
+				"description": "Beta 會在啟動時將此建置與 fork 的最新版本比較；Stable 永不檢查。",
+				"keywords": "更新 頻道 穩定 測試 版本",
+				"stable": "穩定版",
+				"beta": "Beta"
+			},
+			"betaFeedURL": {
+				"title": "Beta 饋給 URL",
+				"description": "此 Beta 監看的版本列表；fork 可將其指向自己的版本。留空則還原內建饋給。",
+				"keywords": "beta 饋給 url 版本 fork",
+				"placeholder": "版本饋給 URL"
 			}
 		},
 		"devices": {

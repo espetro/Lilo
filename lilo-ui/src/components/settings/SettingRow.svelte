@@ -164,8 +164,7 @@
       return t("settings.items.appUpdates.lastChecked", { time }) + engine;
     }
     if (id === "betaUpdateCheck") {
-      if (!updater?.betaFeed) return t("settings.items.betaUpdateCheck.absent");
-      if (!updater.betaLastCheck) return t(settingDescriptionKey(id));
+      if (!updater?.betaLastCheck) return t(settingDescriptionKey(id));
       const time = new Intl.DateTimeFormat(getFormatLocale(), { dateStyle: "medium", timeStyle: "short" }).format(updater.betaLastCheck * 1000);
       return t("settings.items.betaUpdateCheck.lastChecked", { time });
     }
@@ -249,6 +248,15 @@
         {t("settings.items.betaUpdateRelease.open")}
       </UiButton>
     {/snippet}
+  </UiListRow>
+{:else if id === "betaFeedURL"}
+  <UiListRow {title} {description}>
+    <UiTextField
+      value={updater?.betaFeedURLOverride ?? ""}
+      placeholder={updater?.betaFeedURL ?? t("settings.items.betaFeedURL.placeholder")}
+      ariaLabel={title}
+      oncommit={(value) => settingsActions.setBetaFeedURL(value.trim())}
+    />
   </UiListRow>
 {:else}
 <UiListRow {title} {description} icon={id === "newSpace" || id === "deviceSetup" ? objectIcon : undefined}>
@@ -380,6 +388,16 @@
         disabled={!updater?.available}
         checked={updater?.automatic ?? false}
         onchange={(checked) => settingsActions.setAutomaticUpdates(checked)}
+      />
+    {:else if id === "updateChannel"}
+      <UiSelect
+        value={getSetting("updateChannel", "beta")}
+        options={[
+          { value: "stable", label: t("settings.items.updateChannel.stable") },
+          { value: "beta", label: t("settings.items.updateChannel.beta") },
+        ]}
+        ariaLabel={title}
+        onchange={(value) => setSetting("updateChannel", value)}
       />
     {:else if id === "folderAutoLock"}
       <UiSelect

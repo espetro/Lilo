@@ -170,7 +170,7 @@
 			"otherAppLinks": "Enlaces desde otras apps",
 			"blockerExceptions": "Listas y excepciones",
 			"agentConversations": "Conversaciones",
-			"beta": "Modo beta"
+			"updateChannel": "Canal de actualización"
 		},
 		"searchPlaceholder": "Buscar en los ajustes",
 		"searchResultsTitle": "Resultados de búsqueda",
@@ -638,13 +638,25 @@
 				"description": "Esta beta compara su compilación con la publicación más nueva del fork una vez, al arrancar.",
 				"keywords": "Actualizaciones beta",
 				"check": "Buscar betas",
-				"lastChecked": "Comprobado {time}",
-				"absent": "Esta compilación no tiene fuente beta."
+				"lastChecked": "Comprobado {time}"
 			},
 			"betaUpdateRelease": {
 				"title": "Sale la beta {tag}",
 				"description": "Se descarga de la página de la publicación y se instala a mano; Lilo nunca se reemplaza a sí mismo.",
 				"open": "Abrir publicación"
+			},
+			"updateChannel": {
+				"title": "Canal de actualización",
+				"description": "Beta compara esta compilación con la versión más reciente del fork al iniciar; Estable nunca comprueba.",
+				"keywords": "actualización canal estable beta versión",
+				"stable": "Estable",
+				"beta": "Beta"
+			},
+			"betaFeedURL": {
+				"title": "URL del feed beta",
+				"description": "La lista de versiones que esta beta vigila; un fork la apunta a sus propias versiones. Vacía restaura el feed integrado.",
+				"keywords": "beta feed url versiones fork",
+				"placeholder": "URL del feed de versiones"
 			}
 		},
 		"devices": {

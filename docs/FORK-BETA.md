@@ -41,7 +41,9 @@ Both still offer to be the default browser: pick one.
 
 It cannot update itself through Sparkle: the build has no Sparkle public key, so no update check starts and no appcast is read.
 Instead, `BetaUpdateChecker` reads the fork's GitHub releases list once on launch (the URL lives in `LILOBetaUpdateFeedURL`, set by `scripts/build-app.sh` only when `LILO_BETA=1`) and compares the newest `beta-N` tag with the one the workflow stamped into this build (`LILOBetaTag`; an unstamped local build keeps the tag its first check saw).
-When a newer one exists, Settings > Advanced shows a row that opens its release page; the download and install stay manual.
+When a newer one exists, the Update channel section of Settings > General shows a row that opens its release page; the download and install stay manual.
+That section's channel selector (Stable / Beta) turns the feed check off and on, and its Beta feed URL field overrides the compiled-in `LILOBetaUpdateFeedURL` at runtime, so another fork's beta can point at its own releases; emptying the field restores the built-in feed.
+A build without a feed (a release Lilo) hides the whole section.
 To find which build has a bug, try the previous N.
 
 ## How it is built

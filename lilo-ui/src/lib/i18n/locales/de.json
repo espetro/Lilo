@@ -170,7 +170,7 @@
 			"otherAppLinks": "Links aus anderen Apps",
 			"blockerExceptions": "Listen und Ausnahmen",
 			"agentConversations": "Unterhaltungen",
-			"beta": "Beta-Modus"
+			"updateChannel": "Update-Kanal"
 		},
 		"searchPlaceholder": "Einstellungen durchsuchen",
 		"searchResultsTitle": "Suchergebnisse",
@@ -638,13 +638,25 @@
 				"description": "Dieses Beta vergleicht seinen Build beim Start einmal von selbst mit der neuesten Veröffentlichung des Forks.",
 				"keywords": "Beta-Aktualisierungen",
 				"check": "Nach Betas suchen",
-				"lastChecked": "Geprüft {time}",
-				"absent": "Dieser Build hat keinen Beta-Feed."
+				"lastChecked": "Geprüft {time}"
 			},
 			"betaUpdateRelease": {
 				"title": "Beta {tag} ist da",
 				"description": "Wird von der Veröffentlichungsseite geladen und von Hand installiert; Lilo ersetzt sich nie selbst.",
 				"open": "Veröffentlichung öffnen"
+			},
+			"updateChannel": {
+				"title": "Update-Kanal",
+				"description": "Beta vergleicht diesen Build beim Start mit dem neuesten Release des Forks; Stabil prüft nie.",
+				"keywords": "update kanal stabil beta release",
+				"stable": "Stabil",
+				"beta": "Beta"
+			},
+			"betaFeedURL": {
+				"title": "Beta-Feed-URL",
+				"description": "Die Release-Liste, die diese Beta beobachtet; ein Fork richtet sie auf seine eigenen Releases. Leer stellt den eingebauten Feed wieder her.",
+				"keywords": "beta feed url releases fork",
+				"placeholder": "Release-Feed-URL"
 			}
 		},
 		"devices": {

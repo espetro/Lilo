@@ -170,7 +170,7 @@
 			"otherAppLinks": "Liens venant d'autres apps",
 			"blockerExceptions": "Listes et exceptions",
 			"agentConversations": "Conversations",
-			"beta": "Mode bêta"
+			"updateChannel": "Canal de mise à jour"
 		},
 		"searchPlaceholder": "Rechercher un réglage",
 		"searchResultsTitle": "Résultats",
@@ -638,13 +638,25 @@
 				"description": "Cette bêta compare sa version à la plus récente du fork une fois, au lancement.",
 				"keywords": "Mises à jour bêta",
 				"check": "Rechercher des bêtas",
-				"lastChecked": "Vérifié {time}",
-				"absent": "Cette version n'a pas de flux bêta."
+				"lastChecked": "Vérifié {time}"
 			},
 			"betaUpdateRelease": {
 				"title": "La bêta {tag} est sortie",
 				"description": "À télécharger depuis la page de publication et à installer à la main ; Lilo ne se remplace jamais lui-même.",
 				"open": "Ouvrir la publication"
+			},
+			"updateChannel": {
+				"title": "Canal de mise à jour",
+				"description": "Bêta compare cette compilation à la plus récente version du fork au lancement ; Stable ne vérifie jamais.",
+				"keywords": "mise à jour canal stable bêta version",
+				"stable": "Stable",
+				"beta": "Bêta"
+			},
+			"betaFeedURL": {
+				"title": "URL du flux bêta",
+				"description": "La liste des versions que cette bêta surveille ; un fork la pointe vers ses propres versions. Vide, le flux intégré est restauré.",
+				"keywords": "bêta flux url versions fork",
+				"placeholder": "URL du flux de versions"
 			}
 		},
 		"devices": {

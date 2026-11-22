@@ -170,7 +170,7 @@
 			"otherAppLinks": "Łącza z innych aplikacji",
 			"blockerExceptions": "Listy i wyjątki",
 			"agentConversations": "Rozmowy",
-			"beta": "Tryb beta"
+			"updateChannel": "Kanał aktualizacji"
 		},
 		"searchPlaceholder": "Szukaj w ustawieniach",
 		"searchResultsTitle": "Wyniki wyszukiwania",
@@ -638,13 +638,25 @@
 				"description": "To beta przy starcie raz porównuje swoją kompilację z najnowszym wydaniem forka.",
 				"keywords": "Aktualizacje beta",
 				"check": "Sprawdź bety",
-				"lastChecked": "Sprawdzono {time}",
-				"absent": "Ta kompilacja nie ma źródła beta."
+				"lastChecked": "Sprawdzono {time}"
 			},
 			"betaUpdateRelease": {
 				"title": "Beta {tag} jest dostępna",
 				"description": "Pobierana ręcznie ze strony wydania i instalowana ręcznie; Lilo nigdy nie zastępuje samej siebie.",
 				"open": "Otwórz wydanie"
+			},
+			"updateChannel": {
+				"title": "Kanał aktualizacji",
+				"description": "Beta porównuje tę kompilację z najnowszym wydaniem forka przy uruchomieniu; Stabilna nigdy nie sprawdza.",
+				"keywords": "aktualizacja kanał stabilna beta wydanie",
+				"stable": "Stabilna",
+				"beta": "Beta"
+			},
+			"betaFeedURL": {
+				"title": "Adres kanału beta",
+				"description": "Lista wydań, którą obserwuje ta beta; fork może wskazać własne wydania. Puste przywraca wbudowany kanał.",
+				"keywords": "beta kanał url wydania fork",
+				"placeholder": "Adres kanału wydań"
 			}
 		},
 		"devices": {
