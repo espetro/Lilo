@@ -382,7 +382,7 @@
       "agent-gate-structure"
     ],
     "branch": "upstream/agent-read-deltas",
-    "status": "pr-open",
+    "status": "merged",
     "needsMedia": false,
     "upstreamPR": 458,
     "userVisible": true

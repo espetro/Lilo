@@ -52,7 +52,7 @@ Ordered so every PR comes after the PRs it depends on, open upstream PRs and pus
 | 28 | `agent-debug-harness` | feat(app): run the agent harness headless in Debug builds | #27, #38 | +119/-13 | no | no | merged (#452) | none |
 | 29 | `agent-gate-structure` | fix(agent): decide the approval gate from the page's structure | #31 | +169/-9 | yes | no | merged (#454) | none |
 | 30 | `agent-native-html5-drag` | fix(agent): run the HTML5 drag session for a native drag | #33 | +103/-7 | yes | no | pr-open (#456) | none |
-| 31 | `agent-read-deltas` | feat(agent): viewport-scoped reads and post-action page deltas | #59 | +246/-17 | yes | no | pr-open (#458, rebase needed) | `agent-gate-structure` |
+| 31 | `agent-read-deltas` | feat(agent): viewport-scoped reads and post-action page deltas | #59 | +246/-17 | yes | no | merged (#458) | `agent-gate-structure` |
 | 32 | `agent-action-log` | feat(agent): log each tool call to a local JSONL file | #55 | +405/-4 | yes | no | merged (#460) | `agent-debug-harness` |
 | 33 | `agent-acp-custom-command` | feat(conversations): run a custom ACP command as an agent | #35, #45 | +436/-5 | yes | yes | pr-open (#478) | none |
 | 34 | `agent-saved-flows` | feat(agent): saved flows - record once, replay deterministically | #77, #81, #83, #102 | +762/-19 | yes | no | merged (#472) | `agent-action-log`, `agent-read-deltas` |
