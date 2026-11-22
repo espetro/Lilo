@@ -1,6 +1,6 @@
 <script lang="ts">
   import LayoutPicker from "./LayoutPicker.svelte";
-  import { extensionActions, profileActions, settingsActions } from "../../lib/bridge/actions";
+  import { extensionActions, profileActions, settingsActions, tabActions } from "../../lib/bridge/actions";
   import { isAgentsSpace } from "../../stores/agents.svelte";
   import { getFormatLocale, getLocale, setLocale, t } from "../../lib/i18n/state.svelte";
   import { isSupportedLocale, SUPPORTED_LOCALES } from "../../lib/i18n/translate";
@@ -96,6 +96,18 @@
     settingsActions.unlockDeveloperTools();
   }
 
+  // The beta check spins until the checker publishes the check it was asked for, which always moves lastCheck.
+  let betaCheckAtClick = $state<number | null>(null);
+  let betaChecking = $state(false);
+  $effect(() => {
+    if (betaChecking && (updater?.betaLastCheck ?? null) !== betaCheckAtClick) betaChecking = false;
+  });
+  function checkForBetas(): void {
+    betaCheckAtClick = updater?.betaLastCheck ?? null;
+    betaChecking = true;
+    settingsActions.checkForUpdates();
+  }
+
   // Remounts the new-profile field once a profile is created, which empties it.
   let profileFieldKey = $state(0);
 
@@ -134,6 +146,7 @@
   const title = $derived.by(() => {
     if (id === "deviceSetup") return deviceSetup.label || t("settings.devices.builtinOnly");
     if (id === "appUpdates") return t("settings.items.appUpdates.title", { version: updater?.version ?? "" });
+    if (id === "betaUpdateRelease") return t("settings.items.betaUpdateRelease.title", { tag: updater?.betaAvailable?.tag ?? "" });
     if (passwordManagers.length > 0) return t("settings.items.passwordManager.installedTitle");
     return t(settingTitleKey(id));
   });
@@ -149,6 +162,12 @@
       if (!updater?.lastCheck) return t(settingDescriptionKey(id)) + engine;
       const time = new Intl.DateTimeFormat(getFormatLocale(), { dateStyle: "medium", timeStyle: "short" }).format(updater.lastCheck * 1000);
       return t("settings.items.appUpdates.lastChecked", { time }) + engine;
+    }
+    if (id === "betaUpdateCheck") {
+      if (!updater?.betaFeed) return t("settings.items.betaUpdateCheck.absent");
+      if (!updater.betaLastCheck) return t(settingDescriptionKey(id));
+      const time = new Intl.DateTimeFormat(getFormatLocale(), { dateStyle: "medium", timeStyle: "short" }).format(updater.betaLastCheck * 1000);
+      return t("settings.items.betaUpdateCheck.lastChecked", { time });
     }
     if (id === "checkExtensionUpdates") {
       if (updateCheck.checking) return t("settings.extensionUpdates.checking");
@@ -217,6 +236,20 @@
       {/snippet}
     </UiListRow>
   </div>
+{:else if id === "betaUpdateCheck"}
+  <UiListRow {title} {description}>
+    {#snippet action()}
+      <UiButton disabled={!updater?.betaFeed || betaChecking} busy={betaChecking} onclick={checkForBetas}>{t("settings.items.betaUpdateCheck.check")}</UiButton>
+    {/snippet}
+  </UiListRow>
+{:else if id === "betaUpdateRelease"}
+  <UiListRow {title} {description}>
+    {#snippet action()}
+      <UiButton disabled={!updater?.betaAvailable} onclick={() => updater?.betaAvailable && tabActions.create(updater.betaAvailable.url)}>
+        {t("settings.items.betaUpdateRelease.open")}
+      </UiButton>
+    {/snippet}
+  </UiListRow>
 {:else}
 <UiListRow {title} {description} icon={id === "newSpace" || id === "deviceSetup" ? objectIcon : undefined}>
   {#if id === "appIcon"}

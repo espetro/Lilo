@@ -1425,6 +1425,11 @@ export interface BridgeUpdaterStatus {
 	available: boolean;
 	automatic: boolean;
 	lastCheck: number | null;
+	/** True when an unsigned build watches a plain release feed (the fork beta); the beta fields then apply. */
+	betaFeed: boolean;
+	/** The newer beta release found: tag and release page; null while this build is the newest or none checked yet. */
+	betaAvailable: { tag: string; url: string } | null;
+	betaLastCheck: number | null;
 }
 
 /** One menu's actions, keys already spelled with their symbols; `custom` when the user changed them. */

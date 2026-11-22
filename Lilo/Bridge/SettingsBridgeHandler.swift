@@ -325,6 +325,10 @@ final class SettingsBridgeHandler: BridgeHandler {
 
         case "checkForUpdates":
             updaterController?.checkForUpdates(nil)
+            Task { [weak self] in
+                await Self.betaUpdateChecker.check()
+                self?.publishUpdaterStatus()
+            }
             publishUpdaterStatus()
 
         case "installUpdate":
@@ -578,15 +582,23 @@ final class SettingsBridgeHandler: BridgeHandler {
         (NSApp.delegate as? AppDelegate)?.updaterController
     }
 
+    /// The plain release feed of an unsigned build (the fork beta); nil when no feed is compiled in.
+    /// Shared: every window's handler instance points at the one check, and AppDelegate starts it.
+    static let betaUpdateChecker = BetaUpdateChecker()
+
     private func publishUpdaterStatus() {
         let updater = updaterController?.updater
+        let beta = Self.betaUpdateChecker.isConfigured ? Self.betaUpdateChecker : nil
         bridgeRouter?.send(event: "updaterStatus", data: [
             "version": Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "",
             "webKitVersion": Bundle(for: WKWebView.self).object(forInfoDictionaryKey: "CFBundleVersion") as? String ?? "",
             "webKitFork": WKEngineFactory.isForkedWebKit,
             "available": updater != nil,
             "automatic": updater.map { $0.automaticallyChecksForUpdates && $0.automaticallyDownloadsUpdates } ?? false,
-            "lastCheck": updater?.lastUpdateCheckDate?.timeIntervalSince1970 ?? NSNull()
+            "lastCheck": updater?.lastUpdateCheckDate?.timeIntervalSince1970 ?? NSNull(),
+            "betaFeed": beta != nil,
+            "betaAvailable": beta?.available.map { ["tag": $0.tag, "url": $0.url] } ?? NSNull(),
+            "betaLastCheck": beta?.lastCheck?.timeIntervalSince1970 ?? NSNull()
         ])
     }
 

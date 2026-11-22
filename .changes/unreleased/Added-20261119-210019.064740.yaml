@@ -1,0 +1,3 @@
+kind: Added
+body: 'Lilo Beta watches the fork''s releases itself: once on launch it compares the newest beta-N release with the build it came from, and Settings > Advanced shows a row to open the release page when a newer beta is out'
+time: 2026-11-19T21:00:19.06474-08:00

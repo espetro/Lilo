@@ -60,6 +60,8 @@ export type SettingId =
   | "autoDevices"
   | "deviceSetup"
   | "appUpdates"
+  | "betaUpdateCheck"
+  | "betaUpdateRelease"
   | "autoUpdate"
   | "shortcuts"
   | "holdToQuit"
@@ -199,6 +201,8 @@ export const SETTINGS: SettingModel[] = [
   { id: "autoDevices", section: "media", groupKey: "settings.groups.calls" },
   { id: "deviceSetup", section: "media", groupKey: "settings.groups.calls", requires: "autoDevices" },
   { id: "appUpdates", section: "general", groupKey: "settings.groups.lilo" },
+  { id: "betaUpdateCheck", section: "advanced", groupKey: "settings.groups.beta" },
+  { id: "betaUpdateRelease", section: "advanced", groupKey: "settings.groups.beta" },
   { id: "autoUpdate", section: "general", groupKey: "settings.groups.lilo" },
   { id: "shortcuts", section: "general", groupKey: "settings.groups.lilo" },
   { id: "holdToQuit", section: "general", groupKey: "settings.groups.lilo" },

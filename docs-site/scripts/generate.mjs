@@ -115,11 +115,12 @@ export function shortcutsPartial(actions, catalog, locale) {
 const lookup = (catalog, locale, key) =>
   key.split(".").reduce((node, part) => node?.[part], catalog) ?? fail(SOURCES.catalog(locale), `no string "${key}"`);
 
-/** A catalog string whose `{placeholders}` are Blume variables (`{version}` becomes `{{version}}`). */
+/** A catalog string whose `{placeholders}` are Blume variables (`{version}` becomes `{{version}}`); a runtime-only one like `{tag}` stays, as inline code. */
 function catalogText(catalog, locale, key) {
   const text = lookup(catalog, locale, key);
   if (typeof text !== "string") fail(SOURCES.catalog(locale), `"${key}" is not a string`);
   return cell(text).replace(/\\\{(\w+)\\\}/gu, (_, name) => {
+    if (name === "tag") return "`{tag}`";
     if (name !== "version") fail(SOURCES.catalog(locale), `"${key}" has a placeholder {${name}} the reference cannot fill`);
     return `{{${name}}}`;
   });

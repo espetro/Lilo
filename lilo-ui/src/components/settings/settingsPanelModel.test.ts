@@ -49,6 +49,17 @@ test("groups a section's settings in display order", () => {
   assert.deepEqual(sectionGroups("terminal"), []);
 });
 
+test("beta mode sits in Advanced; the chrome hides the release row until a newer beta exists", () => {
+  assert.deepEqual(sectionGroups("advanced").find((group) => group.groupKey === "settings.groups.beta"), {
+    groupKey: "settings.groups.beta",
+    settings: ["betaUpdateCheck", "betaUpdateRelease"],
+  });
+  const hidden = sectionGroups("advanced", (setting) => setting.id !== "betaUpdateRelease").find(
+    (group) => group.groupKey === "settings.groups.beta",
+  );
+  assert.deepEqual(hidden?.settings, ["betaUpdateCheck"]);
+});
+
 test("settings under a switch that is off drop out of their group", () => {
   const values: Record<string, string> = { agentControlEnabled: "false" };
   const get = (key: string, fallback: string) => values[key] ?? fallback;

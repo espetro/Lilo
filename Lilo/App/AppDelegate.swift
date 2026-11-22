@@ -130,6 +130,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         mainWindowController?.showWindow(nil)
         // Off the launch path: macOS delivers its payloads at most daily, so nothing waits on this.
         DispatchQueue.main.async { MetricKitArchive.shared.start() }
+        // The unsigned beta's one-shot release-feed check; nothing happens in Sparkle-signed builds.
+        DispatchQueue.main.async { SettingsBridgeHandler.betaUpdateChecker.startSharedCheck() }
         mainWindowController?.window?.makeKeyAndOrderFront(nil)
         StartupMetrics.mark("windowShown")
         // Writes the bundle's custom icon: kept off the path to the first window.
