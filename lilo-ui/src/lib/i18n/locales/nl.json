@@ -170,7 +170,7 @@
 			"otherAppLinks": "Links uit andere apps",
 			"blockerExceptions": "Lijsten en uitzonderingen",
 			"agentConversations": "Gesprekken",
-			"beta": "Bètamodus"
+			"updateChannel": "Updatekanaal"
 		},
 		"searchPlaceholder": "Zoek in instellingen",
 		"searchResultsTitle": "Zoekresultaten",
@@ -638,13 +638,25 @@
 				"description": "Deze bèta vergelijkt zijn build bij het starten één keer met de nieuwste release van de fork.",
 				"keywords": "Bèta-updates",
 				"check": "Zoek naar bèta's",
-				"lastChecked": "Gecontroleerd {time}",
-				"absent": "Deze build heeft geen bètafeed."
+				"lastChecked": "Gecontroleerd {time}"
 			},
 			"betaUpdateRelease": {
 				"title": "Bèta {tag} is uit",
 				"description": "Handmatig gedownload van de releasepagina en geïnstalleerd; Lilo vervangt nooit zichzelf.",
 				"open": "Release openen"
+			},
+			"updateChannel": {
+				"title": "Updatekanaal",
+				"description": "Bèta vergelijkt deze build bij het opstarten met de nieuwste release van de fork; Stabiel controleert nooit.",
+				"keywords": "update kanaal stabiel bèta release",
+				"stable": "Stabiel",
+				"beta": "Bèta"
+			},
+			"betaFeedURL": {
+				"title": "URL van bètafeed",
+				"description": "De lijst met releases die deze bèta volgt; een fork wijst hem naar de eigen releases. Leeg herstelt de ingebouwde feed.",
+				"keywords": "bèta feed url releases fork",
+				"placeholder": "URL van de releasefeed"
 			}
 		},
 		"devices": {

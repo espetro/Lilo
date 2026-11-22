@@ -1,0 +1,3 @@
+kind: Changed
+body: 'The beta rows moved out of Settings > Advanced into an Update channel section of Settings > General: a Stable or Beta selector, and a Beta feed URL field a fork can point at its own releases'
+time: 2026-11-22T22:39:56.000000000Z

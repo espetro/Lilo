@@ -170,7 +170,7 @@
 			"otherAppLinks": "다른 앱의 링크",
 			"blockerExceptions": "목록 및 예외",
 			"agentConversations": "대화",
-			"beta": "베타 모드"
+			"updateChannel": "업데이트 채널"
 		},
 		"searchPlaceholder": "설정 검색",
 		"searchResultsTitle": "검색 결과",
@@ -638,13 +638,25 @@
 				"description": "이 베타는 시작할 때 한 번만 자체 빌드를 포크의 최신 릴리스와 비교합니다.",
 				"keywords": "베타 업데이트",
 				"check": "베타 확인",
-				"lastChecked": "{time}에 확인함",
-				"absent": "이 빌드에는 베타 피드가 없습니다."
+				"lastChecked": "{time}에 확인함"
 			},
 			"betaUpdateRelease": {
 				"title": "베타 {tag}가 나왔습니다",
 				"description": "릴리스 페이지에서 직접 내려받아 설치합니다. Lilo는 스스로를 교체하지 않습니다.",
 				"open": "릴리스 열기"
+			},
+			"updateChannel": {
+				"title": "업데이트 채널",
+				"description": "Beta는 시작할 때 이 빌드를 포크의 최신 릴리스와 비교하고, Stable은 확인하지 않습니다.",
+				"keywords": "업데이트 채널 안정 베타 릴리스",
+				"stable": "안정",
+				"beta": "베타"
+			},
+			"betaFeedURL": {
+				"title": "베타 피드 URL",
+				"description": "이 베타가 살펴보는 릴리스 목록입니다. 포크는 자체 릴리스를 가리키게 할 수 있습니다. 비우면 내장 피드가 복원됩니다.",
+				"keywords": "베타 피드 URL 릴리스 포크",
+				"placeholder": "릴리스 피드 URL"
 			}
 		},
 		"devices": {

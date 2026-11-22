@@ -9,10 +9,13 @@ import OSLog
 @MainActor
 final class BetaUpdateChecker {
     static let installedTagKey = "installedBetaTag"
+    static let feedURLOverrideKey = "betaUpdateFeedURLOverride"
     private static let logger = Logger(liloCategory: "beta-update")
 
-    private let feedURL: URL?
+    private let compiledFeedURL: String?
     private let session: URLSession
+    /// The channel picked in Settings ("stable" or "beta"); the check stays idle off beta.
+    var updateChannel = "beta"
     /// Set once a check answers, so the settings row shows something honest while none ran yet.
     private(set) var lastCheck: Date?
     /// The newer release found: its tag and the release's HTML page, nil while this build is the newest.
@@ -22,12 +25,29 @@ final class BetaUpdateChecker {
 
     init(feedURL: String? = Bundle.main.object(forInfoDictionaryKey: "LILOBetaUpdateFeedURL") as? String,
          session: URLSession = .shared) {
-        self.feedURL = feedURL.flatMap { URL(string: $0) }.flatMap { $0.host != nil && $0.scheme != nil ? $0 : nil }
+        self.compiledFeedURL = feedURL
         self.session = session
     }
 
+    /// The feed the check reads: a URL the Settings field stored wins over the one compiled into the
+    /// build, so another fork points its beta at its own releases without rebuilding.
+    var feedURL: URL? {
+        let raw = UserDefaults.standard.string(forKey: Self.feedURLOverrideKey) ?? compiledFeedURL
+        return raw.flatMap { URL(string: $0) }.flatMap { $0.host != nil && $0.scheme != nil ? $0 : nil }
+    }
+
+    /// The URL the Settings field shows as the override, nil while the build's own feed applies.
+    var feedURLOverride: String? { UserDefaults.standard.string(forKey: Self.feedURLOverrideKey) }
+
     /// False in builds without a feed URL, whose rows stay honest about never checking.
     var isConfigured: Bool { feedURL != nil }
+
+    /// An empty URL removes the override and the compiled-in feed applies again.
+    func setFeedURLOverride(_ raw: String) {
+        let trimmed = raw.trimmingCharacters(in: .whitespacesAndNewlines)
+        if trimmed.isEmpty { UserDefaults.standard.removeObject(forKey: Self.feedURLOverrideKey) }
+        else { UserDefaults.standard.set(trimmed, forKey: Self.feedURLOverrideKey) }
+    }
 
     /// The tag this build was published as, stamped at build time. A local build has none and keeps the
     /// tag the newest release had the first time it ran, so a check on an older build keeps finding the
@@ -51,7 +71,7 @@ final class BetaUpdateChecker {
     }
 
     func check() async {
-        guard let feedURL else { return }
+        guard updateChannel == "beta", let feedURL else { return }
         lastCheck = Date()
         do {
             let (data, response) = try await session.data(from: feedURL)

@@ -170,7 +170,7 @@
 			"otherAppLinks": "Diğer uygulamalardan gelen bağlantılar",
 			"blockerExceptions": "Listeler ve istisnalar",
 			"agentConversations": "Sohbetler",
-			"beta": "Beta modu"
+			"updateChannel": "Güncelleme kanalı"
 		},
 		"searchPlaceholder": "Ayarlarda ara",
 		"searchResultsTitle": "Arama sonuçları",
@@ -638,13 +638,25 @@
 				"description": "Bu beta, başlangıçta bir kez kendi yapısını fork'un en yeni sürümüyle karşılaştırır.",
 				"keywords": "Beta güncellemeleri",
 				"check": "Beta sürümlerini denetle",
-				"lastChecked": "Denetlendi: {time}",
-				"absent": "Bu yapının beta akışı yok."
+				"lastChecked": "Denetlendi: {time}"
 			},
 			"betaUpdateRelease": {
 				"title": "{tag} betası çıktı",
 				"description": "Sürüm sayfasından elle indirilir ve kurulur; Lilo kendini asla değiştirmez.",
 				"open": "Sürümü aç"
+			},
+			"updateChannel": {
+				"title": "Güncelleme kanalı",
+				"description": "Beta, açılışta bu derlemeyi çatalın en yeni sürümüyle karşılaştırır; Kararlı hiç denetlemez.",
+				"keywords": "güncelleme kanal kararlı beta sürüm",
+				"stable": "Kararlı",
+				"beta": "Beta"
+			},
+			"betaFeedURL": {
+				"title": "Beta akışı URL'si",
+				"description": "Bu betanın izlediği sürüm listesi; bir çatal kendi sürümlerini gösterebilir. Boş bırakılırsa yerleşik akış geri yüklenir.",
+				"keywords": "beta akış url sürümler çatal",
+				"placeholder": "Sürüm akışı URL'si"
 			}
 		},
 		"devices": {

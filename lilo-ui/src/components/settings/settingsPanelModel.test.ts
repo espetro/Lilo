@@ -41,6 +41,10 @@ test("groups a section's settings in display order", () => {
     { groupKey: "settings.groups.search", settings: ["searchEngine", "searchSuggestions", "preloadTopHit", "searchEngines"] },
     { groupKey: "settings.groups.downloads", settings: ["downloadsFolder", "askDownloadLocation"] },
     { groupKey: "settings.groups.lilo", settings: ["appUpdates", "autoUpdate", "shortcuts", "holdToQuit"] },
+    {
+      groupKey: "settings.groups.updateChannel",
+      settings: ["updateChannel", "betaUpdateCheck", "betaUpdateRelease", "betaFeedURL"],
+    },
   ]);
   assert.deepEqual(sectionGroups("media"), [
     { groupKey: "settings.groups.playback", settings: ["autoPictureInPicture", "autoplay"] },
@@ -49,15 +53,14 @@ test("groups a section's settings in display order", () => {
   assert.deepEqual(sectionGroups("terminal"), []);
 });
 
-test("beta mode sits in Advanced; the chrome hides the release row until a newer beta exists", () => {
-  assert.deepEqual(sectionGroups("advanced").find((group) => group.groupKey === "settings.groups.beta"), {
-    groupKey: "settings.groups.beta",
-    settings: ["betaUpdateCheck", "betaUpdateRelease"],
-  });
-  const hidden = sectionGroups("advanced", (setting) => setting.id !== "betaUpdateRelease").find(
-    (group) => group.groupKey === "settings.groups.beta",
+test("the update channel sits in General; the chrome hides the release row until a newer beta exists", () => {
+  const channel = sectionGroups("general").find((group) => group.groupKey === "settings.groups.updateChannel");
+  assert.deepEqual(channel?.settings, ["updateChannel", "betaUpdateCheck", "betaUpdateRelease", "betaFeedURL"]);
+  assert.ok(!sectionGroups("advanced").some((group) => group.groupKey === "settings.groups.updateChannel"));
+  const hidden = sectionGroups("general", (setting) => setting.id !== "betaUpdateRelease").find(
+    (group) => group.groupKey === "settings.groups.updateChannel",
   );
-  assert.deepEqual(hidden?.settings, ["betaUpdateCheck"]);
+  assert.deepEqual(hidden?.settings, ["updateChannel", "betaUpdateCheck", "betaFeedURL"]);
 });
 
 test("settings under a switch that is off drop out of their group", () => {

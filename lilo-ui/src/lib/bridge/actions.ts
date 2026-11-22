@@ -259,6 +259,7 @@ export const settingsActions = {
 	dismissUpdate: emitEmpty("dismissUpdate"),
 	unlockDeveloperTools: emitEmpty("unlockDeveloperTools"),
 	setAutomaticUpdates: (enabled: boolean): void => emit("setAutomaticUpdates", { enabled }),
+	setBetaFeedURL: (url: string): void => emit("setBetaFeedURL", { url }),
 	loadShortcuts: emitEmpty("getShortcuts"),
 	recordShortcut: (id: string | null): void => emit("recordShortcut", { id }),
 	setShortcut: (id: string, combo: string): void => emit("setShortcut", { id, combo }),

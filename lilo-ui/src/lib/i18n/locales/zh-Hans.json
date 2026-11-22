@@ -170,7 +170,7 @@
 			"otherAppLinks": "其他 App 中的链接",
 			"blockerExceptions": "列表与例外",
 			"agentConversations": "对话",
-			"beta": "Beta 模式"
+			"updateChannel": "更新渠道"
 		},
 		"searchPlaceholder": "搜索设置",
 		"searchResultsTitle": "搜索结果",
@@ -638,13 +638,25 @@
 				"description": "此 Beta 在启动时自动将自身构建与分支的最新发布比较一次。",
 				"keywords": "Beta 更新",
 				"check": "检查 Beta",
-				"lastChecked": "已于 {time} 检查",
-				"absent": "此构建没有 Beta 更新源。"
+				"lastChecked": "已于 {time} 检查"
 			},
 			"betaUpdateRelease": {
 				"title": "Beta {tag} 已发布",
 				"description": "从发布页面手动下载并安装；Lilo 从不自行替换。",
 				"open": "打开发布页"
+			},
+			"updateChannel": {
+				"title": "更新渠道",
+				"description": "Beta 在启动时将此构建与 fork 的最新版本比较；Stable 从不检查。",
+				"keywords": "更新 渠道 稳定 测试 版本",
+				"stable": "稳定版",
+				"beta": "Beta"
+			},
+			"betaFeedURL": {
+				"title": "Beta 订阅源 URL",
+				"description": "此 Beta 监听的版本列表；fork 可以将其指向自己的版本。留空则恢复内置订阅源。",
+				"keywords": "beta 订阅源 url 版本 fork",
+				"placeholder": "版本订阅源 URL"
 			}
 		},
 		"devices": {

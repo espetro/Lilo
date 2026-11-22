@@ -170,7 +170,7 @@
 			"otherAppLinks": "Links from other apps",
 			"blockerExceptions": "Lists and exceptions",
 			"agentConversations": "Conversations",
-			"beta": "Beta mode"
+			"updateChannel": "Update channel"
 		},
 		"searchPlaceholder": "Search settings",
 		"searchResultsTitle": "Search results",
@@ -638,13 +638,25 @@
 				"description": "This beta compares its build with the fork's newest release page on its own once, on launch.",
 				"keywords": "beta update release fork",
 				"check": "Check for Betas",
-				"lastChecked": "Checked {time}",
-				"absent": "This build has no beta feed."
+				"lastChecked": "Checked {time}"
 			},
 			"betaUpdateRelease": {
 				"title": "Beta {tag} is out",
 				"description": "Downloaded from the release page and installed by hand; Lilo never replaces itself.",
 				"open": "Open Release"
+			},
+			"updateChannel": {
+				"title": "Update channel",
+				"description": "Beta compares this build with the fork's newest release on launch; Stable never checks.",
+				"keywords": "update channel stable beta release",
+				"stable": "Stable",
+				"beta": "Beta"
+			},
+			"betaFeedURL": {
+				"title": "Beta feed URL",
+				"description": "The release list this beta watches; a fork points it at its own releases. Empty restores the built-in feed.",
+				"keywords": "beta feed url releases fork override",
+				"placeholder": "Release feed URL"
 			}
 		},
 		"devices": {
