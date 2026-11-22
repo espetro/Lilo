@@ -3058,5 +3058,9 @@
 				}
 			}
 		}
+	},
+	"splitPane": {
+		"close": "Fermer le volet fractionné",
+		"maximize": "Agrandir le volet fractionné"
 	}
 }

@@ -3086,5 +3086,9 @@
 				}
 			}
 		}
+	},
+	"splitPane": {
+		"close": "Zamknij panel podziału",
+		"maximize": "Maksymalizuj panel podziału"
 	}
 }

@@ -3058,5 +3058,9 @@
 				}
 			}
 		}
+	},
+	"splitPane": {
+		"close": "Bölünmüş bölmeyi kapat",
+		"maximize": "Bölünmüş bölümü büyüt"
 	}
 }

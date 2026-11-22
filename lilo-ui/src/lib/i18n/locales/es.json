@@ -3058,5 +3058,9 @@
 				}
 			}
 		}
+	},
+	"splitPane": {
+		"close": "Cerrar panel dividido",
+		"maximize": "Maximizar panel dividido"
 	}
 }

@@ -3058,5 +3058,9 @@
 				}
 			}
 		}
+	},
+	"splitPane": {
+		"close": "Gesplitst deelvenster sluiten",
+		"maximize": "Gesplitst deelvenster maximaliseren"
 	}
 }
