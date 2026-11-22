@@ -4,7 +4,14 @@ on:
   push:
     branches: [main]
   pull_request:
-    branches: [main]
+    branches: [main, develop]
+  # A run on any branch of the fork, for `make ci-swift REF=<branch>`; the ref input checks out another ref of the workflow's own repository.
+  workflow_dispatch:
+    inputs:
+      ref:
+        description: Branch, tag or commit to test, empty for the ref the run was dispatched on
+        required: false
+        default: ''
 
 permissions:
   contents: read
@@ -137,6 +144,9 @@ jobs:
     # The macOS 27 image whose default Xcode is 27 (the SDK Lilo builds against); macos-26 only has Xcode 26.
     runs-on: xcode-27
     timeout-minutes: 60
+    # The Makefile refuses to run the Swift tests anywhere a person may be at the keyboard unless this is set.
+    env:
+      LILO_LOCAL_UI_TESTS: '1'
     # Each shard builds incrementally from the cache, then runs a third of the test classes. Shard 1 also takes the
     # project check and SwiftLint, shard 3, the lightest, the slow tests. Three shards and the Release build stay within
     # the free plan's five concurrent macOS jobs.
@@ -146,6 +156,8 @@ jobs:
         shard: [1, 2, 3]
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ inputs.ref }}
       - run: xcodebuild -downloadComponent MetalToolchain
       # The UI build release-build saves.
       - name: Restore the UI build

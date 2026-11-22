@@ -122,15 +122,30 @@ ifndef CI
 export TEST_RUNNER_LILO_APP_SUPPORT_DIR ?= $(CURDIR)/.derived.noindex/test-data
 endif
 TEST_CONFIG := $(XCODEBUILD) -configuration Debug LILO_BUNDLE_ID_SUFFIX=.tests $(DEBUG_SIGNING)
-TEST := $(TEST_LOCK) $(TEST_CONFIG) test-without-building $(TEST_TIMEOUTS)
+TEST_RUN := $(TEST_CONFIG) test-without-building $(TEST_TIMEOUTS)
+TEST := $(TEST_LOCK) $(TEST_RUN)
+# Whatever runs xcodebuild inside the lock: `make test-disturbance` puts its sampler here.
+TEST_WRAP :=
 # CI (which sets CI) runs a failed test once more and lists it in the job summary; locally a flake fails.
 TEST_RETRY := $(if $(CI),-retry-tests-on-failure -test-iterations 2)
-TEST_WORKERS = $(shell cores=$$(sysctl -n hw.perflevel0.physicalcpu 2>/dev/null || sysctl -n hw.ncpu); echo $$((cores / $(TEST_SLOTS) > 0 ? cores / $(TEST_SLOTS) : 1)))
+# A quiet run (the default off CI; TEST_QUIET=0 opts out) leaves the Mac usable: the test hosts' windows stay transparent
+# and let clicks through, and half the performance cores run tests instead of all of them (see TEST_WORKERS), so an
+# interactive thread still finds a core. TEST_NICE=1 also runs the hosts and their WebKit processes at background priority
+# (efficiency cores only): the Mac stays even smoother, but the suite takes twice as long and timing-sensitive tests flake.
+# taskpolicy on make would not do it: xcodebuild's hosts are launchd's children. Measured in docs/plans/test-disturbance.md.
+# Benchmarks and media captures never run quiet.
+TEST_QUIET ?= $(if $(CI),0,1)
+TEST_NICE ?= 0
+swift-test swift-test-slow: export TEST_RUNNER_LILO_TEST_QUIET := $(filter 1,$(TEST_QUIET))
+swift-test swift-test-slow: export TEST_RUNNER_LILO_TEST_DEMOTE := $(filter 1,$(TEST_NICE))
+# TEST_PARALLEL=NO runs the classes one after the other in one host: xcodebuild then timestamps each class.
+TEST_PARALLEL ?= YES
+TEST_WORKERS = $(shell cores=$$(sysctl -n hw.perflevel0.physicalcpu 2>/dev/null || sysctl -n hw.ncpu); echo $$((cores / $(TEST_SLOTS) / $(if $(filter 1,$(TEST_QUIET)),2,1) > 0 ? cores / $(TEST_SLOTS) / $(if $(filter 1,$(TEST_QUIET)),2,1) : 1)))
 
 .PHONY: help site-release-import validate validate-scope validate-ui check check-staged ui-check swiftlint-changed sync-check linux-checks swiftlint project-sync ui-build ui-watch ui-dev ui-lint ui-test e2e e2e-energy ui-capture \
-	swift-test swift-test-slow blocker-coverage blocker-bench script-bench speedometer-bench page-bench preload-bench terminal-bench ext-bridge-build ext-bridge-test ext-smoke ext-nightly ext-e2e-passwords ext-e2e-passwords-trust top-extensions top-manifests chrome-surface \
+	swift-test swift-test-slow test-disturbance blocker-coverage blocker-bench script-bench speedometer-bench page-bench preload-bench terminal-bench ext-bridge-build ext-bridge-test ext-smoke ext-nightly ext-e2e-passwords ext-e2e-passwords-trust top-extensions top-manifests chrome-surface \
 	chrome-contracts chrome-smoke public-suffix-list app install install-debug xcode-build xcode-build-release \
-	run-ui-dev release release-notarize release-archive dmg dmg-background bridge-gen vt-build vt-build-source vt-zip webkit-fork bootstrap bootstrap-test ui-preview check-commits startup-bench ext-bench energy-sample energy-compare energy-browsers perf-summary perf-compare perf-summary-test retried-tests-test lockf-test slot-test scope-test tier-test metrics metrics-on metrics-off metrics-test ci-metrics ci-metrics-test check-summary-test agent-app agent-call window-capture agent-eval agent-eval-test \
+	run-ui-dev release release-notarize release-archive dmg dmg-background bridge-gen vt-build vt-build-source vt-zip webkit-fork bootstrap bootstrap-test ui-preview check-commits worktree-new worktree-gc worktree-gc-test startup-bench ext-bench energy-sample energy-compare energy-browsers perf-summary perf-compare perf-summary-test retried-tests-test lockf-test slot-test scope-test tier-test metrics metrics-on metrics-off metrics-test ci-metrics ci-metrics-test check-summary-test agent-app agent-call window-capture agent-eval agent-eval-test \
 	logs logs-stream site-dev site-dev-stop site-preview site-native-preview site-generate site-check site-fix site-test site-e2e site-release-capture site-capture-server site-capture-deps site-lock site-audit site-add-svelte site-playground-deps site-demo-icons site-deploy site-deploy-check emoji-data password-manager-icons \
 	docs-dev docs-build docs-check docs-test docs-preview docs-deploy-check docs-deploy docs-translate docs-eval docs-lock \
 	hooks-install hooks-install-checks hooks-install-push-checks quick-deps hooks-test lint-commit-message lint-commits \
@@ -193,11 +208,12 @@ validate: $(UI_DEPS) $(BRIDGE_DEPS) $(SITE_DEPS) $(DOCS_DEPS) $(SWIFTLINT) $(CHA
 	$(CHECK_SUMMARY) run bridge-build "$$logs" -- $(MAKE) --no-print-directory $(BRIDGE_STAMP) & bridge=$$!; \
 	$(CHECK_SUMMARY) run ui-build "$$logs" -- $(MAKE) --no-print-directory $(UI_STAMP); ui=$$?; wait $$bridge; bridge=$$?; \
 	names="ui-build bridge-build$$names"; \
-	if [ $$ui -eq 0 ] && [ $$bridge -eq 0 ]; then \
+	if [ $$ui -eq 0 ] && [ $$bridge -eq 0 ] && [ -n "$$LILO_LOCAL_UI_TESTS" ]; then \
 		$(CHECK_SUMMARY) run swift-test "$$logs" -- $(MAKE) --no-print-directory swift-test; names="$$names swift-test"; \
 	fi; \
 	wait $$pids; \
 	$(CHECK_SUMMARY) report $(if $(JSON),--json) "$$logs" $$names; status=$$?; \
+	[ -n "$$LILO_LOCAL_UI_TESTS" ] || echo 'swift-test: not run here ($(SWIFT_TESTS_HERE)); the result: make ci-swift' >&2; \
 	/bin/rm -rf "$$logs"; exit $$status
 
 $(UI_STAMP): $(UI_DEPS) $(UI_SOURCES)
@@ -265,7 +281,7 @@ validate-ui: ui-lint ui-test ui-build
 
 # `validate` without the Xcode build and Swift tests: every other group, in order. Runs on macOS too.
 ## Run every check that needs no Xcode: UI, website, docs, bridge, hooks, release and Swift lint (what Linux can run)
-linux-checks: ui-lint ui-test site-check site-test docs-check docs-test hooks-test perf-summary-test retried-tests-test scope-test tier-test metrics-test ci-metrics-test check-summary-test lockf-test ext-bridge-test swiftlint release-status
+linux-checks: ui-lint ui-test site-check site-test docs-check docs-test hooks-test perf-summary-test retried-tests-test scope-test tier-test metrics-test ci-metrics-test check-summary-test lockf-test ext-bridge-test swiftlint release-status worktree-gc-test
 
 ## Run Swift lint only
 swiftlint: $(SWIFTLINT)
@@ -365,7 +381,7 @@ release-media-test: release-media/node_modules/.installed
 changelog-media: release-media/node_modules/.installed
 	@test -n '$(RELEASE)' || { echo 'RELEASE=x.y.z is required' >&2; exit 2; }
 	-@TEST_RUNNER_LILO_RELEASE_MEDIA_PLANS='$(CURDIR)/release-media/plans/$(RELEASE)' TEST_RUNNER_LILO_RELEASE_MEDIA_SHOTS='$(CURDIR)/build/release-media/shots/$(RELEASE)' \
-		$(MAKE) --no-print-directory swift-test SWIFT_TEST_FILTER=LiloTests/ReleaseMediaCaptureTests TEST_WORKERS=1
+		$(MAKE) --no-print-directory swift-test SWIFT_TEST_FILTER=LiloTests/ReleaseMediaCaptureTests TEST_WORKERS=1 TEST_QUIET=0
 	@LILO_RELEASE='$(RELEASE)' node release-media/media.mjs
 
 ## Print what the changelog-draft skill drafts an entry from (RELEASE=x.y.z; pending notes by default)
@@ -442,17 +458,42 @@ SWIFT_TEST_SHARD_CLASSES = $(shell grep -rhE '^final class [A-Za-z0-9_]+: *(XCTe
 	| sed -E 's/^final class ([A-Za-z0-9_]+).*/LiloTests\/\1/' | sort \
 	| awk -v i=$(SWIFT_TEST_SHARD_I) -v n=$(SWIFT_TEST_SHARD_N) 'i == n ? NR % n != 0 : NR % n == i % n')
 SWIFT_TEST_SHARD_ARGS = $(if $(filter $(SWIFT_TEST_SHARD_N),$(SWIFT_TEST_SHARD_I)),-only-testing:LiloTests $(addprefix -skip-testing:,$(SWIFT_TEST_SHARD_CLASSES)),$(addprefix -only-testing:,$(SWIFT_TEST_SHARD_CLASSES)))
+# Swift tests open windows and take the keyboard focus for minutes: a person at the machine cannot work meanwhile.
+# CI sets LILO_LOCAL_UI_TESTS; a person who wants them here, deliberately, sets it too.
+SWIFT_TESTS_HERE = Swift tests open windows and take your keyboard focus: run them in CI with `make ci-swift`; for a deliberate local batch every few PRs, set LILO_LOCAL_UI_TESTS=1 (the run is then quiet: half the cores, transparent windows; TEST_NICE=1 also lowers its priority)
+.PHONY: ci-swift
+# At parse time, so nothing builds first.
+ifneq ($(filter swift-test swift-test-slow,$(MAKECMDGOALS)),)
+ifndef LILO_LOCAL_UI_TESTS
+$(error $(SWIFT_TESTS_HERE))
+endif
+endif
+
+## Run the Swift tests in CI and print the verdict: dispatches a run when the pushed head has none, waits at most CI_SWIFT_TIMEOUT seconds (REF=branch, default the current one)
+ci-swift:
+	@scripts/ci_swift.sh $(or $(REF),$(shell git branch --show-current))
+
 ## Run Swift unit tests but the slow ones (SWIFT_TEST_FILTER="LiloTests/Class LiloTests/Other/testCase" narrows the run, SWIFT_TEST_SHARD=1/3 runs a third)
 swift-test: test-build
-	@$(TEST) $(or $(addprefix -only-testing:,$(SWIFT_TEST_FILTER)),$(if $(SWIFT_TEST_SHARD),$(SWIFT_TEST_SHARD_ARGS)),-only-testing:LiloTests) -skip-testing:LiloTests/TerminalBenchmarkTests -skip-testing:LiloTests/RealExtensionSmokeTests -skip-testing:LiloTests/PasswordManagerE2ETests \
-		$(addprefix -skip-testing:LiloTests/,$(SLOW_TESTS)) -parallel-testing-enabled YES -maximum-parallel-testing-workers $(TEST_WORKERS) \
+	@$(TEST_LOCK) $(TEST_WRAP) $(TEST_RUN) $(or $(addprefix -only-testing:,$(SWIFT_TEST_FILTER)),$(if $(SWIFT_TEST_SHARD),$(SWIFT_TEST_SHARD_ARGS)),-only-testing:LiloTests) -skip-testing:LiloTests/TerminalBenchmarkTests -skip-testing:LiloTests/RealExtensionSmokeTests -skip-testing:LiloTests/PasswordManagerE2ETests \
+		$(addprefix -skip-testing:LiloTests/,$(SLOW_TESTS)) -parallel-testing-enabled $(TEST_PARALLEL) -maximum-parallel-testing-workers $(TEST_WORKERS) \
 		$(TEST_RETRY) $(if $(RESULT_BUNDLE),-resultBundlePath '$(RESULT_BUNDLE)')
+
+# Samples the desktop while the tests run: see scripts/disturbance_sampler.swift. Nothing to install: swiftc ships with Xcode.
+DISTURBANCE_SAMPLER := build/disturbance-sampler
+$(DISTURBANCE_SAMPLER): scripts/disturbance_sampler.swift
+	@mkdir -p build && swiftc -O scripts/disturbance_sampler.swift -o $@
+
+## Run swift-test (SWIFT_TEST_FILTER, TEST_QUIET, TEST_WORKERS as there) while sampling what it does to the desktop: focus, Dock, windows shown, cursor, CPU, latency. Prints the score, build/disturbance/LABEL.jsonl keeps the samples
+test-disturbance: $(DISTURBANCE_SAMPLER) test-build
+	@mkdir -p build/disturbance
+	@$(MAKE) --no-print-directory -o test-build swift-test TEST_WRAP="$(DISTURBANCE_SAMPLER) --label '$(or $(LABEL),swift-test)' --out 'build/disturbance/$(or $(LABEL),swift-test).jsonl' --"
 
 ## Run the Swift tests that wait out real clocks, which swift-test skips
 swift-test-slow: test-build
 	@for t in $(SLOW_TESTS); do grep -rqE "class $${t%/*}\b" LiloTests && grep -rqE "func $${t#*/}\(" LiloTests \
 		|| { echo "SLOW_TESTS names $$t, which LiloTests does not have" >&2; exit 1; }; done
-	@$(TEST) $(addprefix -only-testing:LiloTests/,$(SLOW_TESTS)) -parallel-testing-enabled YES \
+	@$(TEST_LOCK) $(TEST_WRAP) $(TEST_RUN) $(addprefix -only-testing:LiloTests/,$(SLOW_TESTS)) -parallel-testing-enabled YES \
 		$(TEST_RETRY) $(if $(RESULT_BUNDLE),-resultBundlePath '$(RESULT_BUNDLE)')
 
 ## Report what the converter keeps of the default filter lists, by kind and skip reason (network; OUT=build/blocker-coverage.txt)
@@ -764,6 +805,22 @@ vt-zip: vt-build-source
 ## Build every commit of BASE..HEAD with SwiftPM in a throwaway worktree (BASE=origin/main)
 check-commits:
 	@scripts/check_commits.sh $(BASE)
+
+## Create a worktree at $(WORKTREE_ROOT)/NAME, seeded by clonefile from a warm checkout (NAME=ticket/keywords BASE=origin/develop SEED=<main checkout> DERIVED=1 SITES=1)
+worktree-new:
+	@LILO_WORKTREE_ROOT="$(or $(WORKTREE_ROOT),$(HOME)/.worktrees)" LILO_WORKTREE_SEED="$(SEED)" \
+		LILO_WORKTREE_BRANCH="$(BRANCH)" LILO_WORKTREE_MAX=$(or $(MAX_WORKTREES),10) \
+		LILO_WORKTREE_FORCE=$(or $(FORCE),0) LILO_WORKTREE_DERIVED=$(or $(DERIVED),0) \
+		LILO_WORKTREE_SITES=$(or $(SITES),0) LILO_WORKTREE_BRIDGE=$(or $(BRIDGE),1) \
+		scripts/worktree_new.sh "$(NAME)" "$(or $(BASE),origin/develop)"
+
+## List worktrees whose PR is merged or closed and that are safe to remove (APPLY=1 removes them)
+worktree-gc:
+	@scripts/worktree_gc.sh $(if $(APPLY),--apply)
+
+## Test the worktree-gc selection logic in a throwaway repository
+worktree-gc-test:
+	@scripts/worktree_gc.test.sh
 
 ## Time launches of a Release build against a throwaway profile (RUNS=10 TABS=0; APP=path times that app, unbuilt)
 startup-bench:
