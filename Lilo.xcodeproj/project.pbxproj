@@ -714,6 +714,7 @@
 		F11DC9B17805F96C57CA2EF7 /* TerminalView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2C5EAC944C4FA42F1A74E759 /* TerminalView.swift */; };
 		F12FB6207C0FDEE7F670F1A6 /* AgentClientConfigTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 49DC7A82002222474EC0B589 /* AgentClientConfigTests.swift */; };
 		F14DC0CB8ACD457C481D32BE /* AppIconPreference.swift in Sources */ = {isa = PBXBuildFile; fileRef = FE33F1BC16095EB5A431DA4D /* AppIconPreference.swift */; };
+		F171DCC9015F691F5564C594 /* AppIconBeta.icon in Resources */ = {isa = PBXBuildFile; fileRef = 2B8B2048E746F45A8BFE0441 /* AppIconBeta.icon */; };
 		F1AB7E6994363208511270C5 /* ItalianLocalizationTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = CB96370139765B31D9813437 /* ItalianLocalizationTests.swift */; };
 		F1E5EE9539E2BA40D3A19DAC /* ExternalLinkRoutingTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 041D070362A134FB62C93574 /* ExternalLinkRoutingTests.swift */; };
 		F2C609C656DB2D6AD585F9AE /* MainWindowController+HideElement.swift in Sources */ = {isa = PBXBuildFile; fileRef = 35DB3552045162A7C7483438 /* MainWindowController+HideElement.swift */; };
@@ -940,6 +941,7 @@
 		29F8A3E02FAD20294119950A /* ExtensionPageNavigationTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ExtensionPageNavigationTests.swift; sourceTree = "<group>"; };
 		2B1C3FDFB052BFDCE12B8834 /* FeatureFlagsBridgeHandler.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FeatureFlagsBridgeHandler.swift; sourceTree = "<group>"; };
 		2B88189CA5154455C4382892 /* WKWebViewTabNavigationPolicyTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WKWebViewTabNavigationPolicyTests.swift; sourceTree = "<group>"; };
+		2B8B2048E746F45A8BFE0441 /* AppIconBeta.icon */ = {isa = PBXFileReference; lastKnownFileType = wrapper.icon; path = AppIconBeta.icon; sourceTree = "<group>"; };
 		2BAF3FA7CB946F4AEC598E44 /* TabExtensionEventsTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TabExtensionEventsTests.swift; sourceTree = "<group>"; };
 		2BF1B068EE38071BDC4C8801 /* MainWindowController+Extensions.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "MainWindowController+Extensions.swift"; sourceTree = "<group>"; };
 		2BF2A6D8AA9663C63227724B /* TemporaryProfileDatabase.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TemporaryProfileDatabase.swift; sourceTree = "<group>"; };
@@ -2662,6 +2664,7 @@
 			isa = PBXGroup;
 			children = (
 				95EC3B76D8ACF6B44D4E67DE /* AppIcon.icon */,
+				2B8B2048E746F45A8BFE0441 /* AppIconBeta.icon */,
 				97A6DAEDC4C211B50447A556 /* AppIcons */,
 				F388357485E32883962C521E /* AppShortcuts.strings */,
 				D75168448A420202678EC83F /* AppShortcuts.strings */,
@@ -3087,6 +3090,7 @@
 				A7100FD36275605AB072CF66 /* AgentInspector.js in Resources */,
 				4E832205EC9C150F3D739117 /* AgentPage.js in Resources */,
 				4A358455003A370150ADCEBF /* AppIcon.icon in Resources */,
+				F171DCC9015F691F5564C594 /* AppIconBeta.icon in Resources */,
 				FC9E47488A4CEF3D0E0866DB /* AppIcons in Resources */,
 				B67158E782EB5DD50FB8FE85 /* AppShortcuts.strings in Resources */,
 				5E42EA268ABD060C86792A70 /* AppShortcuts.strings in Resources */,

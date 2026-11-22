@@ -94,6 +94,7 @@ jobs:
           check() { [ "$2" = "$3" ] || { echo "::error::$1 is '$2', not '$3'."; exit 1; }; }
           check CFBundleIdentifier "$(/usr/libexec/PlistBuddy -c 'Print :CFBundleIdentifier' "$plist")" fr.arouillard.lilo.beta
           check CFBundleName "$(/usr/libexec/PlistBuddy -c 'Print :CFBundleName' "$plist")" 'Lilo Beta'
+          check CFBundleIconFile "$(/usr/libexec/PlistBuddy -c 'Print :CFBundleIconFile' "$plist")" AppIconBeta
           check SUPublicEDKey "$(/usr/libexec/PlistBuddy -c 'Print :SUPublicEDKey' "$plist")" ''
           check LILOBetaUpdateFeedURL "$(/usr/libexec/PlistBuddy -c 'Print :LILOBetaUpdateFeedURL' "$plist")" 'https://api.github.com/repos/espetro/Lilo/releases?per_page=30'
           check LILOBetaTag "$(/usr/libexec/PlistBuddy -c 'Print :LILOBetaTag' "$plist")" "beta-$GITHUB_RUN_NUMBER"
