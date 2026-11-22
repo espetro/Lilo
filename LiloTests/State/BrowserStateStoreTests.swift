@@ -3173,7 +3173,8 @@ final class BrowserStateStoreTests: XCTestCase {
 
         XCTAssertEqual(discardCount, 0)
         XCTAssertTrue(store.space(id: hiddenSpaceId)?.engines[tabId] === engine)
-        XCTAssertTrue(await pollUntil(timeout: 10) { engine.isFrozen })
+        let frozen = await pollUntil(timeout: 10) { engine.isFrozen }
+        XCTAssertTrue(frozen)
     }
 
     /// The same routine trim leaves an unsaved-form engine alone entirely: the veto covers both the
@@ -3866,7 +3867,7 @@ final class BrowserStateStoreTests: XCTestCase {
             config: config,
             discardEngine: { _ in discardCount += 1; return nil },
             syncActiveState: {},
-            trimActiveSpaceEngines: { policy, _ in
+            trimActiveSpaceEngines: { policy, _, _ in
                 XCTAssertEqual(policy, .foreground, "a hidden window keeps its tab budget")
                 trimmed.fulfill()
             }
