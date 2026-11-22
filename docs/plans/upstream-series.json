@@ -111,9 +111,9 @@
     ],
     "dependsOn": [],
     "branch": "upstream/agent-picker-layout",
-    "status": "branch-pushed",
+    "status": "pr-open",
     "needsMedia": true,
-    "upstreamPR": null,
+    "upstreamPR": 436,
     "userVisible": true
   },
   {
@@ -140,9 +140,9 @@
     ],
     "dependsOn": [],
     "branch": "upstream/commandbar-scopes-row",
-    "status": "branch-pushed",
+    "status": "pr-open",
     "needsMedia": true,
-    "upstreamPR": null,
+    "upstreamPR": 440,
     "userVisible": true
   },
   {
@@ -153,9 +153,9 @@
     ],
     "dependsOn": [],
     "branch": "upstream/split-view-fixes",
-    "status": "branch-pushed",
+    "status": "pr-open",
     "needsMedia": true,
-    "upstreamPR": null,
+    "upstreamPR": 430,
     "userVisible": true
   },
   {
@@ -179,9 +179,9 @@
     ],
     "dependsOn": [],
     "branch": "upstream/pip-gesture-forwarding",
-    "status": "branch-pushed",
+    "status": "merged",
     "needsMedia": false,
-    "upstreamPR": null,
+    "upstreamPR": 445,
     "userVisible": true
   },
   {
@@ -192,9 +192,9 @@
     ],
     "dependsOn": [],
     "branch": "upstream/little-window-redesign",
-    "status": "branch-pushed",
+    "status": "pr-open",
     "needsMedia": true,
-    "upstreamPR": null,
+    "upstreamPR": 442,
     "userVisible": true
   },
   {
@@ -205,9 +205,9 @@
     ],
     "dependsOn": [],
     "branch": "upstream/hold-cmdq-to-quit",
-    "status": "todo",
+    "status": "pr-open",
     "needsMedia": true,
-    "upstreamPR": null,
+    "upstreamPR": 444,
     "userVisible": true
   },
   {
@@ -218,9 +218,9 @@
     ],
     "dependsOn": [],
     "branch": "upstream/split-pane-controls",
-    "status": "todo",
+    "status": "merged",
     "needsMedia": true,
-    "upstreamPR": null,
+    "upstreamPR": 446,
     "userVisible": true
   },
   {
@@ -250,9 +250,9 @@
       "split-pane-margin"
     ],
     "branch": "upstream/split-flat-corners",
-    "status": "todo",
+    "status": "closed",
     "needsMedia": true,
-    "upstreamPR": null,
+    "upstreamPR": 462,
     "userVisible": true
   },
   {
@@ -265,9 +265,9 @@
       "split-pane-controls"
     ],
     "branch": "upstream/split-shortcuts",
-    "status": "todo",
+    "status": "merged",
     "needsMedia": false,
-    "upstreamPR": null,
+    "upstreamPR": 464,
     "userVisible": true
   },
   {
@@ -282,9 +282,9 @@
       "split-pane-margin"
     ],
     "branch": "upstream/split-pane-drag-drop",
-    "status": "todo",
+    "status": "pr-open",
     "needsMedia": true,
-    "upstreamPR": null,
+    "upstreamPR": 476,
     "userVisible": true
   },
   {
@@ -296,9 +296,9 @@
     ],
     "dependsOn": [],
     "branch": "upstream/sidebar-narrow-range",
-    "status": "todo",
+    "status": "merged",
     "needsMedia": true,
-    "upstreamPR": null,
+    "upstreamPR": 448,
     "userVisible": true
   },
   {
@@ -311,9 +311,9 @@
       "sidebar-narrow-range"
     ],
     "branch": "upstream/sidebar-newtab-row",
-    "status": "todo",
+    "status": "pr-open",
     "needsMedia": true,
-    "upstreamPR": null,
+    "upstreamPR": 450,
     "userVisible": true
   },
   {
@@ -327,9 +327,9 @@
       "traffic-lights-live-resize"
     ],
     "branch": "upstream/traffic-lights-narrow-range",
-    "status": "todo",
+    "status": "closed",
     "needsMedia": true,
-    "upstreamPR": null,
+    "upstreamPR": 474,
     "userVisible": true
   },
   {
@@ -341,9 +341,9 @@
     ],
     "dependsOn": [],
     "branch": "upstream/agent-debug-harness",
-    "status": "todo",
+    "status": "merged",
     "needsMedia": false,
-    "upstreamPR": null,
+    "upstreamPR": 452,
     "userVisible": false
   },
   {
@@ -354,9 +354,9 @@
     ],
     "dependsOn": [],
     "branch": "upstream/agent-gate-structure",
-    "status": "todo",
+    "status": "merged",
     "needsMedia": false,
-    "upstreamPR": null,
+    "upstreamPR": 454,
     "userVisible": true
   },
   {
@@ -367,9 +367,9 @@
     ],
     "dependsOn": [],
     "branch": "upstream/agent-native-html5-drag",
-    "status": "todo",
+    "status": "pr-open",
     "needsMedia": false,
-    "upstreamPR": null,
+    "upstreamPR": 456,
     "userVisible": true
   },
   {
@@ -382,9 +382,9 @@
       "agent-gate-structure"
     ],
     "branch": "upstream/agent-read-deltas",
-    "status": "todo",
+    "status": "pr-open",
     "needsMedia": false,
-    "upstreamPR": null,
+    "upstreamPR": 458,
     "userVisible": true
   },
   {
@@ -397,9 +397,9 @@
       "agent-debug-harness"
     ],
     "branch": "upstream/agent-action-log",
-    "status": "todo",
+    "status": "merged",
     "needsMedia": false,
-    "upstreamPR": null,
+    "upstreamPR": 460,
     "userVisible": true
   },
   {
@@ -411,9 +411,9 @@
     ],
     "dependsOn": [],
     "branch": "upstream/agent-acp-custom-command",
-    "status": "todo",
+    "status": "pr-open",
     "needsMedia": true,
-    "upstreamPR": null,
+    "upstreamPR": 478,
     "userVisible": true
   },
   {
@@ -430,9 +430,9 @@
       "agent-read-deltas"
     ],
     "branch": "upstream/agent-saved-flows",
-    "status": "todo",
+    "status": "merged",
     "needsMedia": false,
-    "upstreamPR": null,
+    "upstreamPR": 472,
     "userVisible": true
   },
   {
@@ -447,9 +447,9 @@
       "agent-saved-flows"
     ],
     "branch": "upstream/agent-eval-suite",
-    "status": "todo",
+    "status": "pr-open",
     "needsMedia": false,
-    "upstreamPR": null,
+    "upstreamPR": 480,
     "userVisible": false
   },
   {
@@ -460,9 +460,9 @@
     ],
     "dependsOn": [],
     "branch": "upstream/build-validate-quiet-json",
-    "status": "todo",
+    "status": "merged",
     "needsMedia": false,
-    "upstreamPR": null,
+    "upstreamPR": 466,
     "userVisible": false
   },
   {
@@ -478,9 +478,9 @@
       "build-validate-quiet-json"
     ],
     "branch": "upstream/build-check-tiers",
-    "status": "todo",
+    "status": "pr-open",
     "needsMedia": false,
-    "upstreamPR": null,
+    "upstreamPR": 470,
     "userVisible": false
   },
   {
@@ -492,9 +492,9 @@
     ],
     "dependsOn": [],
     "branch": "upstream/test-deflake",
-    "status": "todo",
+    "status": "merged",
     "needsMedia": false,
-    "upstreamPR": null,
+    "upstreamPR": 468,
     "userVisible": false
   },
   {

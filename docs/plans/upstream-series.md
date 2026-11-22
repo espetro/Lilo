@@ -33,33 +33,33 @@ Ordered so every PR comes after the PRs it depends on, open upstream PRs and pus
 | 9 | `build-bootstrap-checks` | build(setup): check the whole environment before bootstrap installs anything | #71 | +42/-9 | no | no | pr-open (#382) | none |
 | 10 | `build-linux-checks` | build: add linux-checks and a Linux SwiftLint for agents on Linux | #73 | +72/-34 | no | no | pr-open (#383) | none |
 | 11 | `build-pnpm-workspace` | build: move lilo-ui, site and docs-site to one pnpm workspace | none | n/a | no | no | pr-open (#384) | none |
-| 12 | `agent-picker-layout` | fix(agents): keep agent picker rows from overlapping | #114 | +270/-35 | yes | yes | branch-pushed | none |
+| 12 | `agent-picker-layout` | fix(agents): keep agent picker rows from overlapping | #114 | +270/-35 | yes | yes | pr-open (#436) | none |
 | 13 | `tab-multiselect-ring` | fix(sidebar): pinned multi-select and kept-loaded ring | #118 | +44/-20 | yes | yes | branch-pushed | `keep-loaded`, `tab-sleep-indicator` |
-| 14 | `commandbar-scopes-row` | fix(commandbar): restore the scopes row and footer hints | #120 | +1216/-376 | yes | yes | branch-pushed | none |
-| 15 | `split-view-fixes` | feat(splits): tell the user when the split view is full | #115 | +219/-51 | yes | yes | branch-pushed | none |
+| 14 | `commandbar-scopes-row` | fix(commandbar): restore the scopes row and footer hints | #120 | +1216/-376 | yes | yes | pr-open (#440) | none |
+| 15 | `split-view-fixes` | feat(splits): tell the user when the split view is full | #115 | +219/-51 | yes | yes | pr-open (#430) | none |
 | 16 | `traffic-lights-live-resize` | fix(window): keep the traffic lights at their standard size and place through a live resize | #119 | +45/-13 | yes | no | branch-pushed | none |
-| 17 | `pip-gesture-forwarding` | fix(pip): keep trackpad gestures from moving or resizing the floating panels | #121 | +87/-2 | yes | no | branch-pushed | none |
-| 18 | `little-window-redesign` | feat(window): little window opens on the command bar and turns into a page window | #122 | +1395/-354 | yes | yes | branch-pushed | none |
-| 19 | `hold-cmdq-to-quit` | feat(app): hold the quit shortcut to quit | #117 | +377/-1 | yes | yes | todo | none |
-| 20 | `split-pane-controls` | feat(splits): per-pane close and maximize controls | #63 | +441/-4 | yes | yes | todo | none |
+| 17 | `pip-gesture-forwarding` | fix(pip): keep trackpad gestures from moving or resizing the floating panels | #121 | +87/-2 | yes | no | merged (#445) | none |
+| 18 | `little-window-redesign` | feat(window): little window opens on the command bar and turns into a page window | #122 | +1395/-354 | yes | yes | pr-open (#442) | none |
+| 19 | `hold-cmdq-to-quit` | feat(app): hold the quit shortcut to quit | #117 | +377/-1 | yes | yes | pr-open (#444, issue #443) | none |
+| 20 | `split-pane-controls` | feat(splits): per-pane close and maximize controls | #63 | +441/-4 | yes | yes | merged (#446) | none |
 | 21 | `agent-split-pane-controls` | fix(splits): give agent split panes working close and maximize controls | #103, #115 | +552/-52 | yes | yes | todo | `split-pane-controls`, `agent-split-focus` |
-| 22 | `split-flat-corners` | fix(splits): flat outer corners for split panes | #115 | +219/-51 | yes | yes | todo | `split-pane-margin` |
-| 23 | `split-shortcuts` | fix(shortcuts): give the split view actions their keys by default | #75 | +43/-4 | yes | no | todo | `split-pane-controls` |
-| 24 | `split-pane-drag-drop` | feat(split): drag a pane to swap or re-dock it, with menu moves | #116, #125 | +512/-6 | yes | yes | todo | `split-pane-controls`, `split-pane-margin` |
-| 25 | `sidebar-narrow-range` | feat(sidebar): continuous narrow range to the rail's width | #88, #93 | +117/-32 | yes | yes | todo | none |
-| 26 | `sidebar-newtab-row` | fix(sidebar): keep the New Tab row's buttons and step its label down | #98 | +96/-4 | yes | yes | todo | `sidebar-narrow-range` |
-| 27 | `traffic-lights-narrow-range` | fix(sidebar): keep the window buttons through the sidebar's narrow range | #101 | +261/-26 | yes | yes | todo | `sidebar-narrow-range`, `traffic-lights-live-resize` |
-| 28 | `agent-debug-harness` | feat(app): run the agent harness headless in Debug builds | #27, #38 | +119/-13 | no | no | todo | none |
-| 29 | `agent-gate-structure` | fix(agent): decide the approval gate from the page's structure | #31 | +169/-9 | yes | no | todo | none |
-| 30 | `agent-native-html5-drag` | fix(agent): run the HTML5 drag session for a native drag | #33 | +103/-7 | yes | no | todo | none |
-| 31 | `agent-read-deltas` | feat(agent): viewport-scoped reads and post-action page deltas | #59 | +246/-17 | yes | no | todo | `agent-gate-structure` |
-| 32 | `agent-action-log` | feat(agent): log each tool call to a local JSONL file | #55 | +405/-4 | yes | no | todo | `agent-debug-harness` |
-| 33 | `agent-acp-custom-command` | feat(conversations): run a custom ACP command as an agent | #35, #45 | +436/-5 | yes | yes | todo | none |
-| 34 | `agent-saved-flows` | feat(agent): saved flows - record once, replay deterministically | #77, #81, #83, #102 | +762/-19 | yes | no | todo | `agent-action-log`, `agent-read-deltas` |
-| 35 | `agent-eval-suite` | test(agent): add fixture agent tasks graded in code | #29, #85 | +745/-28 | no | no | todo | `agent-debug-harness`, `agent-saved-flows` |
-| 36 | `build-validate-quiet-json` | build(validate): print one line per check and JSON=1 for agents | #28 | +301/-16 | no | no | todo | none |
-| 37 | `build-check-tiers` | feat(build): quick check tiers with pre-commit and pre-push hooks | #57, #79, #86, #92 | +489/-21 | no | no | todo | `build-validate-quiet-json` |
-| 38 | `test-deflake` | test: widen the ACP exit wait and press Escape until the overlay shell closes | #94, #104 | +12/-4 | no | no | todo | none |
+| 22 | `split-flat-corners` | fix(splits): flat outer corners for split panes | #115 | +219/-51 | yes | yes | closed (#462, owner prefers rounded) | `split-pane-margin` |
+| 23 | `split-shortcuts` | fix(shortcuts): give the split view actions their keys by default | #75 | +43/-4 | yes | no | merged (#464) | `split-pane-controls` |
+| 24 | `split-pane-drag-drop` | feat(split): drag a pane to swap or re-dock it, with menu moves | #116, #125 | +512/-6 | yes | yes | pr-open (#476) | `split-pane-controls`, `split-pane-margin` |
+| 25 | `sidebar-narrow-range` | feat(sidebar): continuous narrow range to the rail's width | #88, #93 | +117/-32 | yes | yes | merged (#448) | none |
+| 26 | `sidebar-newtab-row` | fix(sidebar): keep the New Tab row's buttons and step its label down | #98 | +96/-4 | yes | yes | pr-open (#450) | `sidebar-narrow-range` |
+| 27 | `traffic-lights-narrow-range` | fix(sidebar): keep the window buttons through the sidebar's narrow range | #101 | +261/-26 | yes | yes | closed (#474, superseded by #448) | `sidebar-narrow-range`, `traffic-lights-live-resize` |
+| 28 | `agent-debug-harness` | feat(app): run the agent harness headless in Debug builds | #27, #38 | +119/-13 | no | no | merged (#452) | none |
+| 29 | `agent-gate-structure` | fix(agent): decide the approval gate from the page's structure | #31 | +169/-9 | yes | no | merged (#454) | none |
+| 30 | `agent-native-html5-drag` | fix(agent): run the HTML5 drag session for a native drag | #33 | +103/-7 | yes | no | pr-open (#456) | none |
+| 31 | `agent-read-deltas` | feat(agent): viewport-scoped reads and post-action page deltas | #59 | +246/-17 | yes | no | pr-open (#458, rebase needed) | `agent-gate-structure` |
+| 32 | `agent-action-log` | feat(agent): log each tool call to a local JSONL file | #55 | +405/-4 | yes | no | merged (#460) | `agent-debug-harness` |
+| 33 | `agent-acp-custom-command` | feat(conversations): run a custom ACP command as an agent | #35, #45 | +436/-5 | yes | yes | pr-open (#478) | none |
+| 34 | `agent-saved-flows` | feat(agent): saved flows - record once, replay deterministically | #77, #81, #83, #102 | +762/-19 | yes | no | merged (#472) | `agent-action-log`, `agent-read-deltas` |
+| 35 | `agent-eval-suite` | test(agent): add fixture agent tasks graded in code | #29, #85 | +745/-28 | no | no | pr-open (#480) | `agent-debug-harness`, `agent-saved-flows` |
+| 36 | `build-validate-quiet-json` | build(validate): print one line per check and JSON=1 for agents | #28 | +301/-16 | no | no | merged (#466) | none |
+| 37 | `build-check-tiers` | feat(build): quick check tiers with pre-commit and pre-push hooks | #57, #79, #86, #92 | +489/-21 | no | no | pr-open (#470) | `build-validate-quiet-json` |
+| 38 | `test-deflake` | test: widen the ACP exit wait and press Escape until the overlay shell closes | #94, #104 | +12/-4 | no | no | merged (#468) | none |
 
 Size is the fork PR total including locales, release notes and generated files; the port is usually smaller. Slugs, titles and dependencies are also in the JSON.
 
