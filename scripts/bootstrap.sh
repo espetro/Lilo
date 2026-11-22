@@ -180,14 +180,6 @@ if [ "$worst" -ne 0 ]; then
     exit "$worst"
 fi
 
-# The version package.json pins is Corepack's to fetch; any pnpm that is not it refuses to install.
-if pnpm -v >/dev/null 2>&1; then
-    echo "  ok  pnpm $(pnpm -v)"
-else
-    echo "Missing: pnpm. Run corepack enable (it comes with Node.js 22) or mise install, then rerun make bootstrap." >&2
-    exit 1
-fi
-
 # shellcheck disable=SC2086 # each argument is a list of make targets
 run_make $deps_targets || { [ "$json" = 1 ] && emit_json 1 false; exit 1; }
 if [ "$with_sites" = 1 ]; then
