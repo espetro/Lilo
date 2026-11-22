@@ -208,11 +208,12 @@ validate: $(UI_DEPS) $(BRIDGE_DEPS) $(SITE_DEPS) $(DOCS_DEPS) $(SWIFTLINT) $(CHA
 	$(CHECK_SUMMARY) run bridge-build "$$logs" -- $(MAKE) --no-print-directory $(BRIDGE_STAMP) & bridge=$$!; \
 	$(CHECK_SUMMARY) run ui-build "$$logs" -- $(MAKE) --no-print-directory $(UI_STAMP); ui=$$?; wait $$bridge; bridge=$$?; \
 	names="ui-build bridge-build$$names"; \
-	if [ $$ui -eq 0 ] && [ $$bridge -eq 0 ]; then \
+	if [ $$ui -eq 0 ] && [ $$bridge -eq 0 ] && [ -n "$$LILO_LOCAL_UI_TESTS" ]; then \
 		$(CHECK_SUMMARY) run swift-test "$$logs" -- $(MAKE) --no-print-directory swift-test; names="$$names swift-test"; \
 	fi; \
 	wait $$pids; \
 	$(CHECK_SUMMARY) report $(if $(JSON),--json) "$$logs" $$names; status=$$?; \
+	[ -n "$$LILO_LOCAL_UI_TESTS" ] || echo 'swift-test: not run here ($(SWIFT_TESTS_HERE)); the result: make ci-swift' >&2; \
 	/bin/rm -rf "$$logs"; exit $$status
 
 $(UI_STAMP): $(UI_DEPS) $(UI_SOURCES)
@@ -457,6 +458,21 @@ SWIFT_TEST_SHARD_CLASSES = $(shell grep -rhE '^final class [A-Za-z0-9_]+: *(XCTe
 	| sed -E 's/^final class ([A-Za-z0-9_]+).*/LiloTests\/\1/' | sort \
 	| awk -v i=$(SWIFT_TEST_SHARD_I) -v n=$(SWIFT_TEST_SHARD_N) 'i == n ? NR % n != 0 : NR % n == i % n')
 SWIFT_TEST_SHARD_ARGS = $(if $(filter $(SWIFT_TEST_SHARD_N),$(SWIFT_TEST_SHARD_I)),-only-testing:LiloTests $(addprefix -skip-testing:,$(SWIFT_TEST_SHARD_CLASSES)),$(addprefix -only-testing:,$(SWIFT_TEST_SHARD_CLASSES)))
+# Swift tests open windows and take the keyboard focus for minutes: a person at the machine cannot work meanwhile.
+# CI sets LILO_LOCAL_UI_TESTS; a person who wants them here, deliberately, sets it too.
+SWIFT_TESTS_HERE = Swift tests open windows and take your keyboard focus: run them in CI with `make ci-swift`; for a deliberate local batch every few PRs, set LILO_LOCAL_UI_TESTS=1 (the run is then quiet: half the cores, transparent windows; TEST_NICE=1 also lowers its priority)
+.PHONY: ci-swift
+# At parse time, so nothing builds first.
+ifneq ($(filter swift-test swift-test-slow,$(MAKECMDGOALS)),)
+ifndef LILO_LOCAL_UI_TESTS
+$(error $(SWIFT_TESTS_HERE))
+endif
+endif
+
+## Run the Swift tests in CI and print the verdict: dispatches a run when the pushed head has none, waits at most CI_SWIFT_TIMEOUT seconds (REF=branch, default the current one)
+ci-swift:
+	@scripts/ci_swift.sh $(or $(REF),$(shell git branch --show-current))
+
 ## Run Swift unit tests but the slow ones (SWIFT_TEST_FILTER="LiloTests/Class LiloTests/Other/testCase" narrows the run, SWIFT_TEST_SHARD=1/3 runs a third)
 swift-test: test-build
 	@$(TEST_LOCK) $(TEST_WRAP) $(TEST_RUN) $(or $(addprefix -only-testing:,$(SWIFT_TEST_FILTER)),$(if $(SWIFT_TEST_SHARD),$(SWIFT_TEST_SHARD_ARGS)),-only-testing:LiloTests) -skip-testing:LiloTests/TerminalBenchmarkTests -skip-testing:LiloTests/RealExtensionSmokeTests -skip-testing:LiloTests/PasswordManagerE2ETests \
