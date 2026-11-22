@@ -8,7 +8,8 @@
 
 One JSON line per recipe line in ~/.cache/lilo/metrics.jsonl (LILO_METRICS_FILE moves it), written on
 success, failure and interrupt. A recipe that is killed outright (SIGKILL) cannot write its own line, so
-the next run records it as phase "orphaned". Nothing is sent anywhere. Every field is documented in
+the next run records it as phase "orphaned". `make validate` adds a phase "check" record per check group
+(scripts/check_summary.py). Nothing is sent anywhere. Every field is documented in
 docs/build-baseline.md.
 """
 import json
