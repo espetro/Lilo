@@ -168,7 +168,7 @@ struct TabLifecycleCoordinator {
         }
     }
 
-    /// `protectedEngineIds` plus tabs with unsaved form input: a discard would lose what the user typed, a freeze would not.
+    /// `protectedEngineIds` plus tabs still loading: a discard would abort a pending navigation, a freeze would not.
     func discardProtectedEngineIds(
         tabs: [Tab],
         availableEngineIds: Set<UUID>,
@@ -273,9 +273,10 @@ struct TabLifecycleCoordinator {
         })
     }
 
-    /// Every discard spares tabs with unsaved form input; they can still be frozen.
+    /// The stored `isLoading` flag can outlive its engine (a stale spinner), so it must not shield a tab from
+    /// discard for good: a load really in flight is spared by the live `engine.isLoading` check at the discard sites.
     private func shouldRetainFromDiscard(_ tab: Tab, restoringTabIds: [UUID: Date], now: Date) -> Bool {
-        shouldRetainProtected(tab, restoringTabIds: restoringTabIds, now: now) || tab.hasUnsavedFormData
+        shouldRetainProtected(tab, restoringTabIds: restoringTabIds, now: now)
     }
 
     /// Idle discard also spares pinned tabs. They can still be frozen and stay subject to budget, LRU
@@ -296,7 +297,9 @@ struct TabLifecycleCoordinator {
     }
 
     private func shouldRetainProtected(_ tab: Tab, restoringTabIds: [UUID: Date], now: Date, freezing: Bool = false) -> Bool {
-        tab.isAgentControlled || tab.isInPictureInPicture || isKeptLoaded(tab) ||
+        // Unsaved form input vetoes freezing as well as discarding: a frozen page cannot autosave
+        // and sees its visibility forced hidden mid-edit.
+        tab.isAgentControlled || tab.isInPictureInPicture || tab.hasUnsavedFormData || isKeptLoaded(tab) ||
             shouldRetainForAudio(tab, now: now, freezing: freezing) ||
             shouldRetainForCapture(tab, now: now) ||
             shouldRetainForRestoration(tab, restoringTabIds: restoringTabIds, now: now)
