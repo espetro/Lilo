@@ -226,10 +226,6 @@ python3 scripts/metrics.py calibrate     # the cost of a record
 make ci-metrics RUNS=20                  # CI, the last 20 runs of build.yml on main
 make metrics-off
 ```
-# Build and dev-loop baseline
-
-Dated measurements of the [development-experience plan](DEVELOPMENT-EXPERIENCE-PLAN.md), appended section by section.
-A number marked "not measured" was not measured: the reason is given, and nothing is estimated in its place.
 
 ## 2026-11-18, Stage 2 PR 2: shared compilation cache
 
@@ -321,10 +317,6 @@ No timing change: `gate` is one `ubuntu-latest` step of a few seconds that runs 
 Checked locally with actionlint and by running the gate's `case` on result lists: `success skipped` and `success success skipped` pass, `success failure` and `cancelled success` fail.
 Not measured: the behaviour on a real failed run, which needs the first CI run of this branch.
 The branch-protection change (require only `Gate` and Conventional Commits) is a maintainer action in the repository settings and is not part of this diff.
-# Build and dev-loop baseline
-
-Dated sections, appended per change of the [development-experience plan](DEVELOPMENT-EXPERIENCE-PLAN.md).
-This branch started the file without the Stage 0 baseline; when the two merge, keep Stage 0's text and append the section below.
 
 ## After: pnpm workspace for lilo-ui, site and docs-site (2026-11-18)
 
@@ -354,10 +346,6 @@ What the move changed besides size:
 
 Verified here: `make ui-lint ui-test site-check site-test docs-check docs-test` (654 UI tests, 86 site tests, 47 docs tests), `make release-test release-media-test site-deploy-check docs-deploy-check ui-build` and `actionlint`, each from an empty `node_modules`.
 Not measured: the CI jobs on GitHub-hosted runners (they need a push) and the Cloudflare build (the maintainer's dashboard change comes first).
-# Build and dev-loop baseline
-
-Dated sections, appended per change of the [development-experience plan](DEVELOPMENT-EXPERIENCE-PLAN.md).
-This branch started the file without the Stage 0 baseline; when the two merge, keep Stage 0's text and append the section below.
 
 ## After: Linux development flow (2026-11-18)
 
@@ -376,8 +364,6 @@ The per-target table is in [LINUX-AGENTS.md](LINUX-AGENTS.md#measurements).
 | `make validate` on this Mac | not run: `make swift-test` cannot run here (CoreSimulator plug-in and Metal toolchain missing) |
 | the CI `swiftlint` step on `ubuntu-latest` | not measured: it needs a push that triggers the workflow |
 | worktree to macOS runner latency | not measured: no Mac was reachable |
-||||||| parent of 9bee88e0 (ci(build): upload failing-tests.md per shard and cache the XCC CAS)
-=======
 
 ## After PR 7c: failing-tests.md and the XCC cache entry (2026-11-18)
 
@@ -386,4 +372,3 @@ The real size of an xcodebuild log and result bundle was not measured here, beca
 `make retried-tests-test` covers the Xcode and Playwright parsers (10 tests, under 10 ms); the `xcresulttool` JSON shape is mocked from the tree the existing retry parser already reads, so the first CI run with a failing Swift test is the real check.
 The XCC cache entry is wired but inert until the Stage 2 change points `COMPILATION_CACHE_CAS_PATH` at `~/.cache/lilo/xcc`: the path stays empty and nothing is saved.
 Not measured: the CI hit rate and the CAS correctness spot-check, which ride Stage 0 metric 6 once the Stage 2 change lands.
->>>>>>> 9bee88e0 (ci(build): upload failing-tests.md per shard and cache the XCC CAS)

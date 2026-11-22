@@ -143,27 +143,7 @@ swift-test swift-test-slow: export TEST_RUNNER_LILO_TEST_DEMOTE := $(filter 1,$(
 TEST_PARALLEL ?= YES
 TEST_WORKERS = $(shell cores=$$(sysctl -n hw.perflevel0.physicalcpu 2>/dev/null || sysctl -n hw.ncpu); echo $$((cores / $(TEST_SLOTS) / $(if $(filter 1,$(TEST_QUIET)),2,1) > 0 ? cores / $(TEST_SLOTS) / $(if $(filter 1,$(TEST_QUIET)),2,1) : 1)))
 
-.PHONY: help site-release-import validate validate-ui linux-checks swiftlint project-sync ui-build ui-watch ui-dev ui-lint ui-test e2e e2e-energy \
-.PHONY: help site-release-import validate validate-scope validate-ui swiftlint project-sync ui-build ui-watch ui-dev ui-lint ui-test e2e e2e-energy \
-.PHONY: help site-release-import validate validate-scope validate-ui check check-staged ui-check swiftlint-changed sync-check linux-checks swiftlint project-sync ui-build ui-watch ui-dev ui-lint ui-test e2e e2e-energy \
-.PHONY: help site-release-import validate validate-scope validate-ui check check-staged ui-check swiftlint-changed sync-check linux-checks swiftlint project-sync ui-build ui-watch ui-dev ui-lint ui-test e2e e2e-energy ui-capture \
-	swift-test ci-swift swift-test-slow blocker-coverage blocker-bench script-bench speedometer-bench page-bench preload-bench terminal-bench ext-bridge-build ext-bridge-test ext-smoke ext-nightly ext-e2e-passwords ext-e2e-passwords-trust top-extensions top-manifests chrome-surface \
-	swift-test swift-test-slow test-disturbance blocker-coverage blocker-bench script-bench speedometer-bench page-bench preload-bench terminal-bench ext-bridge-build ext-bridge-test ext-smoke ext-nightly ext-e2e-passwords ext-e2e-passwords-trust top-extensions top-manifests chrome-surface \
-	chrome-contracts chrome-smoke public-suffix-list app install install-debug xcode-build xcode-build-release \
-	run-ui-dev release release-notarize release-archive dmg dmg-background bridge-gen vt-build vt-build-source vt-zip webkit-fork bootstrap bootstrap-test ui-preview check-commits startup-bench ext-bench energy-sample energy-compare energy-browsers perf-summary perf-compare perf-summary-test check-summary-test agent-app agent-app-stop agent-app-restart agent-call agent-eval agent-eval-test \
-	run-ui-dev release release-notarize release-archive dmg dmg-background bridge-gen vt-build vt-build-source vt-zip webkit-fork bootstrap ui-preview check-commits startup-bench ext-bench energy-sample energy-compare energy-browsers perf-summary perf-compare perf-summary-test lockf-test slot-test agent-call \
-	run-ui-dev release release-notarize release-archive dmg dmg-background bridge-gen vt-build vt-build-source vt-zip webkit-fork bootstrap ui-preview check-commits startup-bench ext-bench energy-sample energy-compare energy-browsers perf-summary perf-compare perf-summary-test lockf-test slot-test scope-test agent-call \
-	run-ui-dev release release-notarize release-archive dmg dmg-background bridge-gen vt-build vt-build-source vt-zip webkit-fork bootstrap ui-preview check-commits startup-bench ext-bench energy-sample energy-compare energy-browsers perf-summary perf-compare perf-summary-test retried-tests-test lockf-test agent-call \
-	run-ui-dev release release-notarize release-archive dmg dmg-background bridge-gen vt-build vt-build-source vt-zip webkit-fork bootstrap bootstrap-test ui-preview check-commits startup-bench ext-bench energy-sample energy-compare energy-browsers perf-summary perf-compare perf-summary-test retried-tests-test lockf-test slot-test scope-test tier-test metrics metrics-on metrics-off metrics-test ci-metrics ci-metrics-test check-summary-test agent-app agent-call agent-eval agent-eval-test \
-	run-ui-dev release release-notarize release-archive dmg dmg-background bridge-gen vt-build vt-build-source vt-zip webkit-fork bootstrap bootstrap-test ui-preview check-commits startup-bench ext-bench energy-sample energy-compare energy-browsers perf-summary perf-compare perf-summary-test retried-tests-test lockf-test slot-test scope-test tier-test metrics metrics-on metrics-off metrics-test ci-metrics ci-metrics-test check-summary-test agent-app agent-call window-capture agent-eval agent-eval-test \
-	run-ui-dev release release-notarize release-archive dmg dmg-background bridge-gen vt-build vt-build-source vt-zip webkit-fork bootstrap bootstrap-test ui-preview check-commits worktree-new worktree-gc worktree-gc-test startup-bench ext-bench energy-sample energy-compare energy-browsers perf-summary perf-compare perf-summary-test retried-tests-test lockf-test slot-test scope-test tier-test metrics metrics-on metrics-off metrics-test ci-metrics ci-metrics-test check-summary-test agent-app agent-call window-capture agent-eval agent-eval-test \
-	run-ui-dev release release-notarize release-archive dmg dmg-background bridge-gen vt-build vt-build-source vt-zip webkit-fork bootstrap ui-preview check-commits startup-bench ext-bench energy-sample energy-compare energy-browsers perf-summary perf-compare perf-summary-test lockf-test agent-call \
-	run-ui-dev release release-notarize release-archive dmg dmg-background bridge-gen vt-build vt-build-source vt-zip webkit-fork bootstrap ui-preview check-commits startup-bench ext-bench energy-sample energy-compare energy-browsers perf-summary perf-compare perf-summary-test lockf-test metrics metrics-on metrics-off metrics-test agent-call \
-	run-ui-dev release release-notarize release-archive dmg dmg-background bridge-gen vt-build vt-build-source vt-zip webkit-fork bootstrap ui-preview check-commits startup-bench ext-bench energy-sample energy-compare energy-browsers perf-summary perf-compare perf-summary-test lockf-test metrics metrics-on metrics-off metrics-test ci-metrics ci-metrics-test agent-call \
-	logs logs-stream site-dev site-dev-stop site-preview site-native-preview site-generate site-check site-fix site-test site-e2e site-release-capture site-capture-server site-capture-deps site-lock site-audit site-add-svelte site-playground-deps site-demo-icons site-deploy site-deploy-check emoji-data password-manager-icons \
-	docs-dev docs-build docs-check docs-test docs-preview docs-deploy-check docs-deploy docs-translate docs-eval docs-lock \
-	hooks-install hooks-install-checks hooks-install-push-checks quick-deps hooks-test lint-commit-message lint-commits \
-	changie change release-status release-version release-discord release-test release-media-stage release-media-test changelog-context changelog-draft changelog-media
+.PHONY: help site-release-import validate validate-ui linux-checks swiftlint project-sync ui-build ui-watch ui-dev ui-lint ui-test e2e e2e-energy validate-scope check check-staged ui-check swiftlint-changed sync-check ui-capture swift-test ci-swift swift-test-slow blocker-coverage blocker-bench script-bench speedometer-bench page-bench preload-bench terminal-bench ext-bridge-build ext-bridge-test ext-smoke ext-nightly ext-e2e-passwords ext-e2e-passwords-trust top-extensions top-manifests chrome-surface test-disturbance chrome-contracts chrome-smoke public-suffix-list app install install-debug xcode-build xcode-build-release run-ui-dev release release-notarize release-archive dmg dmg-background bridge-gen vt-build vt-build-source vt-zip webkit-fork bootstrap bootstrap-test ui-preview check-commits startup-bench ext-bench energy-sample energy-compare energy-browsers perf-summary perf-compare perf-summary-test check-summary-test agent-app agent-app-stop agent-app-restart agent-call agent-eval agent-eval-test lockf-test slot-test scope-test retried-tests-test tier-test metrics metrics-on metrics-off metrics-test ci-metrics ci-metrics-test window-capture worktree-new worktree-gc worktree-gc-test logs logs-stream site-dev site-dev-stop site-preview site-native-preview site-generate site-check site-fix site-test site-e2e site-release-capture site-capture-server site-capture-deps site-lock site-audit site-add-svelte site-playground-deps site-demo-icons site-deploy site-deploy-check emoji-data password-manager-icons docs-dev docs-build docs-check docs-test docs-preview docs-deploy-check docs-deploy docs-translate docs-eval docs-lock hooks-install hooks-install-checks hooks-install-push-checks quick-deps hooks-test lint-commit-message lint-commits changie change release-status release-version release-discord release-test release-media-stage release-media-test changelog-context changelog-draft changelog-media
 
 ## List the targets
 help:
@@ -306,10 +286,7 @@ validate-ui: ui-lint ui-test ui-build
 
 # `validate` without the Xcode build and Swift tests: every other group, in order. Runs on macOS too.
 ## Run every check that needs no Xcode: UI, website, docs, bridge, hooks, release and Swift lint (what Linux can run)
-linux-checks: ui-lint ui-test site-check site-test docs-check docs-test hooks-test perf-summary-test lockf-test ext-bridge-test swiftlint release-status
-linux-checks: ui-lint ui-test site-check site-test docs-check docs-test hooks-test perf-summary-test retried-tests-test scope-test tier-test metrics-test ci-metrics-test check-summary-test lockf-test ext-bridge-test swiftlint release-status
 linux-checks: ui-lint ui-test site-check site-test docs-check docs-test hooks-test perf-summary-test retried-tests-test scope-test tier-test metrics-test ci-metrics-test check-summary-test lockf-test ext-bridge-test swiftlint release-status worktree-gc-test
-linux-checks: ui-lint ui-test site-check site-test docs-check docs-test hooks-test perf-summary-test retried-tests-test metrics-test ci-metrics-test lockf-test ext-bridge-test swiftlint release-status
 
 ## Run Swift lint only
 swiftlint: $(SWIFTLINT)
@@ -931,42 +908,6 @@ slot-test:
 ## Test the diff scoping behind validate-scope
 scope-test:
 	@scripts/scope_checks.test.sh
-## Test the report of failed and retried tests that CI writes
-retried-tests-test:
-	@python3 scripts/retried_tests_test.py -q
-
-## Test the lock wrapper that keeps heavy commands to one at a time
-lockf-test:
-	@python3 scripts/lockf_test.py -q
-
-## Test the lock wrapper that keeps heavy commands to one at a time
-lockf-test:
-	@python3 scripts/lockf_test.py -q
-
-## Summarize the recorded recipe timings (SINCE=days NAME=target); `make metrics-on` starts recording
-metrics:
-	@python3 scripts/metrics.py summary $(if $(SINCE),--since $(SINCE)) $(if $(NAME),--target $(NAME))
-
-## Record every recipe's timing in ~/.cache/lilo/metrics.jsonl: opt-in, local, via Makefile.local
-metrics-on:
-	@python3 scripts/metrics.py on
-
-## Stop recording and remove the hook from Makefile.local
-metrics-off:
-	@python3 scripts/metrics.py off
-
-## Test the recipe timing recorder
-metrics-test:
-	@python3 scripts/metrics_test.py -q
-
-## Summarize the last CI runs from the Actions API (RUNS=20 REPO=owner/name)
-ci-metrics:
-	@python3 scripts/ci_metrics.py --runs $(or $(RUNS),20) $(if $(REPO),--repo $(REPO))
-
-## Test the CI timing summary
-ci-metrics-test:
-	@python3 scripts/ci_metrics_test.py -q
-
 # --info --debug are required: os_log info/debug messages are memory-only and absent from `log show` without them.
 ## Dump the app log to lilo-log.txt (SINCE=15m OUT=path)
 logs:
