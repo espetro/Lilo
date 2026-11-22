@@ -119,10 +119,10 @@ final class BrowserImporter {
                         if let index = targets.firstIndex(where: { $0.spaceId == spaceId }) {
                             targets[index].pinned += space.pinned
                             targets[index].unpinned += space.unpinned
-                            targets[index].bookmarked += favorites
+                            targets[index].bookmarked += favorites + space.bookmarked
                         } else {
                             targets.append(Target(spaceId: spaceId, bookmarks: [], pinned: space.pinned, unpinned: space.unpinned,
-                                                  bookmarked: favorites, icons: icons))
+                                                  bookmarked: favorites + space.bookmarked, icons: icons))
                         }
                     }
                     for index in targets.indices {
@@ -240,6 +240,8 @@ final class BrowserImporter {
             return SafariReader.read(safariURL: source.rootURL, cookiesURL: BrowserImportScanner.safariCookiesURL(home: home), kinds: kinds)
         case .firefox:
             return FirefoxReader.read(profile: profile, kinds: kinds)
+        case .lilo:
+            return LiloReader.read(profile: profile, kinds: kinds, global: source.rootURL.appendingPathComponent("global.db"))
         }
     }
 

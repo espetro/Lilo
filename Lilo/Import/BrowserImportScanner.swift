@@ -1,4 +1,5 @@
 import AppKit
+import GRDB
 
 enum BrowserImportScanner {
     /// (id, display name, user data dir under Application Support, Keychain service, bundle id).
@@ -15,6 +16,11 @@ enum BrowserImportScanner {
     ]
     private static let firefox: [(String, String, String, String)] = [
         ("firefox", "Firefox", "Firefox", "org.mozilla.firefox"), ("zen", "Zen", "zen", "app.zen-browser.zen")
+    ]
+    /// Other Lilo builds this one can import from: (id, display name, bundle id). A build never sees itself.
+    private static let lilo: [(String, String, String)] = [
+        ("lilo", "Lilo", "fr.arouillard.lilo"), ("lilo-beta", "Lilo Beta", "fr.arouillard.lilo.beta"),
+        ("lilo-debug", "Lilo Debug", "fr.arouillard.lilo.debug")
     ]
 
     /// Where a browser LaunchServices never registered (unzipped, copied by hand) is looked for by name.
@@ -39,7 +45,8 @@ enum BrowserImportScanner {
     /// for its native helpers, is not a browser in use.
     static func scan(
         home: URL = FileManager.default.homeDirectoryForCurrentUser,
-        isInstalled: (String) -> Bool = { appURL(bundleId: $0) != nil }
+        isInstalled: (String) -> Bool = { appURL(bundleId: $0) != nil },
+        ownBundleId: String = BuildIdentity.appIdentifier
     ) -> [ImportSource] {
         let support = home.appendingPathComponent("Library/Application Support")
         var sources: [ImportSource] = []
@@ -80,6 +87,19 @@ enum BrowserImportScanner {
             let profiles = firefoxProfiles(root: root)
             if !profiles.isEmpty {
                 sources.append(ImportSource(id: id, name: name, family: .firefox, bundleId: bundleId, rootURL: root, keychainService: nil,
+                                            needsFullDiskAccess: false, profiles: profiles))
+            }
+        }
+        for (id, name, bundleId) in lilo where bundleId != ownBundleId && isInstalled(bundleId) {
+            guard let root = LiloSiblingLocator.supportDirectory(bundleId: bundleId, home: home, ownBundleId: ownBundleId) else { continue }
+            if isDenied(root) || isDenied(root.appendingPathComponent("global.db")) {
+                sources.append(ImportSource(id: id, name: name, family: .lilo, bundleId: bundleId, rootURL: root, keychainService: nil,
+                                            needsFullDiskAccess: true, profiles: []))
+                continue
+            }
+            let profiles = liloProfiles(root: root)
+            if !profiles.isEmpty {
+                sources.append(ImportSource(id: id, name: name, family: .lilo, bundleId: bundleId, rootURL: root, keychainService: nil,
                                             needsFullDiskAccess: false, profiles: profiles))
             }
         }
@@ -162,5 +182,30 @@ enum BrowserImportScanner {
         }
         flush()
         return profiles
+    }
+
+    /// The profiles `global.db` lists, each with the extensions `installed_extensions` records for it.
+    /// A profile only counts when its `lilo.db` exists; an unreadable or older global.db finds none.
+    private static func liloProfiles(root: URL) -> [ImportProfile] {
+        let scanned = try? ImportFiles.withCopy(root.appendingPathComponent("global.db")) { db in
+            let profiles = try Row.fetchAll(db, sql: "SELECT id, name FROM profiles ORDER BY createdAt")
+            var extensions: [String: [ImportedExtension]] = [:]
+            // Older builds have no installed_extensions table.
+            for row in (try? Row.fetchAll(db, sql: "SELECT id, name, profile_id FROM installed_extensions")) ?? [] {
+                extensions[row["profile_id"], default: []].append(ImportedExtension(id: row["id"], name: row["name"]))
+            }
+            return (profiles, extensions)
+        }
+        guard let (rows, extensions) = scanned else { return [] }
+        let fm = FileManager.default
+        return rows.compactMap { row in
+            let id: String = row["id"]
+            let url = root.appendingPathComponent("Profiles/\(id)", isDirectory: true)
+            guard fm.fileExists(atPath: url.appendingPathComponent("lilo.db").path) else { return nil }
+            var kinds: [ImportKind] = [.bookmarks, .tabs, .history]
+            let found = extensions[id] ?? []
+            if !found.isEmpty { kinds.append(.extensions) }
+            return ImportProfile(id: id, name: row["name"], url: url, kinds: kinds, extensions: found)
+        }
     }
 }

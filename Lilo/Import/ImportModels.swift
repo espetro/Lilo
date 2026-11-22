@@ -25,6 +25,8 @@ struct ImportedSpace: Sendable, Equatable {
     var color: String?
     var pinned: [ImportedBookmark]
     var unpinned: [ImportedBookmark]
+    /// Lilo's own bookmarked section; empty for browsers that have no such section.
+    var bookmarked: [ImportedBookmark] = []
 }
 
 struct ImportedVisit: Sendable, Equatable {
@@ -92,7 +94,7 @@ struct ImportProfile: Sendable, Equatable, Identifiable {
 }
 
 struct ImportSource: Sendable, Equatable, Identifiable {
-    enum Family: String, Sendable { case chromium, safari, firefox }
+    enum Family: String, Sendable { case chromium, safari, firefox, lilo }
 
     var id: String
     var name: String
