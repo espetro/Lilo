@@ -39,6 +39,25 @@ final class BetaUpdateCheckerTests: XCTestCase {
         XCTAssertTrue(BetaUpdateChecker(feedURL: "https://updates.example.com/betas.json").isConfigured)
     }
 
+    @MainActor func testAFeedURLOverrideWinsOverTheCompiledOneAndClearingRestoresIt() {
+        UserDefaults.standard.removeObject(forKey: BetaUpdateChecker.feedURLOverrideKey)
+        defer { UserDefaults.standard.removeObject(forKey: BetaUpdateChecker.feedURLOverrideKey) }
+        let checker = BetaUpdateChecker(feedURL: "https://updates.example.com/betas.json")
+        checker.setFeedURLOverride("https://fork.example.com/releases.json")
+        XCTAssertEqual(checker.feedURL?.absoluteString, "https://fork.example.com/releases.json")
+        checker.setFeedURLOverride("")
+        XCTAssertEqual(checker.feedURL?.absoluteString, "https://updates.example.com/betas.json")
+    }
+
+    @MainActor func testTheStableChannelSkipsTheCheck() async {
+        UserDefaults.standard.removeObject(forKey: BetaUpdateChecker.feedURLOverrideKey)
+        defer { UserDefaults.standard.removeObject(forKey: BetaUpdateChecker.feedURLOverrideKey) }
+        let checker = BetaUpdateChecker(feedURL: "https://updates.example.com/betas.json")
+        checker.updateChannel = "stable"
+        await checker.check()
+        XCTAssertNil(checker.lastCheck)
+    }
+
     @MainActor func testTheInstalledTagIsRememberedAcrossChecks() {
         UserDefaults.standard.removeObject(forKey: BetaUpdateChecker.installedTagKey)
         defer { UserDefaults.standard.removeObject(forKey: BetaUpdateChecker.installedTagKey) }

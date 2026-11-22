@@ -130,8 +130,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         mainWindowController?.showWindow(nil)
         // Off the launch path: macOS delivers its payloads at most daily, so nothing waits on this.
         DispatchQueue.main.async { MetricKitArchive.shared.start() }
-        // The unsigned beta's one-shot release-feed check; nothing happens in Sparkle-signed builds.
-        DispatchQueue.main.async { SettingsBridgeHandler.betaUpdateChecker.startSharedCheck() }
         mainWindowController?.window?.makeKeyAndOrderFront(nil)
         StartupMetrics.mark("windowShown")
         // Writes the bundle's custom icon: kept off the path to the first window.
@@ -143,6 +141,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         Task {
             guard (try? await browserContext.bootstrap()) != nil else { return }
             applyLittleWindowHotKey()
+            // The unsigned beta's one-shot release-feed check; nothing happens in Sparkle-signed builds.
+            // The settings store answers the channel first, so a Stable pick skips the request.
+            SettingsBridgeHandler.betaUpdateChecker.updateChannel = browserContext.settingsStore?.get("updateChannel") ?? "beta"
+            SettingsBridgeHandler.betaUpdateChecker.startSharedCheck()
             // The cache only paints the first frame: the stored setting wins, so a stale cache heals.
             ThemePreference(stored: browserContext.settingsStore?.get("theme")).apply()
         }

@@ -906,6 +906,8 @@ export interface BridgeCommandPayloadMap {
 	dismissWhatsNew: EmptyPayload;
 	unlockDeveloperTools: EmptyPayload;
 	setAutomaticUpdates: { enabled: boolean };
+	/** An empty URL clears the override: the feed compiled into the build applies again. */
+	setBetaFeedURL: { url: string };
 	getShortcuts: EmptyPayload;
 	/** Records the next key press for this action; null stops recording. */
 	recordShortcut: { id: string | null };
@@ -1427,6 +1429,10 @@ export interface BridgeUpdaterStatus {
 	lastCheck: number | null;
 	/** True when an unsigned build watches a plain release feed (the fork beta); the beta fields then apply. */
 	betaFeed: boolean;
+	/** The release feed the beta check reads; null when none applies. */
+	betaFeedURL: string | null;
+	/** The feed URL the Settings field stored, null while the build's own feed applies. */
+	betaFeedURLOverride: string | null;
 	/** The newer beta release found: tag and release page; null while this build is the newest or none checked yet. */
 	betaAvailable: { tag: string; url: string } | null;
 	betaLastCheck: number | null;

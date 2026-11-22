@@ -54,6 +54,7 @@ final class SettingsBridgeHandler: BridgeHandler {
         "dismissUpdate",
         "unlockDeveloperTools",
         "setAutomaticUpdates",
+        "setBetaFeedURL",
         "getShortcuts",
         "recordShortcut",
         "setShortcut",
@@ -197,6 +198,7 @@ final class SettingsBridgeHandler: BridgeHandler {
                 if key == "contentBlockerAllowedDomains" { blockerAllowlistChanged(reloadTabId: nil) }
                 if key == SettingsStore.hiddenElementsKey { engineFactory?.setHiddenElements(store.hiddenElements) }
                 if key == "sendGPC" { engineFactory?.setGlobalPrivacyControl(value == "true") }
+                if key == "updateChannel" { Self.betaUpdateChecker.updateChannel = value }
                 if key == "preventCrossSiteTracking" { engineFactory?.setTrackingPrevention(value == "true") }
                 if key == "httpsOnly" { engineFactory?.setHTTPSOnly(value == "true") }
                 if key == "minimumFontSize" { engineFactory?.setMinimumFontSize(CGFloat(Double(value) ?? 0)) }
@@ -353,6 +355,10 @@ final class SettingsBridgeHandler: BridgeHandler {
                 updater.automaticallyChecksForUpdates = message.bool("enabled")
                 updater.automaticallyDownloadsUpdates = message.bool("enabled")
             }
+            publishUpdaterStatus()
+
+        case "setBetaFeedURL":
+            Self.betaUpdateChecker.setFeedURLOverride(message.string("url") ?? "")
             publishUpdaterStatus()
 
         case "getShortcuts":
@@ -597,6 +603,8 @@ final class SettingsBridgeHandler: BridgeHandler {
             "automatic": updater.map { $0.automaticallyChecksForUpdates && $0.automaticallyDownloadsUpdates } ?? false,
             "lastCheck": updater?.lastUpdateCheckDate?.timeIntervalSince1970 ?? NSNull(),
             "betaFeed": beta != nil,
+            "betaFeedURL": beta?.feedURL?.absoluteString ?? NSNull(),
+            "betaFeedURLOverride": beta?.feedURLOverride ?? NSNull(),
             "betaAvailable": beta?.available.map { ["tag": $0.tag, "url": $0.url] } ?? NSNull(),
             "betaLastCheck": beta?.lastCheck?.timeIntervalSince1970 ?? NSNull()
         ])

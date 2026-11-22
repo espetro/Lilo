@@ -501,6 +501,8 @@ export const createDemoSettings = ({
         available: false,
         betaAvailable: null,
         betaFeed: false,
+        betaFeedURL: null,
+        betaFeedURLOverride: null,
         betaLastCheck: null,
         lastCheck: null,
         version,
