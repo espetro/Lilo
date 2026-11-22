@@ -45,8 +45,9 @@ final class BetaUpdateChecker {
     /// An empty URL removes the override and the compiled-in feed applies again.
     func setFeedURLOverride(_ raw: String) {
         let trimmed = raw.trimmingCharacters(in: .whitespacesAndNewlines)
-        if trimmed.isEmpty { UserDefaults.standard.removeObject(forKey: Self.feedURLOverrideKey) }
-        else { UserDefaults.standard.set(trimmed, forKey: Self.feedURLOverrideKey) }
+        if trimmed.isEmpty { UserDefaults.standard.removeObject(forKey: Self.feedURLOverrideKey) } else {
+            UserDefaults.standard.set(trimmed, forKey: Self.feedURLOverrideKey)
+        }
     }
 
     /// The tag this build was published as, stamped at build time. A local build has none and keeps the
