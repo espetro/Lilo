@@ -32,7 +32,7 @@ export interface ImportProfileInfo {
 export interface ImportSourceInfo {
 	id: string;
 	name: string;
-	family: "chromium" | "safari" | "firefox";
+	family: "chromium" | "safari" | "firefox" | "lilo";
 	/** The installed browser's own icon; empty when macOS cannot resolve the app. */
 	iconDataURL: string;
 	needsFullDiskAccess: boolean;

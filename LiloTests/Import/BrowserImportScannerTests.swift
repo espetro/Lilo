@@ -1,3 +1,4 @@
+import GRDB
 import XCTest
 @testable import Lilo
 
@@ -123,4 +124,58 @@ final class BrowserImportScannerTests: XCTestCase {
         let safari = BrowserImportScanner.scan(home: home, isInstalled: { _ in true }).first { $0.id == "safari" }
         XCTAssertEqual(safari?.needsFullDiskAccess, false)
     }
+
+    /// A sibling install's `global.db` and the `lilo.db` of its one profile.
+    private func writeSiblingLilo(_ folder: String) throws {
+        let dir = home.appendingPathComponent("Library/Application Support/\(folder)")
+        try FileManager.default.createDirectory(at: dir.appendingPathComponent("Profiles/1111"), withIntermediateDirectories: true)
+        let queue = try DatabaseQueue(path: dir.appendingPathComponent("global.db").path)
+        try queue.write { db in
+            try db.execute(sql: "CREATE TABLE profiles (id TEXT PRIMARY KEY, name TEXT NOT NULL, createdAt DATETIME NOT NULL DEFAULT 0)")
+            try db.execute(sql: "INSERT INTO profiles (id, name) VALUES ('1111', 'Personal')")
+            try db.execute(sql: "CREATE TABLE installed_extensions (id TEXT NOT NULL, profile_id TEXT NOT NULL, name TEXT NOT NULL)")
+            try db.execute(sql: "INSERT INTO installed_extensions VALUES ('abcdefghijklmnopqrstuvwxyzabcde1', '1111', 'Sample Blocker')")
+        }
+        try Data().write(to: dir.appendingPathComponent("Profiles/1111/lilo.db"))
+    }
+
+    func testFindsASiblingLiloProfile() throws {
+        try writeSiblingLilo("Lilo")
+
+        let lilo = try XCTUnwrap(BrowserImportScanner.scan(home: home, isInstalled: { _ in true },
+                                                         ownBundleId: "fr.arouillard.lilo.beta").first { $0.id == "lilo" })
+        XCTAssertEqual(lilo.name, "Lilo")
+        XCTAssertEqual(lilo.family, .lilo)
+        XCTAssertFalse(lilo.needsFullDiskAccess)
+        let profile = try XCTUnwrap(lilo.profiles.only)
+        XCTAssertEqual(profile.name, "Personal")
+        XCTAssertEqual(profile.kinds, [.bookmarks, .tabs, .history, .extensions])
+        XCTAssertEqual(profile.extensions, [ImportedExtension(id: "abcdefghijklmnopqrstuvwxyzabcde1", name: "Sample Blocker")])
+    }
+
+    func testOwnLiloBuildIsNeverOffered() throws {
+        try writeSiblingLilo("Lilo-Debug")
+
+        XCTAssertNil(BrowserImportScanner.scan(home: home, isInstalled: { _ in true },
+                                               ownBundleId: "fr.arouillard.lilo.debug").first { $0.family == .lilo })
+    }
+
+    func testASiblingLiloWithoutDataFolderIsNotOffered() throws {
+        XCTAssertNil(BrowserImportScanner.scan(home: home, isInstalled: { _ in true },
+                                               ownBundleId: "fr.arouillard.lilo.beta").first { $0.family == .lilo })
+    }
+
+    func testAnUnreadableSiblingLiloNeedsFullDiskAccess() throws {
+        try writeSiblingLilo("Lilo")
+        try deny("Library/Application Support/Lilo")
+
+        let lilo = try XCTUnwrap(BrowserImportScanner.scan(home: home, isInstalled: { _ in true },
+                                                         ownBundleId: "fr.arouillard.lilo.beta").first { $0.id == "lilo" })
+        XCTAssertTrue(lilo.needsFullDiskAccess)
+        XCTAssertEqual(lilo.profiles, [])
+    }
+}
+
+private extension Collection {
+    var only: Element? { count == 1 ? first : nil }
 }
