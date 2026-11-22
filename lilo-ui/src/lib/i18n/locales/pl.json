@@ -492,6 +492,11 @@
 				"description": "Agent czeka na Twoją odpowiedź.",
 				"keywords": "agent zgoda potwierdzenie płatność zakup zamówienie usuń wyślij publikuj"
 			},
+			"agentActionLog": {
+				"title": "Prowadź dziennik działań agenta",
+				"description": "Lokalny plik wymienia każde wywołanie, nigdy wpisanego tekstu ani treści stron.",
+				"keywords": "agent dziennik historia audyt działania odtwarzanie"
+			},
 			"agentAlwaysAllowed": {
 				"title": "Zawsze dozwolone",
 				"description": "Na tych witrynach agenci działają bez pytania.",
@@ -842,6 +847,7 @@
 		"terminalFailedDetail": "{command} nie powiodło się (kod {code}) po {duration}",
 		"terminalSucceededDetail": "{command} zakończono w {duration}",
 		"closeTab": "Zamknij kartę",
+		"removeFromSplit": "Usuń z podzielonego widoku",
 		"removePinnedTab": "Usuń przypiętą kartę",
 		"tabName": "Nazwa karty",
 		"removeBookmark": "Usuń zakładkę",
@@ -1054,6 +1060,7 @@
 		"showFolder": "Pokaż folder pobierania",
 		"clearFinished": "Wyczyść zakończone pobierania",
 		"dragFile": "Przeciągnij plik",
+		"showInFinder": "Pokaż w Finderze",
 		"announceDone": "Pobrano {filename}",
 		"announceFailed": "Nie udało się pobrać {filename}"
 	},
@@ -2073,6 +2080,8 @@
 		"New Split View": "Nowy widok podzielony",
 		"Split View": "Widok podzielony",
 		"Separate Split View": "Rozdziel widok",
+		"Close Split Pane": "Zamknij panel podziału",
+		"Maximize Split Pane": "Maksymalizuj panel podziału",
 		"Open in Split View": "Otwórz w widoku podzielonym",
 		"Hide Element…": "Ukryj element…",
 		"Click an element to hide it on this site. Press Esc to cancel.": "Kliknij element, aby ukryć go w tej witrynie. Naciśnij Esc, aby anulować.",

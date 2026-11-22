@@ -492,6 +492,11 @@
 				"description": "El agente espera tu respuesta.",
 				"keywords": "agente aprobación confirmar pago compra pedido eliminar enviar publicar"
 			},
+			"agentActionLog": {
+				"title": "Guardar un registro de las acciones del agente",
+				"description": "Un archivo local enumera cada llamada, nunca el texto escrito ni el contenido de las páginas.",
+				"keywords": "agente registro historial auditoría acciones reproducir"
+			},
 			"agentAlwaysAllowed": {
 				"title": "Siempre permitido",
 				"description": "Los agentes actúan en estos sitios sin preguntar.",
@@ -842,6 +847,7 @@
 		"terminalFailedDetail": "{command} ha fallado (código {code}) tras {duration}",
 		"terminalSucceededDetail": "{command} ha terminado en {duration}",
 		"closeTab": "Cerrar pestaña",
+		"removeFromSplit": "Quitar de la vista dividida",
 		"removePinnedTab": "Quitar pestaña fijada",
 		"tabName": "Nombre de la pestaña",
 		"removeBookmark": "Quitar marcador",
@@ -1054,6 +1060,7 @@
 		"showFolder": "Mostrar carpeta de descargas",
 		"clearFinished": "Borrar descargas finalizadas",
 		"dragFile": "Arrastrar archivo",
+		"showInFinder": "Mostrar en el Finder",
 		"announceDone": "{filename} descargado",
 		"announceFailed": "No se ha podido descargar {filename}"
 	},
@@ -2073,6 +2080,8 @@
 		"New Split View": "Nueva vista dividida",
 		"Split View": "Vista dividida",
 		"Separate Split View": "Separar vista dividida",
+		"Close Split Pane": "Cerrar panel dividido",
+		"Maximize Split Pane": "Maximizar panel dividido",
 		"Open in Split View": "Abrir en vista dividida",
 		"Hide Element…": "Ocultar elemento…",
 		"Click an element to hide it on this site. Press Esc to cancel.": "Haz clic en un elemento para ocultarlo en este sitio. Pulsa Esc para cancelar.",

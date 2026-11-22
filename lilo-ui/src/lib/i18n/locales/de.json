@@ -492,6 +492,11 @@
 				"description": "Der Agent wartet auf deine Antwort.",
 				"keywords": "agent erlaubnis bestätigen zahlung kauf bestellung löschen senden veröffentlichen"
 			},
+			"agentActionLog": {
+				"title": "Protokoll der Agentenaktionen führen",
+				"description": "Eine lokale Datei listet jeden Aufruf, nie eingegebenen Text oder Seiteninhalt.",
+				"keywords": "agent protokoll verlauf audit aktionen wiedergabe"
+			},
 			"agentAlwaysAllowed": {
 				"title": "Immer erlaubt",
 				"description": "Auf diesen Websites handeln Agenten ohne Nachfrage.",
@@ -842,6 +847,7 @@
 		"terminalFailedDetail": "{command} nach {duration} fehlgeschlagen (Exit-Code {code})",
 		"terminalSucceededDetail": "{command} in {duration} beendet",
 		"closeTab": "Tab schließen",
+		"removeFromSplit": "Aus geteilter Ansicht entfernen",
 		"removePinnedTab": "Angehefteten Tab entfernen",
 		"tabName": "Tabname",
 		"removeBookmark": "Lesezeichen entfernen",
@@ -1054,6 +1060,7 @@
 		"showFolder": "Downloadordner anzeigen",
 		"clearFinished": "Abgeschlossene Downloads entfernen",
 		"dragFile": "Datei ziehen",
+		"showInFinder": "Im Finder anzeigen",
 		"announceDone": "{filename} heruntergeladen",
 		"announceFailed": "{filename} konnte nicht heruntergeladen werden"
 	},
@@ -2073,6 +2080,8 @@
 		"New Split View": "Neue geteilte Ansicht",
 		"Split View": "Geteilte Ansicht",
 		"Separate Split View": "Geteilte Ansicht trennen",
+		"Close Split Pane": "Geteilten Bereich schließen",
+		"Maximize Split Pane": "Geteilten Bereich maximieren",
 		"Open in Split View": "In geteilter Ansicht öffnen",
 		"Hide Element…": "Element ausblenden…",
 		"Click an element to hide it on this site. Press Esc to cancel.": "Klicke auf ein Element, um es auf dieser Website auszublenden. Drücke Esc zum Abbrechen.",
