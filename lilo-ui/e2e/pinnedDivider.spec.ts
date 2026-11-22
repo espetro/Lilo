@@ -129,7 +129,7 @@ test("the divider's search button opens the command bar in the Tabs scope", asyn
 	await search.click();
 
 	await expect(page.locator(".command-bar")).toBeVisible();
-	await expect(page.locator(".scope-picker")).toHaveAccessibleName("Tabs");
+	await expect(page.locator(".scope-token")).toHaveText("Tabs");
 });
 
 test("the pinned head folds and unfolds the pinned tabs, per Space", async ({ page }) => {
