@@ -42,6 +42,8 @@ Promote the Debug headless seam ([Lilo/App/LiloApplication.swift:8](../Lilo/App/
 
 Out of scope: LaunchAgent/auto-start (a follow-up if the mode earns its keep).
 
+Status: built. `Headless` ([Lilo/App/LiloApplication.swift](../Lilo/App/LiloApplication.swift)) takes `--background` on every build and LILO_HEADLESS=1 on Debug, one path for both. The Settings > Agents switch (`agentBackgroundHost`, off by default, under agent control) decides the lifetime: closing the last window sends Lilo to the background instead of quitting. While in the background a consent question goes to a notification (no window can show it), and its tap or opening Lilo again brings the windows back with the Dock icon.
+
 ### B3. Consent without a window (the hard blocker)
 
 `askConsent` ([Lilo/Agent/AgentControl.swift:396](../Lilo/Agent/AgentControl.swift)) returns `.unavailable` without windows, so a background host cannot approve anything. Deliver the [AGENT-CONSENT-MODEL.md](AGENT-CONSENT-MODEL.md) four-case enum as a prerequisite: consent questions queue as **notifications** with deep links into a visible window; if the user is away, questions hold (session pauses, not auto-denies) — never a silent allow. The `agentClientPermissions` tiers (ask / chosen sites / everywhere) become the declarative path that lets approved clients run unattended *within the grant the user already made*.
