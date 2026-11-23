@@ -483,6 +483,14 @@ final class AgentFoldersTests: AgentToolTestCase {
         XCTAssertEqual(animating.text, "true")
     }
 
+    func testAParkedTabThrottlesBeforeItSleeps() async throws {
+        let number = try await agentTab(showing: "<title>Parked</title>")
+
+        try await pollUntil(timeout: 5) {
+            (try? await self.engine(forTab: number).wkWebView.evaluateJavaScript("document.visibilityState")) as? String == "hidden"
+        }
+    }
+
     func testAProfiledTabNeverSleeps() async throws {
         let sleepDelay = AgentControl.sleepDelay
         AgentControl.sleepDelay = 0.2

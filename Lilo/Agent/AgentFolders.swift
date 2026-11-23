@@ -299,12 +299,10 @@ extension AgentControl {
     }
 
     /// Under the shown tab when a window shows the space; otherwise in the parking window. A view another
-    /// window shows stays there. With occlusion detection off, and no hidden-page throttling while the agent
-    /// drives the tab, the page renders and runs timers at full rate though nobody sees it, until it sleeps: what
-    /// the agent measures in it is not the throttling of a hidden page.
+    /// window shows stays there. Occlusion detection stays on while parked, so WebKit throttles a tab nobody
+    /// sees from the start; every tool call wakes the engine first, which disables it until the tab sleeps again.
     func attach(_ engine: WKWebViewTab, to host: MainWindowController?) {
         let parked = unsafe engine.view.window === parkingWindow
-        engine.setWindowOcclusionDetection(false)
         if let host {
             guard unsafe engine.view.window == nil || parked else { return }
             engine.fitView(in: host.contentContainerView.bounds)
@@ -344,8 +342,9 @@ extension AgentControl {
 
     /// Back at full rate before a tool acts: WebKit hears the page is visible again before the tool reads or clicks it.
     func wake(tabNumber: Int) async {
-        guard let id = tabNumbers.first(where: { $0.value == tabNumber })?.key, sleepingTabIds.remove(id) != nil,
+        guard let id = tabNumbers.first(where: { $0.value == tabNumber })?.key,
               let engine = context?.browserState.liveEngine(forTab: id) else { return }
+        sleepingTabIds.remove(id)
         engine.isAgentSleeping = false
         engine.setWindowOcclusionDetection(false)
         engine.view.isHidden = true
