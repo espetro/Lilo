@@ -46,7 +46,7 @@ Out of scope: LaunchAgent/auto-start (a follow-up if the mode earns its keep).
 
 `askConsent` ([Lilo/Agent/AgentControl.swift:396](../Lilo/Agent/AgentControl.swift)) returns `.unavailable` without windows, so a background host cannot approve anything. Deliver the [AGENT-CONSENT-MODEL.md](AGENT-CONSENT-MODEL.md) four-case enum as a prerequisite: consent questions queue as **notifications** with deep links into a visible window; if the user is away, questions hold (session pauses, not auto-denies) — never a silent allow. The `agentClientPermissions` tiers (ask / chosen sites / everywhere) become the declarative path that lets approved clients run unattended *within the grant the user already made*.
 
-Sequencing: enum first (small, already half-landed via `agent-consent-answer-enum`), notification-queued questions second, then B2 can ship enabled.
+Sequencing: enum first (small, already half-landed via `agent-consent-answer-enum`), notification-queued questions second — landed: `askConsent` holds a windowless question in a notification (`revealConsent` opens a window at its tap); `.unavailable` is the detached-control case — then B2 can ship enabled.
 
 ### B4. Resource posture by default
 
