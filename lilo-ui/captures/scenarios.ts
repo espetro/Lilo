@@ -239,6 +239,15 @@ async function openCommandBarIdle(page: Page) {
 
 const compactWorld = (): FakeHostWorld => ({ ...initialWorld(), settings: { commandBarLayout: "compact" } });
 
+// Settings > Agents with agent control on, scrolled to the agent access switches.
+const agentAccessWorld = (): FakeHostWorld => ({ ...initialWorld(), settings: { agentControlEnabled: "true" } });
+
+async function agentAccessSettings(page: Page) {
+	await page.evaluate(() => window.__lilo!.receive({ event: "openSettings" }));
+	await page.locator(".section-nav-button").filter({ hasText: "Agents" }).click();
+	await page.locator("[data-setting-id='agentControl']").scrollIntoViewIfNeeded();
+}
+
 scenarios.push(
 	{ name: "agent-picker-light", run: (page) => openAgentPicker(page) },
 	{ name: "agent-picker-dark", colorScheme: "dark", run: (page) => openAgentPicker(page) },
@@ -260,4 +269,6 @@ scenarios.push(
 	{ name: "cmdbar-scopes-dark", colorScheme: "dark", run: openCommandBarIdle },
 	{ name: "cmdbar-compact-light", world: compactWorld(), run: openCommandBarIdle },
 	{ name: "cmdbar-compact-dark", colorScheme: "dark", world: compactWorld(), run: openCommandBarIdle },
+	{ name: "settings-agent-access-light", world: agentAccessWorld(), run: agentAccessSettings },
+	{ name: "settings-agent-access-dark", colorScheme: "dark", world: agentAccessWorld(), run: agentAccessSettings },
 );

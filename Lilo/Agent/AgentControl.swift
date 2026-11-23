@@ -416,7 +416,7 @@ final class AgentControl {
             "action": action ?? NSNull()
         ]
         let windows = context.windows.windows
-        if windows.isEmpty {
+        if windows.isEmpty || Headless.isOn {
             // Nothing on screen can ask: the question holds in a notification whose tap opens a
             // window at it. It is never answered by absence: it waits for the user or expires.
             unsafe Self.consentNotificationPoster(Self.notification(requestId: requestId, request: request))
@@ -451,6 +451,7 @@ final class AgentControl {
     /// drawer. The question stays held: the user answers it, never the notification itself.
     func revealConsent(requestId: String) {
         guard let pending = pendingConsentAnswers[requestId], let context else { return }
+        Headless.leave(revealing: context.windows.windows.compactMap(\.window))
         if context.windows.windows.isEmpty, let spaceId = context.spaceManager?.spaces.first?.id {
             context.openWindow(on: spaceId, opening: .nothing)
         }
