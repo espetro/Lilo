@@ -94,7 +94,8 @@ final class AgentConnectStatusTests: AgentToolTestCase {
         let before = AgentTools.json(try await reply())
         let reply = await client.callTool("connect_status", ["status": "connected", "set": ["consent.actsOnPages": "always"]])
         XCTAssertFalse(reply.isError, reply.text)
-        XCTAssertEqual(AgentTools.json(try await reply()), before)
+        let after = try XCTUnwrap(JSONSerialization.jsonObject(with: Data(reply.text.utf8)) as? [String: Any], reply.text)
+        XCTAssertEqual(AgentTools.json(after), before)
         XCTAssertNil(context.settingsStore!.get(AgentClientPermission.settingKey))
     }
 
