@@ -248,7 +248,7 @@ final class AgentApprovalTests: AgentToolTestCase {
         addTeardownBlock { @MainActor in answerer.window?.close() }
         control.answerConsent(requestId, granted: true)
 
-        XCTAssertTrue(try await approval.value(), "the user's answer releases the held call")
+        XCTAssertTrue(try await approval.value, "the user's answer releases the held call")
     }
 
     /// A question nobody answers expires in a notification as it does in a drawer.
