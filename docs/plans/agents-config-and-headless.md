@@ -54,6 +54,8 @@ Sequencing: enum first (small, already half-landed via `agent-consent-answer-enu
 
 With B1 landed, parked agent tabs throttle whenever idle. Two small follow-ups: exclude agent sessions from App Nap only while a tool call is in flight (`beginActivityWithOptions` in `wake`/`sleep`, already stubbed in the sleep path), and a Settings readout (`browser_config` gains `idlePosture: full-rate | throttled | sleeping`) so harness docs can tell agents what to expect.
 
+Status: built. A call on a tab holds App Nap off (`userInitiatedAllowingIdleSystemSleep`, so the system can still idle-sleep) from `wake` until the call settles and `sleepWhenIdle` ends it, also ended when a tab leaves agent control — never an always-on assertion. `browser_config`'s `agent.idlePosture` reports `full-rate` while any of the session's tabs runs awake and `sleeping` once every one was put to sleep; `throttled` never shows, as a throttled-but-awake tab is WebKit's alone to know and Lilo only observes the state it set.
+
 ## Order and pairing
 
 1. **A1** (docs-only, immediate) — do first, unblocks every harness author today.
