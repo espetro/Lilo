@@ -239,6 +239,16 @@ async function openCommandBarIdle(page: Page) {
 
 const compactWorld = (): FakeHostWorld => ({ ...initialWorld(), settings: { commandBarLayout: "compact" } });
 
+// Favorites pinned at the top of a glass Space: the strip lets the material through.
+const favoritesGlassWorld = (): FakeHostWorld => {
+	const world = initialWorld();
+	world.spaces[0].material = "glass";
+	const favorites = Array.from({ length: 4 }, (_, index) => `tab-favorite-${index}`);
+	world.tabsBySpace[SPACE_1].push(...favorites.map((id) => tab(id, SPACE_1, { isBookmarked: true })));
+	world.treeItemsBySpace[SPACE_1].push(...favorites.map((id, index) => treeItem(id, SPACE_1, 10 + index, "bookmarked")));
+	return world;
+};
+
 // Settings > Agents with agent control on, scrolled to the agent access switches.
 const agentAccessWorld = (): FakeHostWorld => ({ ...initialWorld(), settings: { agentControlEnabled: "true" } });
 
@@ -271,4 +281,6 @@ scenarios.push(
 	{ name: "cmdbar-compact-dark", colorScheme: "dark", world: compactWorld(), run: openCommandBarIdle },
 	{ name: "settings-agent-access-light", world: agentAccessWorld(), run: agentAccessSettings },
 	{ name: "settings-agent-access-dark", colorScheme: "dark", world: agentAccessWorld(), run: agentAccessSettings },
+	{ name: "favorites-glass-light", world: favoritesGlassWorld(), run: idle },
+	{ name: "favorites-glass-dark", colorScheme: "dark", world: favoritesGlassWorld(), run: idle },
 );
