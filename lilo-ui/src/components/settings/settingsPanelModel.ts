@@ -118,6 +118,7 @@ export type SettingId =
   | "agentControl"
   | "agentAskBeforeActions"
   | "agentActionLog"
+  | "agentBackgroundHost"
   | "agentAlwaysAllowed"
   | "agentOther"
   | "agentActivity"
@@ -175,6 +176,7 @@ export const SETTING_TOGGLES: Partial<Record<SettingId, { key: string; fallback:
   agentControl: { key: "agentControlEnabled", fallback: false },
   agentAskBeforeActions: { key: "agentAskBeforeActions", fallback: true },
   agentActionLog: { key: "agentActionLog", fallback: true },
+  agentBackgroundHost: { key: "agentBackgroundHost", fallback: false },
   developMenu: { key: "showDevelopMenu", fallback: true },
 };
 
@@ -258,6 +260,7 @@ export const SETTINGS: SettingModel[] = [
   { id: "agentControl", section: "agents", groupKey: "settings.groups.agentAccess" },
   { id: "agentAskBeforeActions", section: "agents", groupKey: "settings.groups.agentAccess", requires: "agentControl" },
   { id: "agentActionLog", section: "agents", groupKey: "settings.groups.agentAccess", requires: "agentControl" },
+  { id: "agentBackgroundHost", section: "agents", groupKey: "settings.groups.agentAccess", requires: "agentControl" },
   { id: "agentAlwaysAllowed", section: "agents", groupKey: "settings.groups.agentAccess", requires: "agentControl" },
   { id: "agentOther", section: "agents", groupKey: "settings.groups.agentClients", requires: "agentControl" },
   { id: "agentActivity", section: "agents", groupKey: "settings.groups.agentActivity", requires: "agentControl" },
