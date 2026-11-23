@@ -486,9 +486,25 @@ final class AgentFoldersTests: AgentToolTestCase {
     func testAParkedTabThrottlesBeforeItSleeps() async throws {
         let number = try await agentTab(showing: "<title>Parked</title>")
 
-        try await pollUntil(timeout: 5) {
+        let throttled = await pollUntil(timeout: 5) {
             (try? await self.engine(forTab: number).wkWebView.evaluateJavaScript("document.visibilityState")) as? String == "hidden"
         }
+
+        XCTAssertTrue(throttled, "WebKit hides a parked tab nobody sees from the start")
+    }
+
+    func testAThrottledParkedTabIsCapturedAfterItsWakeCall() async throws {
+        let number = try await agentTab(showing: "<body style='margin:0;background:#00ff00'>")
+        let engine = try engine(forTab: number)
+        let throttled = await pollUntil(timeout: 5) { (try? await engine.wkWebView.evaluateJavaScript("document.visibilityState")) as? String == "hidden" }
+
+        let shot = await client.callTool("computer", ["tabId": number, "action": "screenshot"])
+
+        XCTAssertTrue(throttled, "the capture starts from a tab WebKit hides")
+        let image = try XCTUnwrap(shot.images.first.flatMap(NSBitmapImageRep.init(data:)), shot.text)
+        let color = try XCTUnwrap(image.colorAt(x: image.pixelsWide / 2, y: image.pixelsHigh / 2)?.usingColorSpace(.sRGB))
+        XCTAssertGreaterThan(color.greenComponent, 0.65, "the page is painted, not blank: \(color)")
+        XCTAssertLessThan(color.redComponent, 0.35, "\(color)")
     }
 
     func testAProfiledTabNeverSleeps() async throws {
