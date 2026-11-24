@@ -357,21 +357,7 @@ final class MainWindowController: NSWindowController {
 
     /// Ships only the fields that differ from what this window's chrome last received for the tab.
     private func sendTabUpdate(_ tabPayload: [String: Any], spaceId: UUID) {
-        guard let id = tabPayload[TabBridgeField.id.rawValue] as? String else { return }
-        var patch = tabPayload
-        if let sent = sentTabPatches[id] {
-            patch = [TabBridgeField.id.rawValue: id]
-            for (key, value) in tabPayload where (sent[key] as? AnyHashable) != (value as? AnyHashable) {
-                patch[key] = value
-            }
-            guard patch.count > 1 else { return }
-            // The chrome falls back to the url for a blank title.
-            if patch[TabBridgeField.title.rawValue] != nil {
-                patch[TabBridgeField.url.rawValue] = tabPayload[TabBridgeField.url.rawValue]
-            }
-        }
-        sentTabPatches[id, default: [:]].merge(tabPayload) { $1 }
-        let event = BrowserChangePresenter.tabUpdatedEvent(tabPayload: patch, spaceId: spaceId)
+        guard let event = browserCore.tabUpdateEvent(tabPayload, spaceId: spaceId) else { return }
         bridgeRouter.send(event: event.name, data: event.data)
     }
 
@@ -462,7 +448,7 @@ final class MainWindowController: NSWindowController {
     var chromeStaleFaviconTabIds: Set<UUID> = []
     /// Tab payloads by id as this window's chrome last received them through `tabUpdated`. Every other
     /// event that seeds a tab's state clears its entry, so the next patch after it is complete.
-    var sentTabPatches: [String: [String: Any]] = [:]
+    var browserCore = BrowserCore()
     /// Extension rows by id as this window's chrome last received them; `extensionsChanged` ships only the diff.
     var sentExtensionRows: [String: [String: Any]] = [:]
     /// Archived-tab favicons by host as this window's chrome last received them; `archivedTabs` ships only the new ones.
@@ -486,15 +472,9 @@ final class MainWindowController: NSWindowController {
                 // Tabs closed before this window showed their space would otherwise stay forever.
                 chromeStaleFaviconTabIds = chromeStaleFaviconTabIds.filter { context.browserState.owningSpaceId(forTab: $0) != nil }
             }
-            sentTabPatches.removeAll(keepingCapacity: true)
-        } else if !sentTabPatches.isEmpty, let operations = event.data["operations"] as? [[String: Any]] {
-            // A sidebar patch reseeds only the tabs it upserts or removes.
-            for operation in operations {
-                for tab in operation["upsertTabs"] as? [[String: Any]] ?? [] {
-                    if let id = tab[TabBridgeField.id.rawValue] as? String { sentTabPatches[id] = nil }
-                }
-                for id in operation["removedTabIds"] as? [String] ?? [] { sentTabPatches[id] = nil }
-            }
+            browserCore.clearAllSentTabPatches()
+        } else if !browserCore.sentTabPatches.isEmpty, let operations = event.data["operations"] as? [[String: Any]] {
+            browserCore.clearSentTabPatches(in: operations)
         }
         bridgeRouter.send(event: event.name, data: event.data)
     }
@@ -768,7 +748,7 @@ extension MainWindowController: TabManager.Delegate {
             guard didCompleteSessionRestore, !isPerformingSpaceSwitch else { return }
             if !announcedByCommand, let spaceId = tab.spaceId ?? manager.currentSpaceId {
                 let event = BrowserChangePresenter.activationSidebarEvent(tab: tab, spaceId: spaceId)
-                sentTabPatches[tab.id.uuidString] = nil
+                browserCore.sentTabPatches[tab.id.uuidString] = nil
                 bridgeRouter.send(event: event.name, data: event.data)
             }
             return
@@ -804,7 +784,7 @@ extension MainWindowController: TabManager.Delegate {
         // (space transfer, restore).
         if !announcedByCommand, let spaceId = tab.spaceId ?? manager.currentSpaceId {
             let event = BrowserChangePresenter.activationSidebarEvent(tab: tab, spaceId: spaceId)
-            sentTabPatches[tab.id.uuidString] = nil
+            browserCore.sentTabPatches[tab.id.uuidString] = nil
             bridgeRouter.send(event: event.name, data: event.data)
         } else if tab.isLoading {
             // A background load's progress never reached the chrome, and the command's diff does not carry it.

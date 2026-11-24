@@ -242,7 +242,7 @@ extension MainWindowController {
         // space's tabs; every other space must ship favicons again on its first full-state emit.
         chromeFaviconSyncedSpaceIds = tabManager.currentSpaceId.map { [$0] } ?? []
         chromeStaleFaviconTabIds = []
-        sentTabPatches = [:]
+        browserCore.clearAllSentTabPatches()
         sentExtensionRows = [:]
         sentArchiveFavicons = [:]
         searchHandler?.sentFaviconHosts = []
