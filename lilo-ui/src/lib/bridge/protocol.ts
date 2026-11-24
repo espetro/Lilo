@@ -149,6 +149,20 @@ export interface BridgeConversationOpened {
 
 export type BridgeConversationState = "idle" | "starting" | "busy" | "failed";
 
+export type BridgeConversationPlacement = "mini" | "dialog" | "split" | "tab";
+
+export interface BridgeConversationSurfaceRequested {
+	tabId: string;
+	sourceTabId: string;
+	placement: "mini" | "dialog";
+	surfaceRequestId: string;
+}
+
+export interface BridgeConversationSurfaceFailed {
+	surfaceRequestId: string;
+	message: string;
+}
+
 export interface BridgePermissionOption {
 	optionId: string;
 	name: string;
@@ -901,7 +915,7 @@ export interface BridgeCommandPayloadMap {
 		/** A model of the agent's record, set once its session opens; absent keeps the agent's default. */
 		model?: string;
 		/** Where the conversation appears; absent keeps the activated tab. `background` wins over it. */
-		placement?: "mini" | "dialog" | "split" | "tab";
+		placement?: BridgeConversationPlacement;
 		/** The non-agent tab the surface binds to or the split opens beside. */
 		sourceTabId?: string;
 		/** Pairs a delayed native start with the pending surface; `conversationSurfaceFailed` answers it. */
@@ -1167,14 +1181,14 @@ export interface BridgeEventPayloadMap {
 	tabGlanceEnded: EmptyPayload;
 	/** A conversation the chrome asked to show: its whole log, then `conversationUpdate` as it grows. */
 	conversationOpened: BridgeConversationOpened;
+	/** A mini or dialog surface's conversation exists; `surfaceRequestId` pairs it with the pending shell. */
+	conversationSurfaceRequested: BridgeConversationSurfaceRequested;
+	/** The matching `startConversation` failed before a conversation tab existed. */
+	conversationSurfaceFailed: BridgeConversationSurfaceFailed;
 	/** Updates of one conversation since the last delivery, oldest first. */
 	conversationUpdate: { tabId: string; updates: BridgeConversationUpdate[] };
 	/** Every conversation of every Space, for the Agents badge and popover. */
 	conversationsChanged: { conversations: BridgeConversationSummary[] };
-	/** A started conversation landed on a chrome surface (mini or dialog); a failed split asks for "dialog". */
-	conversationSurfaceRequested: { tabId: string; sourceTabId: string; placement: "mini" | "dialog"; surfaceRequestId?: string };
-	/** The start behind a `surfaceRequestId` failed; the pending surface closes instead of waiting. */
-	conversationSurfaceFailed: { surfaceRequestId?: string; message: string };
 	agentCatalog: { agents: BridgeAgentInfo[]; projects: string[]; home: string };
 	/** An agent's probe started or ended, or its record changed. */
 	agentReadiness: { agentId: string; checking: boolean; readiness?: BridgeAgentReadiness };

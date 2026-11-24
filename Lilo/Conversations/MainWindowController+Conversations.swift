@@ -70,12 +70,14 @@ extension MainWindowController {
             context.conversations.register(tab, folderId: folder.id)
             if split { return tab }
             if let surface, let source {
+                // The chrome pairs the request with its pending shell by this id: a start that
+                // named none gets one, so the shell is never left waiting.
                 var data: [String: Any] = [
                     "tabId": tab.id.uuidString,
                     "placement": surface,
-                    "sourceTabId": source.id.uuidString
+                    "sourceTabId": source.id.uuidString,
+                    "surfaceRequestId": surfaceRequestId ?? UUID().uuidString
                 ]
-                if let surfaceRequestId { data["surfaceRequestId"] = surfaceRequestId }
                 bridgeRouter.send(event: "conversationSurfaceRequested", data: data)
             } else if activate {
                 tabManager.activateTabRuntime(id: tab.id)

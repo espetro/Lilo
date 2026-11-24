@@ -600,6 +600,11 @@
 				"description": "Habla con Claude Code, Codex, Gemini y otros agentes en una pestaña, con tus propias suscripciones.",
 				"keywords": "agente ia acp chat conversación preguntar claude codex gemini copilot"
 			},
+			"agentConversationPlacement": {
+				"title": "Ubicación de las conversaciones",
+				"description": "Dónde aparece una conversación iniciada desde la barra Preguntar.",
+				"keywords": "agent conversation placement mini dialog split tab open as"
+			},
 			"agentsNotifyDone": {
 				"title": "Avisar cuando un agente termine",
 				"description": "Una notificación cuando termina una conversación que no estás mirando.",
@@ -3112,6 +3117,15 @@
 				}
 			}
 		}
+	},
+	"placement": {
+		"label": "Abrir como",
+		"mini": "Mini conversación",
+		"dialog": "Diálogo",
+		"split": "Dividir junto a la página",
+		"tab": "Pestaña completa",
+		"enlarge": "Abrir en una pestaña",
+		"surfaceFailed": "No se pudo iniciar la conversación."
 	},
 	"splitPane": {
 		"close": "Cerrar panel dividido",

@@ -600,6 +600,11 @@
 				"description": "Claude Code, Codex, Gemini ve diğer ajanlarla kendi aboneliklerinizle bir sekmede konuşun.",
 				"keywords": "ajan yapay zeka ai acp sohbet sor claude codex gemini copilot"
 			},
+			"agentConversationPlacement": {
+				"title": "Konuşma konumu",
+				"description": "Soru çubuğundan başlatılan konuşmanın görüneceği yer.",
+				"keywords": "agent conversation placement mini dialog split tab open as"
+			},
 			"agentsNotifyDone": {
 				"title": "Bir ajan bitirdiğinde bildir",
 				"description": "Bakmadığınız bir sohbet bittiğinde bildirim.",
@@ -3112,6 +3117,15 @@
 				}
 			}
 		}
+	},
+	"placement": {
+		"label": "Şu şekilde aç",
+		"mini": "Mini konuşma",
+		"dialog": "İletişim kutusu",
+		"split": "Sayfanın yanında böl",
+		"tab": "Tam sekme",
+		"enlarge": "Sekmede aç",
+		"surfaceFailed": "Konuşma başlatılamadı."
 	},
 	"splitPane": {
 		"close": "Bölünmüş bölmeyi kapat",

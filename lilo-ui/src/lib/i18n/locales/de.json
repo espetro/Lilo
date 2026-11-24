@@ -600,6 +600,11 @@
 				"description": "Sprich in einem Tab mit Claude Code, Codex, Gemini und anderen Agenten, mit deinen eigenen Abos.",
 				"keywords": "agent ki acp chat unterhaltung fragen claude codex gemini copilot"
 			},
+			"agentConversationPlacement": {
+				"title": "Konversationsposition",
+				"description": "Wo eine Konversation erscheint, die in der Ask-Leiste gestartet wird.",
+				"keywords": "agent conversation placement mini dialog split tab open as"
+			},
 			"agentsNotifyDone": {
 				"title": "Benachrichtigen, wenn ein Agent fertig ist",
 				"description": "Eine Mitteilung, wenn eine Unterhaltung fertig ist, die du gerade nicht ansiehst.",
@@ -3112,6 +3117,15 @@
 				}
 			}
 		}
+	},
+	"placement": {
+		"label": "Öffnen als",
+		"mini": "Mini-Konversation",
+		"dialog": "Dialog",
+		"split": "Neben der Seite teilen",
+		"tab": "Ganzer Tab",
+		"enlarge": "In Tab öffnen",
+		"surfaceFailed": "Die Konversation konnte nicht gestartet werden."
 	},
 	"splitPane": {
 		"close": "Geteilten Bereich schließen",

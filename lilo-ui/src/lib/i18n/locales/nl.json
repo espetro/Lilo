@@ -600,6 +600,11 @@
 				"description": "Praat in een tabblad met Claude Code, Codex, Gemini en andere agents, met je eigen abonnementen.",
 				"keywords": "agent ai acp chat gesprek vragen claude codex gemini copilot"
 			},
+			"agentConversationPlacement": {
+				"title": "Gespreksweergave",
+				"description": "Waar een gesprek verschijnt dat in de vraagbalk is gestart.",
+				"keywords": "agent conversation placement mini dialog split tab open as"
+			},
 			"agentsNotifyDone": {
 				"title": "Melden als een agent klaar is",
 				"description": "Een melding als een gesprek waar je niet naar kijkt klaar is.",
@@ -3112,6 +3117,15 @@
 				}
 			}
 		}
+	},
+	"placement": {
+		"label": "Openen als",
+		"mini": "Mini-gesprek",
+		"dialog": "Dialoog",
+		"split": "Splitsen naast pagina",
+		"tab": "Volledige tab",
+		"enlarge": "Openen in tab",
+		"surfaceFailed": "Het gesprek kon niet worden gestart."
 	},
 	"splitPane": {
 		"close": "Gesplitst deelvenster sluiten",
