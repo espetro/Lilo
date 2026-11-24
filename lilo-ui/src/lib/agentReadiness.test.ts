@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
 import type { BridgeAgentInfo } from "./bridge/protocol";
-import { agentNote, agentStatus, isPickable, modelControl, parseModelId, signInMethods, withReadiness } from "./agentReadiness";
+import { agentNote, agentStatus, isPickable, modelControl, parseModelId, signInMethods } from "./agentReadiness";
 
 const labels = { needsSignIn: "Needs sign-in", unavailable: "Unavailable", unverified: "Couldn't check" };
 const agent = (readiness?: BridgeAgentInfo["readiness"]): BridgeAgentInfo => ({ id: "a", name: "A", description: "", readiness });
@@ -63,16 +63,4 @@ test("a model id is one word", () => {
 	assert.equal(parseModelId("  gpt-5.5 "), "gpt-5.5");
 	assert.equal(parseModelId("two words"), null);
 	assert.equal(parseModelId("   "), null);
-});
-
-test("a probe's update replaces that agent's record and nothing else", () => {
-	const agents = [{ ...agent(), id: "a" }, { ...agent(record("ready")), id: "b" }];
-	const checking = withReadiness(agents, { agentId: "a", checking: true });
-	assert.equal(checking[0].checking, true);
-	assert.equal(checking[1], agents[1]);
-	const done = withReadiness(checking, { agentId: "a", checking: false, readiness: record("needsSignIn") });
-	assert.equal(done[0].checking, undefined);
-	assert.equal(done[0].readiness?.state, "needsSignIn");
-	// A probe that has not finished leaves the previous record on screen.
-	assert.equal(withReadiness(agents, { agentId: "b", checking: true })[1].readiness?.state, "ready");
 });

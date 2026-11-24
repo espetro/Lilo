@@ -62,16 +62,3 @@ export function parseModelId(text: string): string | null {
 	const id = text.trim();
 	return id.length > 0 && !/\s/.test(id) ? id : null;
 }
-
-/** Replaces one agent's readiness in the catalog: a probe's start, end, or a new record. */
-export function withReadiness(
-	agents: BridgeAgentInfo[],
-	update: { agentId: string; checking: boolean; readiness?: BridgeAgentInfo["readiness"] },
-): BridgeAgentInfo[] {
-	return agents.map((agent) => {
-		if (agent.id !== update.agentId) return agent;
-		const next: BridgeAgentInfo = { ...agent, checking: update.checking || undefined };
-		if (update.readiness) next.readiness = update.readiness;
-		return next;
-	});
-}
