@@ -149,6 +149,20 @@ export interface BridgeConversationOpened {
 
 export type BridgeConversationState = "idle" | "starting" | "busy" | "failed";
 
+export type BridgeConversationPlacement = "mini" | "dialog" | "split" | "tab";
+
+export interface BridgeConversationSurfaceRequested {
+	tabId: string;
+	sourceTabId: string;
+	placement: "mini" | "dialog";
+	surfaceRequestId: string;
+}
+
+export interface BridgeConversationSurfaceFailed {
+	surfaceRequestId: string;
+	message: string;
+}
+
 export interface BridgePermissionOption {
 	optionId: string;
 	name: string;
@@ -234,6 +248,8 @@ export interface BridgeTabFolderSnapshot {
 	splitLayout?: BridgeSplitLayout;
 	isLocked?: boolean;
 	lock?: BridgeFolderLock | null;
+	/** A conversation's own tab, which a split can hold outside this folder of its pages. */
+	conversationTabId?: string;
 }
 
 // BridgeTabSnapshot is generated from bridge-schema/tab.json, edit the schema, run `make bridge-gen`.
@@ -898,6 +914,12 @@ export interface BridgeCommandPayloadMap {
 		background: boolean;
 		/** A model of the agent's record, set once its session opens; absent keeps the agent's default. */
 		model?: string;
+		/** Where the conversation appears; absent keeps the activated tab. `background` wins over it. */
+		placement?: BridgeConversationPlacement;
+		/** The non-agent tab the surface binds to or the split opens beside. */
+		sourceTabId?: string;
+		/** Pairs a delayed native start with the pending surface; `conversationSurfaceFailed` answers it. */
+		surfaceRequestId?: string;
 	};
 	sendConversationPrompt: { tabId: string; text: string; attachments: BridgeConversationAttachment[]; interrupt: boolean };
 	cancelConversation: { tabId: string };
@@ -1159,6 +1181,10 @@ export interface BridgeEventPayloadMap {
 	tabGlanceEnded: EmptyPayload;
 	/** A conversation the chrome asked to show: its whole log, then `conversationUpdate` as it grows. */
 	conversationOpened: BridgeConversationOpened;
+	/** A mini or dialog surface's conversation exists; `surfaceRequestId` pairs it with the pending shell. */
+	conversationSurfaceRequested: BridgeConversationSurfaceRequested;
+	/** The matching `startConversation` failed before a conversation tab existed. */
+	conversationSurfaceFailed: BridgeConversationSurfaceFailed;
 	/** Updates of one conversation since the last delivery, oldest first. */
 	conversationUpdate: { tabId: string; updates: BridgeConversationUpdate[] };
 	/** Every conversation of every Space, for the Agents badge and popover. */

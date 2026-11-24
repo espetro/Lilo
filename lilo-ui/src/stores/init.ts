@@ -22,6 +22,7 @@ import { initSplitPaneDragStore } from "./splitPaneDrag.svelte";
 import { initKeepAwakeStore } from "./keepAwake.svelte";
 import { initAgentsStore } from "./agents.svelte";
 import { initConversationsStore } from "./conversations.svelte";
+import { initConversationSurfacesStore } from "./conversationSurfaces.svelte";
 import { initMediaStore } from "./media.svelte";
 import { initMeetingStore } from "./meeting.svelte";
 import { applyProfileInitialState, initProfileStore } from "./profiles.svelte";
@@ -81,6 +82,7 @@ const DEFERRED_STORES: StoreInitializer[] = [
 	initKeepAwakeStore,
 	initAgentsStore,
 	initConversationsStore,
+	initConversationSurfacesStore,
 	initMediaStore,
 	initMeetingStore,
 	initScreenshotEditor,

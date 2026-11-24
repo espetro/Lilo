@@ -21,7 +21,7 @@ extension AgentControl {
         guard let tabId = session.conversationTabId, let (spaceId, tab) = context?.browserState.durableTab(for: tabId),
               let space = context?.spaceManager?.space(with: spaceId) else { return }
         session.conversationSpaceId = spaceId
-        session.folders[nil] = tab.groupId
+        session.folders[nil] = context?.conversations.conversations[tabId]?.folderId ?? tab.groupId
         session.profileId = space.profileId
     }
 
