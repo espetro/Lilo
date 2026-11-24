@@ -3,6 +3,7 @@ import {
 	addNotice,
 	addPermissionRequest,
 	addQuestion,
+	addSignInLink,
 	addUserPrompt,
 	applyUpdate,
 	configOptions,
@@ -12,6 +13,7 @@ import {
 	endTurn,
 	resolvePermission,
 	resolveQuestion,
+	resolveSignInLink,
 	type QuestionAnswer,
 	type SessionUpdate,
 	type ToolCallFields,
@@ -106,10 +108,15 @@ export function apply(conversation: OpenConversation, update: BridgeConversation
 		case "lilo_question":
 			addQuestion(thread, String(update.requestId), String(update.message ?? ""), update.requestedSchema, typeof update.toolCallId === "string" ? update.toolCallId : undefined);
 			break;
+		case "lilo_sign_in_link":
+			addSignInLink(thread, String(update.requestId), String(update.message ?? ""), String(update.url ?? ""));
+			break;
 		case "lilo_permission_resolved":
 			// A question settles with the form's answer; one the agent dropped settles as cancelled.
 			if (update.answer || thread.items.some((item) => item.kind === "question" && item.requestId === String(update.requestId)))
 				resolveQuestion(thread, String(update.requestId), (update.answer as QuestionAnswer | undefined) ?? { action: "cancel" });
+			else if (thread.items.some((item) => item.kind === "signInLink" && item.requestId === String(update.requestId)))
+				resolveSignInLink(thread, String(update.requestId), (update.answer as QuestionAnswer | undefined) ?? { action: "cancel" });
 			else resolvePermission(thread, String(update.requestId), typeof update.optionId === "string" ? update.optionId : "");
 			break;
 		case "lilo_notice":

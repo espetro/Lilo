@@ -867,6 +867,8 @@ export interface BridgeCommandPayloadMap {
 	/** `optionId` absent cancels the request. */
 	answerConversation: { tabId: string; requestId: string; optionId?: string };
 	answerConversationQuestion: { tabId: string; requestId: string; action: "accept" | "decline"; content?: Record<string, string | number | boolean | string[]> };
+	/** A URL elicitation: `accept` is the user's consent to open the page, `cancel` a refusal. */
+	answerConversationSignInLink: { tabId: string; requestId: string; accept: boolean };
 	setConversationMode: { tabId: string; modeId: string };
 	setConversationConfig: { tabId: string; configId: string; value: string | boolean };
 	/** The chrome shows (or stops showing) a conversation: Lilo replays it, then streams its updates. */
