@@ -281,6 +281,16 @@
       ariaLabel={title}
       oncommit={(value) => setSetting("contentBlockerAllowedDomains", value.trim())}
     />
+  {:else if id === "agentConversationPlacement"}
+    <UiSelect
+      value={getSetting("agentConversationPlacement", "mini")}
+      options={["mini", "dialog", "split", "tab"].map((placement) => ({
+        value: placement,
+        label: t(`placement.${placement}`),
+      }))}
+      ariaLabel={title}
+      onchange={(value) => setSetting("agentConversationPlacement", value)}
+    />
   {:else if id === "agentSystemPrompt"}
     <AgentPromptPicker />
   {:else if id === "agentAlwaysAllowed"}

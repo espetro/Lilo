@@ -139,13 +139,15 @@ struct StoredFolder: Codable, Sendable, Equatable, Identifiable {
     var isUnlocked = false
     /// Created by agent control for a task: the next run's first agent deletes it from the Agents space.
     var isAgentOwned = false
+    /// A conversation's own tab, which a split can hold outside this folder of its pages.
+    var conversationTabId: UUID?
 
     var isSplit: Bool { splitLayout != nil }
 }
 
 extension StoredFolder {
     private enum CodingKeys: String, CodingKey {
-        case id, name, color, isCollapsed, children, splitLayout, lock, isAgentOwned
+        case id, name, color, isCollapsed, children, splitLayout, lock, isAgentOwned, conversationTabId
     }
 
     init(from decoder: Decoder) throws {
@@ -158,6 +160,7 @@ extension StoredFolder {
         splitLayout = try container.decodeIfPresent(SplitLayout.self, forKey: .splitLayout)
         lock = try container.decodeIfPresent(FolderLock.self, forKey: .lock)
         isAgentOwned = try container.decodeIfPresent(Bool.self, forKey: .isAgentOwned) ?? false
+        conversationTabId = try container.decodeIfPresent(UUID.self, forKey: .conversationTabId)
     }
 
     func encode(to encoder: Encoder) throws {
@@ -170,6 +173,7 @@ extension StoredFolder {
         try container.encodeIfPresent(splitLayout, forKey: .splitLayout)
         try container.encodeIfPresent(lock, forKey: .lock)
         if isAgentOwned { try container.encode(true, forKey: .isAgentOwned) }
+        try container.encodeIfPresent(conversationTabId, forKey: .conversationTabId)
     }
 }
 
@@ -497,7 +501,8 @@ extension StoredFolder {
             splitLayout: folder.splitLayout,
             lock: folder.lock,
             isUnlocked: folder.isUnlocked,
-            isAgentOwned: folder.isAgentOwned
+            isAgentOwned: folder.isAgentOwned,
+            conversationTabId: folder.conversationTabId
         )
     }
 }
@@ -542,7 +547,8 @@ extension TabFolder {
             splitLayout: storedFolder.splitLayout,
             lock: storedFolder.lock,
             isUnlocked: storedFolder.isUnlocked,
-            isAgentOwned: storedFolder.isAgentOwned
+            isAgentOwned: storedFolder.isAgentOwned,
+            conversationTabId: storedFolder.conversationTabId
         )
     }
 }

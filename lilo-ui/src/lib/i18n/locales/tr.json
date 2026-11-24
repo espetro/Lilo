@@ -600,6 +600,11 @@
 				"description": "Claude Code, Codex, Gemini ve diğer ajanlarla kendi aboneliklerinizle bir sekmede konuşun.",
 				"keywords": "ajan yapay zeka ai acp sohbet sor claude codex gemini copilot"
 			},
+			"agentConversationPlacement": {
+				"title": "Konuşma konumu",
+				"description": "Soru çubuğundan başlatılan konuşmanın görüneceği yer.",
+				"keywords": "agent conversation placement mini dialog split tab open as"
+			},
 			"agentsNotifyDone": {
 				"title": "Bir ajan bitirdiğinde bildir",
 				"description": "Bakmadığınız bir sohbet bittiğinde bildirim.",
@@ -2420,6 +2425,7 @@
 		},
 		"Commands are still running in them and will be stopped.": "İçlerinde komutlar hâlâ çalışıyor ve durdurulacak.",
 		"The terminal could not start.": "Terminal başlatılamadı.",
+		"The conversation could not be started.": "Sohbet başlatılamadı.",
 		"Close the tab and try again.": "Sekmeyi kapatıp yeniden deneyin.",
 		"Choose an iTerm2 color preset (.itermcolors), a VS Code color theme (.json) or a Ghostty theme file.": "iTerm2 renk önayarı (.itermcolors), VS Code renk teması (.json) veya Ghostty tema dosyası seçin.",
 		"This file is not a theme Lilo can read.": "Bu dosya Lilo'nun okuyabileceği bir tema değil.",
@@ -3111,6 +3117,15 @@
 				}
 			}
 		}
+	},
+	"placement": {
+		"label": "Şu şekilde aç",
+		"mini": "Mini konuşma",
+		"dialog": "İletişim kutusu",
+		"split": "Sayfanın yanında böl",
+		"tab": "Tam sekme",
+		"enlarge": "Sekmede aç",
+		"surfaceFailed": "Konuşma başlatılamadı."
 	},
 	"splitPane": {
 		"close": "Bölünmüş bölmeyi kapat",
