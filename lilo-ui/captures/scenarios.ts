@@ -275,6 +275,7 @@ async function agentActionAsk(page: Page, action: Record<string, unknown>) {
 			action,
 		},
 	]);
+	await page.waitForTimeout(400);
 }
 
 const agentToolAsk = (page: Page) =>
