@@ -629,3 +629,26 @@ test("v2: a turn the agent started keeps its duration when the thread is replaye
   const end = conversation.thread.items.at(-1);
   assert.deepEqual([end?.kind, end?.kind === "turnEnd" && end.durationMs], ["turnEnd", 3000]);
 });
+
+test("a URL elicitation draws a sign-in link and settles with its answer", async () => {
+  const { openConversation } = await import("./conversationThread");
+  const conversation = openConversation(
+    {
+      tabId: "t",
+      agentId: "a",
+      cwd: "/",
+      checkpoints: [],
+      updates: [
+        { sessionUpdate: "lilo_sign_in_link", requestId: "link1", url: "https://example.com/connect", message: "Sign in" },
+        { sessionUpdate: "lilo_permission_resolved", requestId: "link1", answer: { action: "accept" } },
+      ],
+    } as never,
+    [],
+  );
+  const [item] = conversation.thread.items;
+  assert.deepEqual([item?.kind, item?.kind === "signInLink" && item.url, item?.kind === "signInLink" && item.answer?.action], [
+    "signInLink",
+    "https://example.com/connect",
+    "accept",
+  ]);
+});
