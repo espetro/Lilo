@@ -1,6 +1,6 @@
 import Foundation
 
-/// Ordered side effects of the capture lifecycle for the drag-and-drop relay; `ChromeEventRouter` alone turns them into real calls.
+/// Ordered side effects of the capture lifecycle for the drag-and-drop relay; the router alone turns them into real calls.
 /// Mouse drags and flings need no effect, only the returned `target`.
 enum CaptureEffect: Equatable {
     /// Relay a drag *enter* to the chrome / content destination (first time the session
@@ -30,23 +30,20 @@ final class ChromeCaptureMachine {
     /// The outcome of routing one event: which surface the event must go to, and any
     /// ordered drag-relay effects the edge must apply.
     struct Outcome: Equatable {
-        let target: ChromeEventRouter.Target
+        let target: ChromeEventTarget
         let effects: [CaptureEffect]
     }
 
     enum MousePhase: Equatable { case down, dragged, up }
-    /// Mirrors `NSEvent.Phase` collapsed to what matters: a gesture begins, changes,
-    /// ends, is cancelled, or carries no phase at all (a classic mouse-wheel line scroll).
-    /// `momentumBegan` is the first inertial event after the fingers lift.
-    enum GesturePhase: Equatable { case began, changed, ended, cancelled, momentumBegan, none }
+    typealias GesturePhase = ChromeGesturePhase
     enum DragPhase: Equatable { case entered, updated, exited, concluded }
 
-    private var mouseLatch: ChromeEventRouter.Target = .none
-    private var gestureLatch: ChromeEventRouter.Target = .none
+    private var mouseLatch: ChromeEventTarget = .none
+    private var gestureLatch: ChromeEventTarget = .none
     /// The surface the last finger gesture ended on: its momentum, if any follows, goes there too.
     /// Not a grab, so hover runs between the lift and the first momentum event.
-    private var lastGestureTarget: ChromeEventRouter.Target = .none
-    private var dragTarget: ChromeEventRouter.Target = .none
+    private var lastGestureTarget: ChromeEventTarget = .none
+    private var dragTarget: ChromeEventTarget = .none
 
     /// True while any of the three lifetimes holds a grab. The coordinator gates hover /
     /// cursor work on this (drags/flings pay zero hover cost: precedence rule 1).
@@ -57,7 +54,7 @@ final class ChromeCaptureMachine {
     /// The surface a held grab is latched to (mouse-drag / fling / DnD, in that precedence),
     /// or `.none` when nothing is captured. Debug-overlay diagnostics only: routing goes through
     /// `routeMouse`/`routeGesture`/`routeDrag`.
-    var capturedTarget: ChromeEventRouter.Target {
+    var capturedTarget: ChromeEventTarget {
         if mouseLatch != .none { return mouseLatch }
         if gestureLatch != .none { return gestureLatch }
         return dragTarget
@@ -65,7 +62,7 @@ final class ChromeCaptureMachine {
 
     // MARK: (a) mouse-button drags
 
-    func routeMouse(phase: MousePhase, classification: ChromeEventRouter.Target) -> Outcome {
+    func routeMouse(phase: MousePhase, classification: ChromeEventTarget) -> Outcome {
         switch phase {
         case .down:
             mouseLatch = classification
@@ -82,7 +79,7 @@ final class ChromeCaptureMachine {
 
     // MARK: (c) scroll / magnify / rotate / smartMagnify flings
 
-    func routeGesture(phase: GesturePhase, classification: ChromeEventRouter.Target) -> Outcome {
+    func routeGesture(phase: GesturePhase, classification: ChromeEventTarget) -> Outcome {
         switch phase {
         case .began:
             gestureLatch = classification
@@ -109,7 +106,7 @@ final class ChromeCaptureMachine {
 
     // MARK: (b) drag-and-drop sessions
 
-    func routeDrag(phase: DragPhase, classification: ChromeEventRouter.Target) -> Outcome {
+    func routeDrag(phase: DragPhase, classification: ChromeEventTarget) -> Outcome {
         switch phase {
         case .entered, .updated:
             let previous = dragTarget
@@ -129,8 +126,8 @@ final class ChromeCaptureMachine {
     /// On a same-surface update emit the surface's `update*`; on a cross-surface transition
     /// emit the leaving surface's `exit*` then the entering surface's `enter*`.
     private func enterEffects(
-        from previous: ChromeEventRouter.Target,
-        to next: ChromeEventRouter.Target
+        from previous: ChromeEventTarget,
+        to next: ChromeEventTarget
     ) -> [CaptureEffect] {
         if previous == next {
             switch next {
@@ -149,7 +146,7 @@ final class ChromeCaptureMachine {
         return effects
     }
 
-    private func exitEffects(for target: ChromeEventRouter.Target) -> [CaptureEffect] {
+    private func exitEffects(for target: ChromeEventTarget) -> [CaptureEffect] {
         switch target {
         case .chrome: return [.exitChrome]
         case .content: return [.exitContent]
@@ -157,7 +154,7 @@ final class ChromeCaptureMachine {
         }
     }
 
-    private func concludeEffects(for target: ChromeEventRouter.Target) -> [CaptureEffect] {
+    private func concludeEffects(for target: ChromeEventTarget) -> [CaptureEffect] {
         switch target {
         case .chrome: return [.concludeChrome]
         case .content: return [.concludeContent]
