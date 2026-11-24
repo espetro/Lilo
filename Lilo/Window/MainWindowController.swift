@@ -378,20 +378,11 @@ final class MainWindowController: NSWindowController {
 
     func browserSnapshot(for spaceId: UUID, runtime: TabRuntimeSnapshot? = nil) -> BrowserStateStore.SpaceSnapshot {
         let runtime = runtime ?? tabManager.runtimeSnapshot()
-        let tabs = runtime.tabs.filter { $0.spaceId == spaceId }
-        let tabIds = Set(tabs.map(\.id))
         let state = tabManager.spaceTabState(
             forSpace: spaceId,
             activationHistory: context.browserState.space(id: spaceId)?.spaceTab.state.activationHistory ?? []
         )
-        return BrowserStateStore.SpaceSnapshot(
-            spaceTab: SpaceTab(spaceId: spaceId, state: state),
-            engines: runtime.engines.filter { tabIds.contains($0.key) },
-            tabAdapters: runtime.tabAdapters.filter { tabIds.contains($0.key) },
-            interactionStates: runtime.savedInteractionStates.filter { tabIds.contains($0.key) },
-            restoringTabIds: runtime.restoringTabIds.filter { tabIds.contains($0.key) },
-            lastAccessedAt: Date()
-        )
+        return BrowserCore.spaceSnapshot(for: spaceId, runtime: runtime, state: state)
     }
 
     /// Equality means the sync would write back exactly what the store already holds. The runtime
@@ -509,34 +500,30 @@ final class MainWindowController: NSWindowController {
 
     @discardableResult
     func applyBrowserCommand(_ command: BrowserCommand) throws -> BrowserChangeSet {
-        // A terminal closed for good takes its saved screen along, shown or not.
-        var closingTerminal: UUID?
-        if case let .closeTab(_, tabId) = command, tabManager.tab(for: tabId)?.kind == .terminal { closingTerminal = tabId }
-        // Unpinning a closed pinned tab, or unbookmarking a closed bookmark, takes it out of the sidebar: Undo and
-        // Reopen Closed Tab bring it back, whichever path removed it.
-        var removedTab: Tab?
-        var wasPinned: Bool?
-        if case let .setPinned(_, tabId, _) = command { wasPinned = tabManager.tab(for: tabId)?.isPinned }
-        if case let .setPinned(_, tabId, false) = command, let tab = tabManager.tab(for: tabId), tab.isClosed, tab.isPinned { removedTab = tab }
-        if case let .setBookmarked(_, tabId, false) = command, let tab = tabManager.tab(for: tabId), tab.isClosed, tab.isBookmarked { removedTab = tab }
+        let effects = BrowserCore.effects(
+            of: command,
+            tabFacts: { id in tabManager.tab(for: id).map {
+                BrowserCore.TabFacts(kind: $0.kind, isPinned: $0.isPinned, isClosed: $0.isClosed, isBookmarked: $0.isBookmarked)
+            } },
+            folderTabIds: { spaceId, folderId in
+                Set(context.browserState.space(id: spaceId)?.spaceTab.tabIds(inFolder: folderId) ?? [])
+            }
+        )
+        let removedTab = effects.removedTabId.flatMap { tabManager.tab(for: $0) }
         let removalRecorded = removedTab.map { recordClosedTabForRestore(id: $0.id) } ?? false
-        var deletedTabs: (spaceId: UUID, ids: Set<UUID>)?
-        if case let .deleteFolderWithTabs(spaceId, folderId) = command {
-            deletedTabs = (spaceId, Set(context.browserState.space(id: spaceId)?.spaceTab.tabIds(inFolder: folderId) ?? []))
-        }
         let changes = try browserRuntimeCoordinator.apply(command)
         // A folder deleted with its tabs takes their pages along, or one a window shows stays on screen.
-        if let deletedTabs {
-            if let host = context.windows.windows(showing: deletedTabs.spaceId).first {
-                deletedTabs.ids.forEach(host.tabManager.discardPreparedTabRuntime)
+        if let spaceId = effects.deletedFolderSpaceId {
+            if let host = context.windows.windows(showing: spaceId).first {
+                effects.deletedFolderTabIds.forEach(host.tabManager.discardPreparedTabRuntime)
             } else {
-                context.browserState.discardParkedEngines(deletedTabs.ids, spaceId: deletedTabs.spaceId) { context.discardEngine($0) }
+                context.browserState.discardParkedEngines(effects.deletedFolderTabIds, spaceId: spaceId) { context.discardEngine($0) }
             }
         }
         if removalRecorded, let removedTab { announceUndoableClose(of: removedTab) }
-        if let closingTerminal, tabManager.tab(for: closingTerminal) == nil { tabManager.terminalHost.forget(closingTerminal) }
+        if let closingTerminal = effects.closingTerminalTabId, tabManager.tab(for: closingTerminal) == nil { tabManager.terminalHost.forget(closingTerminal) }
         if case let .activateTab(_, tabId) = command { activationAnnouncedByCommand = tabId }
-        if case let .setPinned(_, tabId, isPinned) = command, wasPinned != isPinned, let adapter = tabManager.tabAdapter(for: tabId),
+        if case let .setPinned(_, tabId, isPinned) = command, effects.previousPinnedState != isPinned, let adapter = tabManager.tabAdapter(for: tabId),
            let registry = tabManager.extensionRegistry, registry.hasLoadedExtensions {
             registry.controller.didChangeTabProperties(.pinned, for: adapter)
         }
