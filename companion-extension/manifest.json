@@ -1,0 +1,20 @@
+{
+	"manifest_version": 3,
+	"name": "Lilo Companion",
+	"version": "0.1.0",
+	"description": "Exposes this browser's tabs and pages to the Lilo agent over native messaging.",
+	"minimum_chrome_version": "116",
+	"background": {
+		"service_worker": "background.js",
+		"type": "module"
+	},
+	"permissions": ["nativeMessaging", "tabs", "scripting", "storage"],
+	"host_permissions": ["<all_urls>"],
+	"content_scripts": [
+		{
+			"matches": ["http://*/*", "https://*/*"],
+			"js": ["content.js"],
+			"run_at": "document_idle"
+		}
+	]
+}

@@ -25,6 +25,8 @@ tier() {
 }
 
 expect "ui-lint ui-test release-status" lilo-ui/src/lib/foo.ts lilo-ui/src/app.css
+expect "companion-ext-test release-status" companion-extension/src/protocol.ts
+expect "ui-lint ui-test companion-ext-test release-status" lilo-ui/src/lib/foo.ts companion-extension/src/protocol.ts
 expect "site-check site-test release-status" site/src/pages/index.astro
 expect "docs-check docs-test release-status" docs-site/content/index.md
 expect "release-status" docs/ARCHITECTURE.md AGENTS.md .changes/unreleased/Fixed-1.yaml
