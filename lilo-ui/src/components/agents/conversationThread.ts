@@ -111,14 +111,17 @@ export function apply(conversation: OpenConversation, update: BridgeConversation
 		case "lilo_sign_in_link":
 			addSignInLink(thread, String(update.requestId), String(update.message ?? ""), String(update.url ?? ""));
 			break;
-		case "lilo_permission_resolved":
-			// A question settles with the form's answer; one the agent dropped settles as cancelled.
-			if (update.answer || thread.items.some((item) => item.kind === "question" && item.requestId === String(update.requestId)))
-				resolveQuestion(thread, String(update.requestId), (update.answer as QuestionAnswer | undefined) ?? { action: "cancel" });
-			else if (thread.items.some((item) => item.kind === "signInLink" && item.requestId === String(update.requestId)))
-				resolveSignInLink(thread, String(update.requestId), (update.answer as QuestionAnswer | undefined) ?? { action: "cancel" });
-			else resolvePermission(thread, String(update.requestId), typeof update.optionId === "string" ? update.optionId : "");
+		case "lilo_permission_resolved": {
+			// A question settles with the form's answer; a sign-in link with its consent; one the agent dropped settles as cancelled.
+			const requestId = String(update.requestId);
+			const answer = (update.answer as QuestionAnswer | undefined) ?? { action: "cancel" };
+			if (thread.items.some((item) => item.kind === "signInLink" && item.requestId === requestId))
+				resolveSignInLink(thread, requestId, answer);
+			else if (update.answer || thread.items.some((item) => item.kind === "question" && item.requestId === requestId))
+				resolveQuestion(thread, requestId, answer);
+			else resolvePermission(thread, requestId, typeof update.optionId === "string" ? update.optionId : "");
 			break;
+		}
 		case "lilo_notice":
 			addNotice(thread, String(update.notice ?? ""));
 			if (update.notice === "signedIn") conversation.signingIn = null;
