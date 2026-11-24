@@ -258,6 +258,51 @@ async function agentAccessSettings(page: Page) {
 	await page.locator("[data-setting-id='agentControl']").scrollIntoViewIfNeeded();
 }
 
+// One agent in each state a probe leaves it in. A merge base ignores the readiness and draws a plain menu.
+const readinessAgents = [
+	{ id: "claude-acp", name: "Claude Agent", description: "", featured: true, readiness: { state: "ready", probedAt: 1, modelConfigId: "model", currentModel: "opus", models: [
+		{ id: "opus", name: "Opus", description: "Most capable for complex work" },
+		{ id: "sonnet", name: "Sonnet", description: "Best for everyday tasks" },
+		{ id: "haiku", name: "Haiku", description: "Fastest for quick answers" },
+	] } },
+	{ id: "codex-acp", name: "Codex", description: "", featured: true, readiness: { state: "needsSignIn", probedAt: 1, authMethods: [{ id: "chatgpt", name: "Sign in with ChatGPT", type: "agent" }] } },
+	{ id: "gemini", name: "Gemini CLI", description: "", featured: true, readiness: { state: "unavailable", probedAt: 1, reason: "Gemini CLI needs Node.js: install it from nodejs.org, then try again." } },
+	{ id: "auggie", name: "Auggie CLI", description: "Augment Code's software agent", featured: true },
+];
+
+async function readinessPicker(page: Page, openModels: boolean) {
+	await receive(page, [
+		{ event: "settingsLoaded", settings: { agentsEnabled: "true", agentsLastAgent: "claude-acp" } },
+		{ event: "openAskBar", selection: "" },
+		{ event: "agentCatalog", agents: readinessAgents, projects: ["/Users/example/Code/acme"], home: "/Users/example" },
+	]);
+	const bar = page.locator(".ask-bar");
+	await bar.waitFor({ state: "visible", timeout: 5000 }).catch(() => {});
+	const name = openModels ? "Model" : "Agent";
+	await bar.getByRole("button", { name, exact: true }).click({ timeout: 5000 }).catch(() => {});
+	await page.locator("[role='menu']").waitFor({ state: "visible", timeout: 3000 }).catch(() => {});
+	await page.waitForTimeout(400);
+}
+
+const readinessWorld = (): FakeHostWorld => ({ ...initialWorld(), settings: { agentsEnabled: "true" } });
+
+async function readinessSettings(page: Page) {
+	await receive(page, [{ event: "openSettings" }, { event: "agentCatalog", agents: readinessAgents, projects: [], home: "/Users/example" }]);
+	await page.locator(".section-nav-button").filter({ hasText: "Agents" }).click();
+	await page.locator("[data-setting-id='agentList'] .ui-link-row").click();
+	await page.locator(".settings-section-content .ui-list-row").first().waitFor({ state: "visible", timeout: 5000 });
+	await page.waitForTimeout(400);
+}
+
+scenarios.push(
+	{ name: "agent-readiness-picker-light", run: (page) => readinessPicker(page, false) },
+	{ name: "agent-readiness-picker-dark", colorScheme: "dark", run: (page) => readinessPicker(page, false) },
+	{ name: "agent-readiness-models-light", run: (page) => readinessPicker(page, true) },
+	{ name: "agent-readiness-models-dark", colorScheme: "dark", run: (page) => readinessPicker(page, true) },
+	{ name: "agent-readiness-settings-light", world: readinessWorld(), run: readinessSettings },
+	{ name: "agent-readiness-settings-dark", colorScheme: "dark", world: readinessWorld(), run: readinessSettings },
+);
+
 scenarios.push(
 	{ name: "agent-picker-light", run: (page) => openAgentPicker(page) },
 	{ name: "agent-picker-dark", colorScheme: "dark", run: (page) => openAgentPicker(page) },
