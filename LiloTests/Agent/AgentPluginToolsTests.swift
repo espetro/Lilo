@@ -129,8 +129,8 @@ final class AgentPluginToolsTests: AgentToolTestCase {
         let first = await client.callTool("stub_ping")
         XCTAssertFalse(first.isError, first.text)
         // The dead sidecar is "not running", never an error: the next call spawns a fresh one.
-        let session = try XCTUnwrap(await host.session(for: "app.lilo.test.stub"))
-        await session.stop()
+        let pluginSession = await host.session(for: "app.lilo.test.stub")
+        try await XCTUnwrap(pluginSession).stop()
         let second = await client.callTool("stub_ping")
         XCTAssertFalse(second.isError, second.text)
         XCTAssertEqual(second.text, "stub ran stub_ping")
@@ -144,11 +144,13 @@ final class AgentPluginToolsTests: AgentToolTestCase {
         try await enableStub(tools: [
             ["name": "stub_ping", "description": "Pings", "inputSchema": ["type": "object"], "consent": "read"]
         ])
-        XCTAssertTrue(await listedTools().contains { $0["name"] as? String == "stub_ping" })
+        let listed = await listedTools()
+        XCTAssertTrue(listed.contains { $0["name"] as? String == "stub_ping" })
 
         host.setEnabled(false, for: "app.lilo.test.stub")
 
-        XCTAssertFalse(await listedTools().contains { $0["name"] as? String == "stub_ping" })
+        let remaining = await listedTools()
+        XCTAssertFalse(remaining.contains { $0["name"] as? String == "stub_ping" })
         let reply = await client.callTool("stub_ping")
         XCTAssertTrue(reply.isError)
         XCTAssertTrue(reply.text.contains("disabled"), reply.text)
