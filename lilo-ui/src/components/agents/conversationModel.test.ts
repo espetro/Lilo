@@ -654,5 +654,6 @@ test("switching agents swaps the conversation's agent, clears its pickers and ke
   assert.deepEqual(conversation.modes, []);
   assert.equal(conversation.error, null);
   assert.deepEqual(conversation.thread.items.map((item) => item.kind), ["user", "agent", "turnEnd", "notice"]);
-  assert.equal(conversation.thread.items.at(-1)?.kind === "notice" && conversation.thread.items.at(-1)?.text, "handoff:codex-acp");
+  const last = conversation.thread.items.at(-1);
+  assert.equal(last?.kind === "notice" && last.text, "handoff:codex-acp");
 });
