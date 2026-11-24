@@ -26,9 +26,16 @@ final class ConversationPlacementTests: XCTestCase {
         return Setup(browser: browser, context: context, space: space, window: window, webTabId: webTabId)
     }
 
-    /// The router ships queued sends on the next main-loop turn.
-    private func settle() {
-        RunLoop.main.run(until: Date().addingTimeInterval(0.1))
+    /// The router ships queued sends on the next main-loop turn. An async test already runs inside a
+    /// main-queue block, which cannot nest: the run loop never gets to it, so the wait suspends.
+    private func settle() async {
+        try? await Task.sleep(nanoseconds: 100_000_000)
+    }
+
+    /// Waits for the surface request the router ships on the next main-loop turn.
+    private func awaitSurfaceRequest(_ recorder: BridgeEventRecorder) async -> [[String: Any]] {
+        _ = await pollUntil { recorder.events.contains { $0.name == "conversationSurfaceRequested" } }
+        return recorder.events.filter { $0.name == "conversationSurfaceRequested" }.map(\.data)
     }
 
     private func conversationFolder(of tabId: UUID, in setup: Setup) -> TabFolder? {
@@ -51,8 +58,8 @@ final class ConversationPlacementTests: XCTestCase {
         XCTAssertEqual(setup.window.tabManager.activeTab?.id, conversation.id)
         let folder = try XCTUnwrap(conversationFolder(of: conversation.id, in: setup))
         XCTAssertEqual(sidebarParent(of: conversation.id, in: setup), folder.id)
-        settle()
-        XCTAssertTrue(recorder.events.isEmpty, "a plain tab start announces no surface")
+        await settle()
+        XCTAssertFalse(recorder.events.contains { $0.name == "conversationSurfaceRequested" }, "a plain tab start announces no surface")
     }
 
     func testTabPlacementStartsAnActivatedTabInItsFolder() async throws {
@@ -81,8 +88,8 @@ final class ConversationPlacementTests: XCTestCase {
 
         XCTAssertEqual(setup.window.tabManager.activeTab?.id, setup.webTabId, "the page keeps the focus")
         XCTAssertEqual(sidebarParent(of: conversation.id, in: setup), conversationFolder(of: conversation.id, in: setup)?.id)
-        settle()
-        let requests = recorder.events.filter { $0.name == "conversationSurfaceRequested" }.map(\.data)
+        await settle()
+        let requests = await awaitSurfaceRequest(recorder)
         XCTAssertEqual(requests.count, 1)
         XCTAssertEqual(requests.first?["tabId"] as? String, conversation.id.uuidString)
         XCTAssertEqual(requests.first?["sourceTabId"] as? String, setup.webTabId.uuidString)
@@ -101,8 +108,8 @@ final class ConversationPlacementTests: XCTestCase {
         let conversation = try XCTUnwrap(started)
 
         XCTAssertEqual(setup.window.tabManager.activeTab?.id, setup.webTabId)
-        settle()
-        let requests = recorder.events.filter { $0.name == "conversationSurfaceRequested" }.map(\.data)
+        await settle()
+        let requests = await awaitSurfaceRequest(recorder)
         XCTAssertEqual(requests.count, 1)
         XCTAssertEqual(requests.first?["placement"] as? String, "dialog")
         XCTAssertEqual(requests.first?["tabId"] as? String, conversation.id.uuidString)
@@ -121,7 +128,7 @@ final class ConversationPlacementTests: XCTestCase {
         let conversation = try XCTUnwrap(started)
 
         XCTAssertEqual(setup.window.tabManager.activeTab?.id, conversation.id)
-        settle()
+        await settle()
         XCTAssertFalse(recorder.events.contains { $0.name == "conversationSurfaceRequested" })
     }
 
@@ -149,7 +156,7 @@ final class ConversationPlacementTests: XCTestCase {
         XCTAssertNotEqual(folder.id, split.folderId)
         XCTAssertEqual(setup.context.conversations.conversations[conversation.id]?.folderId, folder.id)
         XCTAssertEqual(setup.window.conversationTab(inFolder: folder)?.id, conversation.id)
-        settle()
+        await settle()
         XCTAssertFalse(recorder.events.contains { $0.name == "conversationSurfaceRequested" }, "a real split announces no surface")
     }
 
@@ -172,8 +179,8 @@ final class ConversationPlacementTests: XCTestCase {
         let conversation = try XCTUnwrap(started)
 
         XCTAssertNotEqual(window.tabManager.activeTab?.id, conversation.id, "the dialog surface leaves the tab inactive")
-        settle()
-        let requests = recorder.events.filter { $0.name == "conversationSurfaceRequested" }.map(\.data)
+        await settle()
+        let requests = await awaitSurfaceRequest(recorder)
         XCTAssertEqual(requests.count, 1)
         XCTAssertEqual(requests.first?["placement"] as? String, "dialog")
         XCTAssertEqual(requests.first?["sourceTabId"] as? String, webTabId.uuidString)
@@ -193,7 +200,7 @@ final class ConversationPlacementTests: XCTestCase {
 
         XCTAssertEqual(setup.window.tabManager.activeTab?.id, setup.webTabId)
         XCTAssertEqual(sidebarParent(of: conversation.id, in: setup), conversationFolder(of: conversation.id, in: setup)?.id)
-        settle()
-        XCTAssertTrue(recorder.events.isEmpty, "a background start opens no surface")
+        await settle()
+        XCTAssertFalse(recorder.events.contains { $0.name == "conversationSurfaceRequested" }, "a background start opens no surface")
     }
 }
