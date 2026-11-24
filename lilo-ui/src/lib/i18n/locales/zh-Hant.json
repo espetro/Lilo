@@ -600,6 +600,11 @@
 				"description": "在分頁中與 Claude Code、Codex、Gemini 等代理程式對話，使用你自己的訂閱。",
 				"keywords": "代理程式 AI ACP 聊天 對話 詢問 Claude Codex Gemini Copilot"
 			},
+			"agentConversationPlacement": {
+				"title": "對話位置",
+				"description": "從提問列啟動的對話顯示的位置。",
+				"keywords": "agent conversation placement mini dialog split tab open as"
+			},
 			"agentsNotifyDone": {
 				"title": "代理程式完成時通知",
 				"description": "你未在檢視的對話完成時發出通知。",
@@ -2420,6 +2425,7 @@
 		},
 		"Commands are still running in them and will be stopped.": "其中仍有指令正在執行，將會停止。",
 		"The terminal could not start.": "無法啟動終端機。",
+		"The conversation could not be started.": "無法啟動對話。",
 		"Close the tab and try again.": "請關閉分頁後再試一次。",
 		"Choose an iTerm2 color preset (.itermcolors), a VS Code color theme (.json) or a Ghostty theme file.": "選擇 iTerm2 色彩預設組（.itermcolors）、VS Code 色彩主題（.json）或 Ghostty 主題檔案。",
 		"This file is not a theme Lilo can read.": "此檔案不是 Lilo 可讀取的主題。",
@@ -3111,6 +3117,15 @@
 				}
 			}
 		}
+	},
+	"placement": {
+		"label": "開啟方式",
+		"mini": "迷你對話",
+		"dialog": "對話框",
+		"split": "在頁面旁分割",
+		"tab": "完整分頁",
+		"enlarge": "在分頁中開啟",
+		"surfaceFailed": "無法啟動對話。"
 	},
 	"splitPane": {
 		"close": "關閉分割窗格",

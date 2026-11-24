@@ -28,6 +28,7 @@
   import { getActiveTab, getTabsById } from "../stores/tabs.svelte";
   import type { BridgeSplitPaneFrame } from "../lib/bridge/protocol";
   import { isAskBarOpen } from "../stores/conversations.svelte";
+  import { getConversationSurfaceBySourceTab } from "../stores/conversationSurfaces.svelte";
 
   // Latched on first open: the chunk loads once, then the component stays mounted so its own
   // open gate keeps close animations and later opens intact.
@@ -66,6 +67,12 @@
     }
     const tab = getActiveTab();
     return tab?.kind === "agent" ? [{ tabId: tab.id, x: 0, y: 0, width: 1, height: 1 }] : [];
+  });
+  // A mini or dialog surface belongs to the tab that asked for it: it mounts only while that tab is active.
+  const conversationSurface = $derived.by(() => {
+    if (!agentsEnabled) return null;
+    const tab = getActiveTab();
+    return tab ? getConversationSurfaceBySourceTab(tab.id) : null;
   });
 </script>
 
@@ -109,6 +116,11 @@
     {#each agentPanes as pane (pane.tabId)}
       <view.default tabId={pane.tabId} frame={pane} />
     {/each}
+  {/await}
+{/if}
+{#if conversationSurface}
+  {#await import("./agents/ConversationSurface.svelte") then surface}
+    <surface.default surface={conversationSurface} />
   {/await}
 {/if}
 {#if agentsEnabled && askBarLoaded}
