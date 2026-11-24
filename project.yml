@@ -133,7 +133,7 @@ targets:
       - path: lilo-ui/public/password-managers
         type: folder
         buildPhase: resources
-      # First-party plugins (manifest + sidecar), scanned by PluginHost from the bundle's Resources/Plugins.
+      # First-party plugins (manifest + sidecar + catalog), scanned by PluginHost from the bundle's Resources/Plugins.
       - path: Plugins
         type: folder
         buildPhase: resources

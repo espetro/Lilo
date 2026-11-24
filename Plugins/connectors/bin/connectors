@@ -1,0 +1,4 @@
+#!/bin/sh
+# The sidecar is JXA (bin/connectors.js): osascript ships with macOS and /bin/sh
+# cannot parse the catalog's JSON.
+exec /usr/bin/osascript -l JavaScript "$(dirname "$0")/connectors.js"

@@ -1,0 +1,79 @@
+[
+  {
+    "id": "claudeCode",
+    "config": { "kind": "claudeCLI", "path": ".claude.json" },
+    "detect": { "binary": "claude", "binaryExtra": [".claude/local/claude"], "folders": [".claude"] },
+    "handshakes": ["claude-code"],
+    "docsURL": "https://code.claude.com/docs/en/mcp",
+    "verified": "2026-11-21",
+    "added": "Added Lilo to Claude Code",
+    "note": "`claude mcp add --scope user` keeps its servers in ~/.claude.json."
+  },
+  {
+    "id": "claudeDesktop",
+    "config": { "kind": "json", "path": "Library/Application Support/Claude/claude_desktop_config.json" },
+    "detect": { "bundleID": "com.anthropic.claudefordesktop" },
+    "handshakes": ["claude-ai"],
+    "handshakePrefixes": ["local-agent-mode-"],
+    "docsURL": "https://modelcontextprotocol.io/quickstart/user",
+    "verified": "2026-11-21",
+    "added": "Added Lilo to Claude Desktop: quit and reopen Claude to load it"
+  },
+  {
+    "id": "codex",
+    "config": { "kind": "toml", "path": ".codex/config.toml" },
+    "detect": { "bundleID": "com.openai.codex", "binary": "codex", "folders": [".codex"] },
+    "handshakes": ["codex", "codex-mcp-client"],
+    "docsURL": "https://developers.openai.com/codex/mcp",
+    "verified": "2026-11-21",
+    "added": "Added Lilo to Codex"
+  },
+  {
+    "id": "cursor",
+    "config": { "kind": "json", "path": ".cursor/mcp.json" },
+    "detect": { "bundleID": "com.todesktop.230313mzl4w4u92" },
+    "handshakes": ["cursor", "cursor-vscode"],
+    "docsURL": "https://cursor.com/docs/context/mcp",
+    "verified": "2026-11-21",
+    "added": "Added Lilo to Cursor"
+  },
+  {
+    "id": "zed",
+    "config": { "kind": "json", "path": ".config/zed/settings.json", "key": "context_servers" },
+    "detect": { "bundleID": "dev.zed.Zed", "binary": "zed", "folders": [".config/zed"] },
+    "handshakes": ["zed"],
+    "docsURL": "https://zed.dev/docs/ai/mcp",
+    "verified": "2026-11-21",
+    "added": "Added Lilo to Zed",
+    "note": "Zed keeps MCP servers in `context_servers` of ~/.config/zed/settings.json (a command alone is enough). Its settings file is JSONC, so a file with comments is never rewritten."
+  },
+  {
+    "id": "vscode",
+    "config": { "kind": "json", "path": ".copilot/mcp-config.json", "entry": "stdio" },
+    "detect": { "bundleID": "com.microsoft.VSCode", "binary": "code", "folders": [".vscode"] },
+    "handshakes": ["visual studio code", "vscode"],
+    "docsURL": "https://code.visualstudio.com/docs/agents/reference/mcp-configuration",
+    "verified": "2026-11-21",
+    "added": "Added Lilo to VS Code",
+    "note": "VS Code's current MCP path is the Copilot harness, which reads `mcpServers` of ~/.copilot/mcp-config.json (the profile mcp.json it replaces is marked deprecated). The file is shared with Copilot CLI."
+  },
+  {
+    "id": "opencode",
+    "config": { "kind": "json", "path": ".config/opencode/opencode.json", "key": "mcp", "entry": "local" },
+    "detect": { "binary": "opencode", "binaryExtra": [".opencode/bin/opencode"], "folders": [".config/opencode"] },
+    "handshakes": ["opencode"],
+    "docsURL": "https://opencode.ai/v1/docs/mcp-servers/",
+    "verified": "2026-11-21",
+    "added": "Added Lilo to OpenCode",
+    "note": "OpenCode V2 reads the V1 shape (`mcp.<name>`) of ~/.config/opencode/opencode.json, which also works on V1. The file may be opencode.jsonc: only a strict opencode.json is written."
+  },
+  {
+    "id": "gemini",
+    "config": { "kind": "json", "path": ".gemini/settings.json" },
+    "detect": { "binary": "gemini", "folders": [".gemini"] },
+    "handshakes": ["gemini-cli-mcp-client"],
+    "docsURL": "https://github.com/google-gemini/gemini-cli/blob/main/docs/tools/mcp-server.md",
+    "verified": "2026-11-21",
+    "added": "Added Lilo to Gemini CLI"
+  }
+]
