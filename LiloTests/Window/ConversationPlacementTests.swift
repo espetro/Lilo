@@ -45,7 +45,8 @@ final class ConversationPlacementTests: XCTestCase {
         defer { setup.browser.tearDown() }
         let recorder = BridgeEventRecorder(setup.window.bridgeRouter)
 
-        let conversation = try XCTUnwrap(await setup.window.startConversation(agentId: "test-agent", cwd: NSTemporaryDirectory(), activate: true))
+        let started = await setup.window.startConversation(agentId: "test-agent", cwd: NSTemporaryDirectory(), activate: true)
+        let conversation = try XCTUnwrap(started)
 
         XCTAssertEqual(setup.window.tabManager.activeTab?.id, conversation.id)
         let folder = try XCTUnwrap(conversationFolder(of: conversation.id, in: setup))
@@ -58,9 +59,10 @@ final class ConversationPlacementTests: XCTestCase {
         let setup = try await makeSetup()
         defer { setup.browser.tearDown() }
 
-        let conversation = try XCTUnwrap(await setup.window.startConversation(
+        let started = await setup.window.startConversation(
             agentId: "test-agent", cwd: NSTemporaryDirectory(), activate: true, placement: "tab"
-        ))
+        )
+        let conversation = try XCTUnwrap(started)
 
         XCTAssertEqual(setup.window.tabManager.activeTab?.id, conversation.id)
         XCTAssertEqual(sidebarParent(of: conversation.id, in: setup), conversationFolder(of: conversation.id, in: setup)?.id)
@@ -71,10 +73,11 @@ final class ConversationPlacementTests: XCTestCase {
         defer { setup.browser.tearDown() }
         let recorder = BridgeEventRecorder(setup.window.bridgeRouter)
 
-        let conversation = try XCTUnwrap(await setup.window.startConversation(
+        let started = await setup.window.startConversation(
             agentId: "test-agent", cwd: NSTemporaryDirectory(), activate: true,
             placement: "mini", sourceTabId: setup.webTabId, surfaceRequestId: "req-1"
-        ))
+        )
+        let conversation = try XCTUnwrap(started)
 
         XCTAssertEqual(setup.window.tabManager.activeTab?.id, setup.webTabId, "the page keeps the focus")
         XCTAssertEqual(sidebarParent(of: conversation.id, in: setup), conversationFolder(of: conversation.id, in: setup)?.id)
@@ -92,9 +95,10 @@ final class ConversationPlacementTests: XCTestCase {
         defer { setup.browser.tearDown() }
         let recorder = BridgeEventRecorder(setup.window.bridgeRouter)
 
-        let conversation = try XCTUnwrap(await setup.window.startConversation(
+        let started = await setup.window.startConversation(
             agentId: "test-agent", cwd: NSTemporaryDirectory(), activate: true, placement: "dialog", sourceTabId: setup.webTabId
-        ))
+        )
+        let conversation = try XCTUnwrap(started)
 
         XCTAssertEqual(setup.window.tabManager.activeTab?.id, setup.webTabId)
         settle()
@@ -110,10 +114,11 @@ final class ConversationPlacementTests: XCTestCase {
         let recorder = BridgeEventRecorder(setup.window.bridgeRouter)
 
         // A source tab that does not exist binds nothing: the conversation opens as a tab instead.
-        let conversation = try XCTUnwrap(await setup.window.startConversation(
+        let started = await setup.window.startConversation(
             agentId: "test-agent", cwd: NSTemporaryDirectory(), activate: true,
             placement: "mini", sourceTabId: UUID(), surfaceRequestId: "req-2"
-        ))
+        )
+        let conversation = try XCTUnwrap(started)
 
         XCTAssertEqual(setup.window.tabManager.activeTab?.id, conversation.id)
         settle()
@@ -125,10 +130,11 @@ final class ConversationPlacementTests: XCTestCase {
         defer { setup.browser.tearDown() }
         let recorder = BridgeEventRecorder(setup.window.bridgeRouter)
 
-        let conversation = try XCTUnwrap(await setup.window.startConversation(
+        let started = await setup.window.startConversation(
             agentId: "test-agent", cwd: NSTemporaryDirectory(), activate: true,
             placement: "split", sourceTabId: setup.webTabId
-        ))
+        )
+        let conversation = try XCTUnwrap(started)
 
         let split = try XCTUnwrap(setup.context.browserState.space(id: setup.space.id)?.spaceTab.splitGroup(containing: conversation.id))
         guard case let .split(vertical, ratio, first, second) = split.layout else { return XCTFail("expected a two-pane split") }
@@ -159,10 +165,11 @@ final class ConversationPlacementTests: XCTestCase {
         let webTabId = try XCTUnwrap(window.createTabStateFirst(url: URL(string: "data:text/html,web"), activate: false)).id
         let recorder = BridgeEventRecorder(window.bridgeRouter)
 
-        let conversation = try XCTUnwrap(await window.startConversation(
+        let started = await window.startConversation(
             agentId: "test-agent", cwd: NSTemporaryDirectory(), activate: true,
             placement: "split", sourceTabId: webTabId, surfaceRequestId: "req-3"
-        ))
+        )
+        let conversation = try XCTUnwrap(started)
 
         XCTAssertNotEqual(window.tabManager.activeTab?.id, conversation.id, "the dialog surface leaves the tab inactive")
         settle()
@@ -178,10 +185,11 @@ final class ConversationPlacementTests: XCTestCase {
         defer { setup.browser.tearDown() }
         let recorder = BridgeEventRecorder(setup.window.bridgeRouter)
 
-        let conversation = try XCTUnwrap(await setup.window.startConversation(
+        let started = await setup.window.startConversation(
             agentId: "test-agent", cwd: NSTemporaryDirectory(), activate: false,
             placement: "mini", sourceTabId: setup.webTabId, surfaceRequestId: "req-4"
-        ))
+        )
+        let conversation = try XCTUnwrap(started)
 
         XCTAssertEqual(setup.window.tabManager.activeTab?.id, setup.webTabId)
         XCTAssertEqual(sidebarParent(of: conversation.id, in: setup), conversationFolder(of: conversation.id, in: setup)?.id)
