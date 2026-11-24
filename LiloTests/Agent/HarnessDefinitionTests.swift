@@ -20,6 +20,11 @@ final class HarnessDefinitionTests: XCTestCase {
         }
     }
 
+    func testTheBundledCatalogLoadsEveryRowInOrder() {
+        XCTAssertEqual(HarnessDefinition.all.map(\.id),
+                       ["claudeCode", "claudeDesktop", "codex", "cursor", "zed", "vscode", "opencode", "gemini"])
+    }
+
     func testIdsAreUniqueAndRoundTrip() {
         let ids = HarnessDefinition.all.map(\.id)
         XCTAssertEqual(Set(ids).count, ids.count)
