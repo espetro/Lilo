@@ -298,7 +298,8 @@ public actor PluginSession {
         }
     }
 
+    /// Slashes stay unescaped (`tools/call` must not reach a sidecar as `tools\/call`).
     private static func encode(_ message: [String: JSONValue]) -> Data {
-        (try? JSONSerialization.data(withJSONObject: JSONValue.object(message).anyObject)) ?? Data()
+        (try? JSONSerialization.data(withJSONObject: JSONValue.object(message).anyObject, options: [.sortedKeys, .withoutEscapingSlashes])) ?? Data()
     }
 }
