@@ -2420,6 +2420,7 @@
 		},
 		"Commands are still running in them and will be stopped.": "아직 실행 중인 명령이 있으며 해당 명령이 중단됩니다.",
 		"The terminal could not start.": "터미널을 시작할 수 없습니다.",
+		"The conversation could not be started.": "대화를 시작할 수 없습니다.",
 		"Close the tab and try again.": "탭을 닫고 다시 시도하세요.",
 		"Choose an iTerm2 color preset (.itermcolors), a VS Code color theme (.json) or a Ghostty theme file.": "iTerm2 색상 프리셋(.itermcolors), VS Code 색상 테마(.json) 또는 Ghostty 테마 파일을 선택하세요.",
 		"This file is not a theme Lilo can read.": "Lilo가 읽을 수 있는 테마 파일이 아닙니다.",

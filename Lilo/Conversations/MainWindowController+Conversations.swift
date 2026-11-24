@@ -1,15 +1,22 @@
 import AppKit
 import CryptoKit
 
-/// Agent tabs: a conversation is a folder of the Space it was started in, the agent tab first, then the
-/// pages the agent opens. The chrome draws the conversation over the tab's empty native view.
+/// Agent tabs: a conversation is a folder of the Space it was started in, marked with its agent tab and
+/// holding the pages the agent opens; the agent tab itself can sit in a split or stay inactive under a
+/// chrome surface. The chrome draws the conversation over the tab's empty native view.
 extension MainWindowController {
     var agentsEnabled: Bool { context.settingsStore?.get("agentsEnabled") == "true" }
 
     /// Starts a conversation in the current Space, which a private Space never hosts. Without a project
     /// it gets a folder of its own; in a repository another agent is working in, its own worktree.
+    /// `placement` picks where it appears: "tab" activates it, "split" panes it beside the source tab,
+    /// "mini" and "dialog" leave it inactive for the chrome surface the events announce; absent or
+    /// `background` keeps the tab inactive, as before.
     @discardableResult
-    func startConversation(agentId: String, cwd: String, activate: Bool) async -> Tab? {
+    func startConversation(
+        agentId: String, cwd: String, activate: Bool,
+        placement: String? = nil, sourceTabId: UUID? = nil, surfaceRequestId: String? = nil
+    ) async -> Tab? {
         guard agentsEnabled, let spaceId = tabManager.currentSpaceId,
               context.spaceManager?.space(with: spaceId)?.isPrivate == false else { return nil }
         var directory = cwd
@@ -31,21 +38,84 @@ extension MainWindowController {
             directory = worktree ?? cwd
         }
         let activate = activate && tabManager.currentSpaceId == spaceId
-        let folder = TabFolder(spaceId: spaceId, name: "New Conversation".localized, color: "#795ceb", isCollapsed: true)
+        let source = activate ? conversationSourceTab(sourceTabId, spaceId: spaceId) : nil
+        // The surface a mini or dialog start answers on; a split that cannot be made degrades to the
+        // dialog surface. No eligible source tab, or no placement, keeps the plain activated tab.
+        var surface = activate && source != nil && (placement == "mini" || placement == "dialog") ? placement : nil
+        let attemptSplit = activate && placement == "split" && source != nil
         let tab = Tab(title: "New Conversation".localized, spaceId: spaceId, kind: .agent, cwd: directory, agentId: agentId)
+        let folder = TabFolder(
+            spaceId: spaceId, name: "New Conversation".localized, color: "#795ceb", isCollapsed: true,
+            conversationTabId: tab.id
+        )
         do {
             try applyBrowserCommand(.createFolder(spaceId: spaceId, folder: folder, section: .unpinned))
-            try applyBrowserCommand(.createTab(spaceId: spaceId, tab: tab, activate: activate))
-            try applyBrowserCommand(.moveSidebarItem(
-                spaceId: spaceId, kind: .tab, itemId: tab.id, parentFolderId: folder.id, section: .unpinned, insert: .index(0)
-            ))
+            try applyBrowserCommand(.createTab(spaceId: spaceId, tab: tab, activate: activate && !attemptSplit && surface == nil))
+            var split = false
+            if attemptSplit, let source {
+                splitTab(tab.id, at: source.id, vertical: false, before: false)
+                if let groupId = tabManager.tab(for: tab.id)?.groupId,
+                   tabManager.folder(id: groupId)?.isSplit == true {
+                    split = true
+                    rebalanceConversationSplit(tab.id, spaceId: spaceId)
+                } else {
+                    surface = "dialog"
+                }
+            }
+            if !split {
+                try applyBrowserCommand(.moveSidebarItem(
+                    spaceId: spaceId, kind: .tab, itemId: tab.id, parentFolderId: folder.id, section: .unpinned, insert: .index(0)
+                ))
+            }
             context.conversations.register(tab, folderId: folder.id)
-            if activate { tabManager.activateTabRuntime(id: tab.id) }
+            if split { return tab }
+            if let surface, let source {
+                var data: [String: Any] = [
+                    "tabId": tab.id.uuidString,
+                    "placement": surface,
+                    "sourceTabId": source.id.uuidString
+                ]
+                if let surfaceRequestId { data["surfaceRequestId"] = surfaceRequestId }
+                bridgeRouter.send(event: "conversationSurfaceRequested", data: data)
+            } else if activate {
+                tabManager.activateTabRuntime(id: tab.id)
+            }
             return tab
         } catch {
             Self.logger.error("start conversation failed: \(error.localizedDescription, privacy: .public)")
             return nil
         }
+    }
+
+    /// The tab a mini, dialog or split surface binds to: the one the chrome captured, or the active
+    /// page when the caller named none. Agent tabs never qualify; a named tab that is gone does not
+    /// silently rebind to whatever is active now.
+    private func conversationSourceTab(_ sourceTabId: UUID?, spaceId: UUID) -> Tab? {
+        if let sourceTabId {
+            guard let (sid, tab) = context.browserState.durableTab(for: sourceTabId),
+                  sid == spaceId, tab.kind != .agent, !tab.isClosed else { return nil }
+            return tab
+        }
+        guard let active = tabManager.activeTab, active.spaceId == spaceId, active.kind != .agent else { return nil }
+        return active
+    }
+
+    /// The new pane takes a third of the split it just joined: the page it answers about keeps two.
+    private func rebalanceConversationSplit(_ tabId: UUID, spaceId: UUID) {
+        guard let split = tabManager.activeSplit, let path = conversationSplitPath(split.layout, tabId: tabId) else { return }
+        let agentIsFirst = split.layout.subtree(at: path + [false])?.paneIds == [tabId]
+        let layout = split.layout.updatingCut(at: path) { _, ratio in
+            ratio = agentIsFirst ? 1.0 / 3.0 : 2.0 / 3.0
+        }
+        _ = try? applyBrowserCommand(.setSplitLayout(spaceId: spaceId, folderId: split.folderId, layout: layout))
+    }
+
+    /// The cut that directly holds `tabId` against the pane it was split with.
+    private func conversationSplitPath(_ layout: SplitLayout, tabId: UUID, path: [Bool] = []) -> [Bool]? {
+        guard case let .split(_, _, first, second) = layout else { return nil }
+        if first.paneIds == [tabId] || second.paneIds == [tabId] { return path }
+        return conversationSplitPath(first, tabId: tabId, path: path + [false])
+            ?? conversationSplitPath(second, tabId: tabId, path: path + [true])
     }
 
     /// A git worktree on a branch of its own, in Lilo's support folder, so agents never edit each
@@ -69,9 +139,15 @@ extension MainWindowController {
         _ = GitDiff.run(["branch", "-D", "lilo/\(URL(fileURLWithPath: path).lastPathComponent)"], in: directory)
     }
 
+    /// The folder holding the conversation's pages, whether its own tab sits there or in a split.
+    private func conversationFolderId(for tab: Tab) -> UUID? {
+        let spaceId = tab.spaceId ?? tabManager.currentSpaceId ?? UUID()
+        if let marked = tabManager.folders(forSpace: spaceId).first(where: { $0.conversationTabId == tab.id })?.id { return marked }
+        return tabManager.sidebarTreeItems(forSpace: spaceId).first { $0.kind == .tab && $0.itemId == tab.id }?.parentFolderId
+    }
+
     func showAgentChatView(for tab: Tab) {
-        context.conversations.register(tab, folderId: tabManager.sidebarTreeItems(forSpace: tab.spaceId ?? tabManager.currentSpaceId ?? UUID())
-            .first { $0.kind == .tab && $0.itemId == tab.id }?.parentFolderId)
+        context.conversations.register(tab, folderId: conversationFolderId(for: tab))
         let view = tabManager.agentChatHost.ensureView(for: tab.id)
         showNativeContentView(view, forTabId: tab.id)
         // The composer is in the chrome: typing goes there, not to the empty view under it.
@@ -83,15 +159,15 @@ extension MainWindowController {
     func registerRestoredConversations() {
         guard agentsEnabled, let spaces = context.spaceManager?.spaces else { return }
         for space in spaces where !space.isPrivate {
-            let items = tabManager.sidebarTreeItems(forSpace: space.id)
             for tab in tabManager.tabs(forSpace: space.id) where tab.kind == .agent {
-                context.conversations.register(tab, folderId: items.first { $0.kind == .tab && $0.itemId == tab.id }?.parentFolderId)
+                context.conversations.register(tab, folderId: conversationFolderId(for: tab))
             }
         }
     }
 
-    /// The agent tab heading `folder` when it is a conversation's.
+    /// The agent tab heading `folder` when it is a conversation's: a split holds it outside the folder.
     func conversationTab(inFolder folder: TabFolder) -> Tab? {
+        if let marked = folder.conversationTabId, let tab = tabManager.tab(for: marked), tab.kind == .agent { return tab }
         guard let first = tabManager.sidebarTreeItems(forSpace: folder.spaceId)
             .filter({ $0.kind == .tab && $0.parentFolderId == folder.id })
             .min(by: { $0.sortOrder < $1.sortOrder }),
@@ -161,7 +237,7 @@ extension MainWindowController {
         let tab = Tab(stored, spaceId: spaceId, groupId: nil)
         let folder = TabFolder(
             id: folderId.flatMap { tabManager.folder(id: $0) == nil ? $0 : nil } ?? UUID(),
-            spaceId: spaceId, name: tab.title, color: "#795ceb", isCollapsed: true
+            spaceId: spaceId, name: tab.title, color: "#795ceb", isCollapsed: true, conversationTabId: tab.id
         )
         do {
             try applyBrowserCommand(.createFolder(spaceId: spaceId, folder: folder, section: .unpinned))

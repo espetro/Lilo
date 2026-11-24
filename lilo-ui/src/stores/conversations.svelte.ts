@@ -4,6 +4,7 @@ import type {
 	BridgeConversationState,
 	BridgeConversationSummary,
 	BridgeConversationUpdate,
+	BridgeEventPayloadMap,
 } from "../lib/bridge/protocol";
 import type { ContextChip } from "../components/agents/conversationModel";
 import type { OpenConversation } from "../components/agents/conversationThread";
@@ -22,6 +23,10 @@ let _home = $state.raw("");
 let _chosenProject = $state.raw<string | null>(null);
 let _askOpen = $state(false);
 let _askSelection = $state.raw("");
+/** Surface placements native announced, and the starts that failed behind a pending surface. The
+ *  surface store lands with the chrome half; until then they wait here unrendered. */
+const surfaceRequests: BridgeEventPayloadMap["conversationSurfaceRequested"][] = [];
+const surfaceFailures: BridgeEventPayloadMap["conversationSurfaceFailed"][] = [];
 /** Bumped at most once per frame when an open conversation changes: its thread is mutated in place. */
 let _version = $state(0);
 const open = new Map<string, OpenConversation>();
@@ -46,6 +51,8 @@ export function initConversationsStore(): void {
 	on("agentReadiness", (data) => {
 		_agents = _agents.map((agent) => (agent.id === data.agentId ? { ...agent, checking: data.checking, readiness: data.readiness ?? agent.readiness } : agent));
 	});
+	on("conversationSurfaceRequested", (data) => { surfaceRequests.push(data); });
+	on("conversationSurfaceFailed", (data) => { surfaceFailures.push(data); });
 	on("conversationProjectChosen", (data) => { _chosenProject = data.path; });
 	on("openAskBar", (data) => {
 		_askSelection = data.selection;

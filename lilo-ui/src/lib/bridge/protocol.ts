@@ -234,6 +234,8 @@ export interface BridgeTabFolderSnapshot {
 	splitLayout?: BridgeSplitLayout;
 	isLocked?: boolean;
 	lock?: BridgeFolderLock | null;
+	/** A conversation's own tab, which a split can hold outside this folder of its pages. */
+	conversationTabId?: string;
 }
 
 // BridgeTabSnapshot is generated from bridge-schema/tab.json, edit the schema, run `make bridge-gen`.
@@ -898,6 +900,12 @@ export interface BridgeCommandPayloadMap {
 		background: boolean;
 		/** A model of the agent's record, set once its session opens; absent keeps the agent's default. */
 		model?: string;
+		/** Where the conversation appears; absent keeps the activated tab. `background` wins over it. */
+		placement?: "mini" | "dialog" | "split" | "tab";
+		/** The non-agent tab the surface binds to or the split opens beside. */
+		sourceTabId?: string;
+		/** Pairs a delayed native start with the pending surface; `conversationSurfaceFailed` answers it. */
+		surfaceRequestId?: string;
 	};
 	sendConversationPrompt: { tabId: string; text: string; attachments: BridgeConversationAttachment[]; interrupt: boolean };
 	cancelConversation: { tabId: string };
@@ -1163,6 +1171,10 @@ export interface BridgeEventPayloadMap {
 	conversationUpdate: { tabId: string; updates: BridgeConversationUpdate[] };
 	/** Every conversation of every Space, for the Agents badge and popover. */
 	conversationsChanged: { conversations: BridgeConversationSummary[] };
+	/** A started conversation landed on a chrome surface (mini or dialog); a failed split asks for "dialog". */
+	conversationSurfaceRequested: { tabId: string; sourceTabId: string; placement: "mini" | "dialog"; surfaceRequestId?: string };
+	/** The start behind a `surfaceRequestId` failed; the pending surface closes instead of waiting. */
+	conversationSurfaceFailed: { surfaceRequestId?: string; message: string };
 	agentCatalog: { agents: BridgeAgentInfo[]; projects: string[]; home: string };
 	/** An agent's probe started or ended, or its record changed. */
 	agentReadiness: { agentId: string; checking: boolean; readiness?: BridgeAgentReadiness };

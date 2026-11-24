@@ -2420,6 +2420,7 @@
 		},
 		"Commands are still running in them and will be stopped.": "其中仍有命令在运行，将被停止。",
 		"The terminal could not start.": "终端无法启动。",
+		"The conversation could not be started.": "无法启动对话。",
 		"Close the tab and try again.": "请关闭标签页，然后重试。",
 		"Choose an iTerm2 color preset (.itermcolors), a VS Code color theme (.json) or a Ghostty theme file.": "选取 iTerm2 颜色预置（.itermcolors）、VS Code 颜色主题（.json）或 Ghostty 主题文件。",
 		"This file is not a theme Lilo can read.": "此文件不是 Lilo 可读取的主题。",

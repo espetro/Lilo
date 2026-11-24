@@ -2446,6 +2446,7 @@
 		},
 		"Commands are still running in them and will be stopped.": "У них ще виконуються команди, які буде зупинено.",
 		"The terminal could not start.": "Не вдалося запустити термінал.",
+		"The conversation could not be started.": "Не вдалося запустити розмову.",
 		"Close the tab and try again.": "Закрийте вкладку та спробуйте ще раз.",
 		"Choose an iTerm2 color preset (.itermcolors), a VS Code color theme (.json) or a Ghostty theme file.": "Виберіть набір кольорів iTerm2 (.itermcolors), колірну тему VS Code (.json) або файл теми Ghostty.",
 		"This file is not a theme Lilo can read.": "Цей файл не є темою, яку може прочитати Lilo.",

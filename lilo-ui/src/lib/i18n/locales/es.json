@@ -2420,6 +2420,7 @@
 		},
 		"Commands are still running in them and will be stopped.": "Se están ejecutando comandos que se detendrán.",
 		"The terminal could not start.": "No se ha podido iniciar el terminal.",
+		"The conversation could not be started.": "No se ha podido iniciar la conversación.",
 		"Close the tab and try again.": "Cierra la pestaña e inténtalo de nuevo.",
 		"Choose an iTerm2 color preset (.itermcolors), a VS Code color theme (.json) or a Ghostty theme file.": "Elige un preajuste de color de iTerm2 (.itermcolors), un tema de color de VS Code (.json) o un archivo de tema de Ghostty.",
 		"This file is not a theme Lilo can read.": "Este archivo no es un tema que Lilo pueda leer.",

@@ -28,9 +28,22 @@ final class ConversationBridgeHandler: BridgeHandler {
         let tabId = (payload["tabId"] as? String).flatMap(UUID.init(uuidString:))
         switch message.action {
         case "startConversation":
-            guard let agentId = payload["agentId"] as? String, let cwd = payload["cwd"] as? String else { return nil }
+            let surfaceRequestId = payload["surfaceRequestId"] as? String
+            guard let agentId = payload["agentId"] as? String, let cwd = payload["cwd"] as? String else {
+                if let surfaceRequestId { sendSurfaceFailed(surfaceRequestId, in: window) }
+                return nil
+            }
             let background = payload["background"] as? Bool ?? false
-            guard let tab = await window.startConversation(agentId: agentId, cwd: cwd, activate: !background) else { return nil }
+            guard let tab = await window.startConversation(
+                agentId: agentId, cwd: cwd, activate: !background,
+                placement: payload["placement"] as? String,
+                sourceTabId: (payload["sourceTabId"] as? String).flatMap(UUID.init(uuidString:)),
+                surfaceRequestId: surfaceRequestId
+            ) else {
+                // A pending mini or dialog surface waits on this id: tell it the start failed.
+                if let surfaceRequestId { sendSurfaceFailed(surfaceRequestId, in: window) }
+                return nil
+            }
             // A model picked before the first prompt: the agent's record names the option that sets it.
             if let model = payload["model"] as? String, !model.isEmpty, let configId = host.readiness.record(for: agentId)?.modelConfigId {
                 host.setConfigOption(tab.id, configId: configId, value: model)
@@ -126,6 +139,14 @@ final class ConversationBridgeHandler: BridgeHandler {
             break
         }
         return nil
+    }
+
+    /// A start that never produced a conversation still owes a pending surface its failure.
+    private func sendSurfaceFailed(_ surfaceRequestId: String, in window: MainWindowController) {
+        window.bridgeRouter.send(event: "conversationSurfaceFailed", data: [
+            "surfaceRequestId": surfaceRequestId,
+            "message": "The conversation could not be started.".localized
+        ])
     }
 
     /// The folders a conversation can work in, most likely first: the active terminal's, then those of
