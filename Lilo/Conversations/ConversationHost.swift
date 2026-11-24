@@ -13,9 +13,15 @@ final class ConversationHost {
         case idle, starting, busy, failed
     }
 
+    /// What waits for the conversation to take it, in the order it came: `drain` applies it at the next turn boundary.
+    enum PendingMessage {
+        case prompt(blocks: [[String: Any]], checkpoint: Int?)
+        case switchAgent(String)
+    }
+
     final class Conversation {
         let tabId: UUID
-        let agentId: String
+        var agentId: String
         var cwd: String
         var sessionId: String?
         var connection: ACPConnection?
@@ -27,8 +33,13 @@ final class ConversationHost {
         /// The agent's open `session/request_permission`s and `elicitation/create` questions, oldest first: its
         /// sub-agents can ask at once. Each is answered from the thread; the sidebar and the notification offer the oldest.
         var permissions: [(id: ACPConnection.Payload, requestId: String, params: [String: Any])] = []
-        /// Prompts waiting for the running turn, each with the checkpoint index `send` reserved for it.
-        var queued: [(blocks: [[String: Any]], checkpoint: Int)] = []
+        /// Prompts and agent switches waiting for the running turn. Kept in memory only: the thread's log on disk covers a crash.
+        var inbox: [PendingMessage] = []
+        /// What the agent switched to is told about the thread, sent with its next prompt.
+        var handoff: String?
+        /// The prompts the chrome was last told wait.
+        var queueReported = 0
+        var queuedPrompts: Int { inbox.reduce(0) { if case .prompt = $1 { $0 + 1 } else { $0 } } }
         /// The prompt a sign-in holds back, sent again once it succeeds.
         var awaitingSignIn: [[String: Any]]?
         /// A sign-in in a terminal was already offered for this prompt: a second refusal shows the error.
@@ -365,7 +376,11 @@ final class ConversationHost {
         if let starting = conversation.starting { return try await starting.value }
         let task = Task { try await start(conversation) }
         conversation.starting = task
-        defer { conversation.starting = nil }
+        // A switch that waited for the start goes as soon as it is over.
+        defer {
+            conversation.starting = nil
+            drain(conversation)
+        }
         try await task.value
     }
 
@@ -709,7 +724,7 @@ final class ConversationHost {
     /// No sign-in could start: the prompt it held is dropped, as nothing would ever send it.
     private func signInFailed(_ conversation: Conversation) {
         conversation.awaitingSignIn = nil
-        conversation.queued.removeAll()
+        dropPrompts(conversation)
         conversation.lastError = "The sign-in terminal could not open.".localized
         append(conversation, ["sessionUpdate": "lilo_error", "message": conversation.lastError ?? ""])
         setState(conversation, .failed)
@@ -754,7 +769,10 @@ final class ConversationHost {
 
     private func persistSession(_ conversation: Conversation) {
         guard let window = context?.windows.window(forTab: conversation.tabId) else { return }
-        _ = window.updateRuntimeTab(id: conversation.tabId) { $0.agentSessionId = conversation.sessionId }
+        _ = window.updateRuntimeTab(id: conversation.tabId) {
+            $0.agentId = conversation.agentId
+            $0.agentSessionId = conversation.sessionId
+        }
         window.profileContext?.sessionPersistence?.scheduleSave()
     }
 
@@ -797,18 +815,104 @@ final class ConversationHost {
             conversation.awaitingSignIn = blocks
             return
         }
-        let index = conversation.checkpoints.count - 1
-        if conversation.state == .busy, !heldForSignIn {
-            if interrupt {
-                conversation.queued.insert((blocks, index), at: 0)
-                cancel(tabId)
-            } else {
-                conversation.queued.append((blocks, index))
-                append(conversation, ["sessionUpdate": "lilo_queued", "count": conversation.queued.count])
-            }
-            return
+        let message = PendingMessage.prompt(blocks: blocks, checkpoint: conversation.checkpoints.count - 1)
+        let interrupting = interrupt && conversation.turnOpen
+        if interrupting { conversation.inbox.insert(message, at: 0) } else { conversation.inbox.append(message) }
+        drain(conversation, ready: heldForSignIn)
+        if interrupting {
+            cancel(tabId)
+        } else {
+            reportQueue(conversation)
         }
-        Task { await runTurn(conversation, blocks: blocks, checkpoint: index) }
+    }
+
+    /// Applies what waits in the inbox, oldest first, once the conversation can take it: a turn ended
+    /// (`ready` covers the state still reading busy then), a sign-in finished, or it went idle. A prompt
+    /// opens the next turn and leaves the rest waiting; an agent switch applies between turns.
+    private func drain(_ conversation: Conversation, ready: Bool = false) {
+        // A busy state with no turn is a sign-in or a start under way, unless the caller knows better.
+        while !conversation.inbox.isEmpty, !conversation.turnOpen, conversation.signIn == nil,
+              ready || conversation.state != .busy {
+            switch conversation.inbox.removeFirst() {
+            case .switchAgent(let agentId):
+                // Its agent is still starting: the switch goes once that is over, at the idle or failed state it ends in.
+                if conversation.starting != nil {
+                    conversation.inbox.insert(.switchAgent(agentId), at: 0)
+                    return
+                }
+                applySwitch(conversation, to: agentId)
+            case .prompt(let blocks, let checkpoint):
+                reportQueue(conversation)
+                startTurn(conversation, blocks: blocks, checkpoint: checkpoint)
+            }
+        }
+    }
+
+    /// Marks the turn open at once, so a message sent before the turn's task first runs waits for it.
+    private func startTurn(_ conversation: Conversation, blocks: [[String: Any]], checkpoint: Int?) {
+        conversation.turnOpen = true
+        setState(conversation, .busy)
+        Task { await runTurn(conversation, blocks: blocks, checkpoint: checkpoint) }
+    }
+
+    /// Tells the chrome how many prompts wait, once the number changes.
+    private func reportQueue(_ conversation: Conversation) {
+        guard conversation.queuedPrompts != conversation.queueReported else { return }
+        conversation.queueReported = conversation.queuedPrompts
+        append(conversation, ["sessionUpdate": "lilo_queued", "count": conversation.queuedPrompts])
+    }
+
+    private func dropPrompts(_ conversation: Conversation) {
+        conversation.inbox.removeAll { if case .prompt = $0 { true } else { false } }
+    }
+
+    /// Asks to hand the conversation to another agent, between turns: now when none runs. The thread, its
+    /// checkpoints and its project stay; the new agent starts a session on its next prompt, with a summary.
+    func switchAgent(_ tabId: UUID, to agentId: String) {
+        guard let conversation = conversations[tabId], catalog.agent(id: agentId) != nil else { return }
+        conversation.inbox.removeAll { if case .switchAgent = $0 { true } else { false } }
+        conversation.inbox.append(.switchAgent(agentId))
+        drain(conversation)
+    }
+
+    private func applySwitch(_ conversation: Conversation, to agentId: String) {
+        guard agentId != conversation.agentId else { return }
+        conversation.idleStop?.cancel()
+        let connection = conversation.connection
+        conversation.connection = nil
+        connection?.terminate()
+        stopSignIn(conversation)
+        clearBackground(conversation)
+        for permission in conversation.permissions {
+            append(conversation, ["sessionUpdate": "lilo_permission_resolved", "requestId": permission.requestId, "optionId": NSNull()])
+        }
+        conversation.permissions = []
+        // A prompt a sign-in held goes to the new agent, which may not need that sign-in.
+        if let held = conversation.awaitingSignIn {
+            conversation.awaitingSignIn = nil
+            conversation.inbox.insert(.prompt(blocks: held, checkpoint: nil), at: 0)
+        }
+        // A switch made twice before a prompt keeps the first summary: the log has not changed since.
+        if conversation.handoff == nil {
+            conversation.handoff = ConversationHandoff.summary(log: conversation.log.map(\.value), from: catalog.agent(id: conversation.agentId)?.name)
+        }
+        conversation.agentId = agentId
+        conversation.sessionId = nil
+        conversation.authMethods = []
+        conversation.signInOffered = false
+        conversation.flowsSkillSent = false
+        conversation.lastError = nil
+        var switched: [String: Any] = ["sessionUpdate": "lilo_agent", "agentId": agentId]
+        if let handoff = conversation.handoff { switched["handoff"] = handoff }
+        append(conversation, switched)
+        append(conversation, ["sessionUpdate": "lilo_session", "modes": [String: Any](), "configOptions": [Any]()])
+        if conversation.latest["available_commands_update"] != nil {
+            append(conversation, ["sessionUpdate": "available_commands_update", "availableCommands": [Any]()])
+        }
+        persistSession(conversation)
+        updateTab(conversation)
+        save(conversation)
+        if conversation.state == .failed { setState(conversation, .idle) }
     }
 
     /// `checkpoint` is the index `send` reserved for this prompt: its snapshot is taken as the turn starts, once
@@ -840,10 +944,13 @@ final class ConversationHost {
             guard let connection = conversation.connection, let sessionId = conversation.sessionId else { return }
             setState(conversation, .busy)
             // Only once started does Lilo know whether the agent takes images.
-            let content = conversation.acceptsImages ? blocks : blocks.filter { $0["type"] as? String != "image" }
+            var content = conversation.acceptsImages ? blocks : blocks.filter { $0["type"] as? String != "image" }
+            // The agent a conversation was switched to learns the thread from one block ahead of the user's prompt.
+            if let handoff = conversation.handoff { content.insert(["type": "text", "text": handoff], at: 0) }
             let result = try await withAuthentication(conversation, connection: connection) {
                 try await connection.request("session/prompt", ["sessionId": sessionId, "prompt": content])
             }
+            conversation.handoff = nil
             conversation.signInOffered = false
             // v2 answers once the prompt is taken in: its idle `state_update` ends the turn.
             if conversation.protocolVersion >= 2 { return }
@@ -851,7 +958,7 @@ final class ConversationHost {
         } catch is SignInPending {
             conversation.turnOpen = false
             conversation.awaitingSignIn = blocks
-            conversation.queued.removeAll()
+            dropPrompts(conversation)
         } catch where conversation.prompts != prompt {
             // The idle state that ended this turn came first, and the next prompt runs.
         } catch where conversation.cancelling {
@@ -878,12 +985,8 @@ final class ConversationHost {
         append(conversation, ["sessionUpdate": "lilo_turn_end", "stopReason": stopReason, "at": Date().timeIntervalSince1970 * 1000])
         save(conversation)
         refreshDiff(conversation)
-        if !conversation.queued.isEmpty {
-            let next = conversation.queued.removeFirst()
-            append(conversation, ["sessionUpdate": "lilo_queued", "count": conversation.queued.count])
-            Task { await runTurn(conversation, blocks: next.blocks, checkpoint: next.checkpoint) }
-            return
-        }
+        drain(conversation, ready: true)
+        if conversation.turnOpen { return }
         if !isShown(conversation.tabId) {
             conversation.unread = true
             postDoneNotification(conversation)
@@ -896,9 +999,12 @@ final class ConversationHost {
         conversation.turnOpen = false
         conversation.lastError = message
         append(conversation, ["sessionUpdate": "lilo_error", "message": message])
+        dropPrompts(conversation)
+        reportQueue(conversation)
         setState(conversation, .failed)
-        conversation.queued.removeAll()
         save(conversation)
+        // The state may already read failed (the agent exited first), which `setState` does not drain on.
+        drain(conversation)
     }
 
     /// A v2 `state_update` of the conversation's own session: the agent's turns, those it starts on its own
@@ -1004,7 +1110,7 @@ final class ConversationHost {
         let work = DispatchWorkItem { [weak self, weak conversation] in
             // Stopping the agent would stop the commands it runs in the background.
             guard let self, let conversation, conversation.state == .idle, conversation.permissions.isEmpty,
-                  conversation.queued.isEmpty, conversation.background == 0 else { return }
+                  conversation.inbox.isEmpty, conversation.background == 0 else { return }
             Self.logger.info("stopping idle agent \(conversation.agentId, privacy: .public)")
             let connection = conversation.connection
             conversation.connection = nil
@@ -1259,6 +1365,7 @@ final class ConversationHost {
         conversation.state = state
         updateTab(conversation)
         if state == .busy { keepAwake(conversation) }
+        if state == .idle || state == .failed { drain(conversation) }
     }
 
     /// The agent's question about a page opened or closed: its row turns amber or back.
