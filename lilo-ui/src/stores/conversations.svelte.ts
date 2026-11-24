@@ -5,6 +5,7 @@ import type {
 	BridgeConversationSummary,
 	BridgeConversationUpdate,
 } from "../lib/bridge/protocol";
+import { withReadiness } from "../lib/agentReadiness";
 import type { ContextChip } from "../components/agents/conversationModel";
 import type { OpenConversation } from "../components/agents/conversationThread";
 
@@ -43,6 +44,7 @@ export function initConversationsStore(): void {
 		_projects = data.projects;
 		_home = data.home;
 	});
+	on("agentReadiness", (data) => { _agents = withReadiness(_agents, data); });
 	on("conversationProjectChosen", (data) => { _chosenProject = data.path; });
 	on("openAskBar", (data) => {
 		_askSelection = data.selection;
