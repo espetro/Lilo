@@ -234,6 +234,8 @@ export interface BridgeTabFolderSnapshot {
 	splitLayout?: BridgeSplitLayout;
 	isLocked?: boolean;
 	lock?: BridgeFolderLock | null;
+	/** A conversation's own tab, which a split can hold outside this folder of its pages. */
+	conversationTabId?: string;
 }
 
 // BridgeTabSnapshot is generated from bridge-schema/tab.json, edit the schema, run `make bridge-gen`.

@@ -59,6 +59,29 @@ final class SplitPaneChromePressTests: XCTestCase {
         ])
     }
 
+    func testNewConversationStartsBesideTheActiveTabWithThePageWider() async throws {
+        let browser = try await TemporaryBrowserContext()
+        defer { browser.tearDown() }
+        let context = browser.context
+        let space = try context.spaceManager!.createSpace(name: "Work", profileId: try context.profileManager!.createProfile(name: "Test").id)
+        let window = makeTestWindow(context, showing: space.id)
+        context.settingsStore!.set("agentsEnabled", value: "true")
+        let webTabId = try XCTUnwrap(window.createTabStateFirst(url: URL(string: "data:text/html,web"), activate: false)).id
+        window.activateTabStateFirst(id: webTabId)
+
+        let conversation = try XCTUnwrap(await window.startConversation(agentId: "test-agent", cwd: NSTemporaryDirectory(), activate: true))
+
+        let split = try XCTUnwrap(context.browserState.space(id: space.id)?.spaceTab.splitGroup(containing: conversation.id))
+        guard case let .split(vertical, ratio, first, second) = split.layout else { return XCTFail("expected a two-pane split") }
+        XCTAssertFalse(vertical)
+        XCTAssertEqual(ratio, 2.0 / 3.0, accuracy: 0.0001)
+        XCTAssertEqual(first.paneIds, [webTabId])
+        XCTAssertEqual(second.paneIds, [conversation.id])
+        let folder = try XCTUnwrap(window.tabManager.folders(forSpace: space.id).first { $0.conversationTabId == conversation.id })
+        XCTAssertNotEqual(folder.id, split.folderId, "the conversation keeps its own folder outside the split's")
+        XCTAssertEqual(context.conversations.conversations[conversation.id]?.folderId, folder.id)
+    }
+
     func testChromePressInsideTheConversationZoneFocusesTheAgentPane() async throws {
         let setup = try await makeSplit()
         defer { setup.browser.tearDown() }
