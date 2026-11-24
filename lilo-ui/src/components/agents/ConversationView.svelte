@@ -18,6 +18,9 @@
 
 <script lang="ts">
   import { modeIcon, modelLogo, supersededModels } from "./modelLogos";
+  import { modelControl, agentNote, isPickable } from "../../lib/agentReadiness";
+  import { readinessLabels } from "../../lib/agentReadinessLabels";
+  import ModelIdField from "./ModelIdField.svelte";
   import "../../lib/i18n/agentsCatalog";
   import { onDestroy, untrack } from "svelte";
   import { cubicOut } from "svelte/easing";
@@ -148,7 +151,14 @@
     const hidden = parseHiddenAgents(getSetting("agentsHidden", "[]"));
     return getAgents()
       .filter((agent) => agent.id === header.agentId || !hidden.has(agent.id))
-      .map((agent) => ({ value: agent.id, label: agent.name, detail: agent.description || undefined, agentId: agent.id }));
+      .map((agent) => ({
+        value: agent.id,
+        label: agent.name,
+        // What keeps an agent from starting, or asks something of the user, replaces its description.
+        detail: agentNote(agent, readinessLabels()) ?? (agent.description || undefined),
+        disabled: !isPickable(agent),
+        agentId: agent.id,
+      }));
   });
   let text = $state(untrack(() => drafts[tabId]?.text ?? ""));
   let attachments = $state.raw<AttachmentDraft[]>(untrack(() => drafts[tabId]?.attachments ?? []));
@@ -327,6 +337,15 @@
       signingIn: conversation?.signingIn ?? null,
       commands: thread?.commands ?? [],
     };
+  });
+  // Before the session has a model to pick, the models the agent was last seen with; for an agent with none, a field to type one.
+  const modelCtl = $derived.by(() => {
+    void version;
+    const options = conversation?.thread.configOptions ?? [];
+    return modelControl(getAgent(header.agentId), {
+      hasModels: options.some((config) => config.category === "model"),
+      opened: options.length > 0 || header.modes.length > 0,
+    });
   });
   const usagePercent = $derived(header.usage ? Math.min(100, Math.round((header.usage.used / header.usage.size) * 100)) : 0);
   // Below half the context, compacting saves little and Claude refuses a short thread.
@@ -1002,6 +1021,32 @@
               <span class="picker-label">{config.options.find((option) => option.value === config.currentValue)?.name ?? config.name}</span>
             </MenuPicker>
           {/each}
+          {#if modelCtl?.kind === "list"}
+            {@const models = modelCtl}
+            {@const current = models.options.find((option) => option.id === models.current)}
+            <MenuPicker
+              value={models.current}
+              options={models.options.map((option) => ({
+                value: option.id,
+                label: option.name,
+                detail: option.description,
+                icon: "sparkle" as const,
+                logo: modelLogo(`${option.id} ${option.name}`),
+              }))}
+              ariaLabel={t("agents.readiness.model")}
+              onchange={(value) => conversationActions.setConfig(tabId, models.configId, value)}
+            >
+              {@const logo = modelLogo(`${models.current} ${current?.name ?? ""}`)}
+              {#if logo}
+                <svg class="model-logo" viewBox="0 0 24 24" aria-hidden="true" style:color={logo.color}><path d={logo.path} /></svg>
+              {:else}
+                <Icon name="sparkle" size={13} />
+              {/if}
+              <span class="picker-label">{current?.name ?? t("agents.readiness.model")}</span>
+            </MenuPicker>
+          {:else if modelCtl?.kind === "custom"}
+            <ModelIdField onsubmit={(id) => conversationActions.setConfig(tabId, "model", id)} />
+          {/if}
           {#if header.extraConfigs.length > 0}
             <MenuPicker
               value=""
