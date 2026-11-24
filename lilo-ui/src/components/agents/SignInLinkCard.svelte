@@ -25,7 +25,9 @@
   }
 
   function confirm(accept: boolean): void {
-    conversationActions.answerSignInLink(tabId, String(item.requestId), accept);
+    // ACP's accept is the user's consent to open the page; decline and cancel are refusals, and Lilo
+    // answers the safe one an agent must handle in every protocol version.
+    conversationActions.answerQuestion({ tabId, requestId: String(item.requestId), action: accept ? "accept" : "cancel" });
   }
 </script>
 

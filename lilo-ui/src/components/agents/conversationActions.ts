@@ -8,7 +8,6 @@ export const conversationActions = {
 	answer: (tabId: string, requestId: string, optionId?: string): void =>
 		emit("answerConversation", optionId ? { tabId, requestId, optionId } : { tabId, requestId }),
 	answerQuestion: (payload: BridgeCommandPayloadMap["answerConversationQuestion"]): void => emit("answerConversationQuestion", payload),
-	answerSignInLink: (tabId: string, requestId: string, accept: boolean): void => emit("answerConversationSignInLink", { tabId, requestId, accept }),
 	setMode: (tabId: string, modeId: string): void => emit("setConversationMode", { tabId, modeId }),
 	setConfig: (tabId: string, configId: string, value: string | boolean): void => emit("setConversationConfig", { tabId, configId, value }),
 	show: (tabId: string, visible: boolean): void => emit("showConversation", { tabId, visible }),

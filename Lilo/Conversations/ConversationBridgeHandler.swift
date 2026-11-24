@@ -7,7 +7,6 @@ import UniformTypeIdentifiers
 final class ConversationBridgeHandler: BridgeHandler {
     let handledActions: Set<String> = [
         "startConversation", "sendConversationPrompt", "cancelConversation", "answerConversation", "answerConversationQuestion",
-        "answerConversationSignInLink",
         "setConversationMode", "setConversationConfig", "showConversation", "restoreConversation",
         "undoConversationFile", "loadAgentCatalog", "loadConversations", "chooseConversationProject",
         "openConversationChanges", "authenticateConversation", "answerConversationSignIn", "openConversationSignInTerminal",
@@ -44,9 +43,6 @@ final class ConversationBridgeHandler: BridgeHandler {
         case "answerConversationQuestion":
             guard let tabId, let requestId = payload["requestId"] as? String, let action = payload["action"] as? String else { return nil }
             host.answerQuestion(tabId, requestId: requestId, action: action, content: payload["content"] as? [String: Any])
-        case "answerConversationSignInLink":
-            guard let tabId, let requestId = payload["requestId"] as? String else { return nil }
-            host.answerSignInLink(tabId, requestId: requestId, accept: payload["accept"] as? Bool ?? false)
         case "setConversationMode":
             if let tabId, let modeId = payload["modeId"] as? String { host.setMode(tabId, modeId: modeId) }
         case "setConversationConfig":

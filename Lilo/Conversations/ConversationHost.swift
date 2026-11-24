@@ -1142,19 +1142,11 @@ final class ConversationHost {
     /// Answers a question with `accept` and the form's values, `decline` or `cancel`.
     func answerQuestion(_ tabId: UUID, requestId: String, action: String, content: [String: Any]?) {
         guard let conversation = conversations[tabId],
-              let question = conversation.permissions.first(where: { $0.requestId == requestId }), Self.isQuestion(question.params) else { return }
+              let question = conversation.permissions.first(where: { $0.requestId == requestId }), Self.isElicitation(question.params) else { return }
         var result: [String: Any] = ["action": action]
-        if action == "accept" { result["content"] = content ?? [:] }
+        // A URL elicitation carries no content: the user consents to open the page, the interaction happens out of band.
+        if action == "accept", Self.isQuestion(question.params) { result["content"] = content ?? [:] }
         conversation.connection?.respond(id: question.id.value["id"] as Any, result: result)
-        resolve(conversation, requestId: requestId, optionId: nil, answer: result)
-    }
-
-    /// Answers a URL elicitation: `accept` is the user's consent to open the page, `cancel` is a refusal.
-    func answerSignInLink(_ tabId: UUID, requestId: String, accept: Bool) {
-        guard let conversation = conversations[tabId],
-              let link = conversation.permissions.first(where: { $0.requestId == requestId }), Self.isUrlElicitation(link.params) else { return }
-        let result: [String: Any] = ["action": accept ? "accept" : "cancel"]
-        conversation.connection?.respond(id: link.id.value["id"] as Any, result: result)
         resolve(conversation, requestId: requestId, optionId: nil, answer: result)
     }
 

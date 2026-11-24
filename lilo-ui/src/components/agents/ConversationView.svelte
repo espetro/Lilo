@@ -585,7 +585,7 @@
   function declineSignInLink(): boolean {
     const link = pendingSignInLink;
     if (!link) return false;
-    conversationActions.answerSignInLink(tabId, String(link.requestId), false);
+    conversationActions.answerQuestion({ tabId, requestId: String(link.requestId), action: "cancel" });
     return true;
   }
 </script>
