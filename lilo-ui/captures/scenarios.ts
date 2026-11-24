@@ -249,6 +249,20 @@ const favoritesGlassWorld = (): FakeHostWorld => {
 	return world;
 };
 
+// A glass Space scrolled so tabs run under the pinned favorites: the strip needs its near-opaque layer.
+const favoritesGlassScrolledWorld = (): FakeHostWorld => {
+	const world = favoritesGlassWorld();
+	const tabs = Array.from({ length: 40 }, (_, index) => `tab-extra-${index}`);
+	world.tabsBySpace[SPACE_1].push(...tabs.map((id) => tab(id, SPACE_1)));
+	world.treeItemsBySpace[SPACE_1].push(...tabs.map((id, index) => treeItem(id, SPACE_1, 100 + index)));
+	return world;
+};
+
+const scrollFavoritesOverTabs = async (page: Page) => {
+	await page.locator(".space-pane").first().locator(".space-scroll").evaluate((el) => el.scrollTo({ top: 120 }));
+	await expect(page.locator(".space-pane").first().locator(".favorites-section")).toHaveClass(/scrolled/);
+};
+
 // Settings > Agents with agent control on, scrolled to the agent access switches.
 const agentAccessWorld = (): FakeHostWorld => ({ ...initialWorld(), settings: { agentControlEnabled: "true" } });
 
@@ -283,4 +297,6 @@ scenarios.push(
 	{ name: "settings-agent-access-dark", colorScheme: "dark", world: agentAccessWorld(), run: agentAccessSettings },
 	{ name: "favorites-glass-light", world: favoritesGlassWorld(), run: idle },
 	{ name: "favorites-glass-dark", colorScheme: "dark", world: favoritesGlassWorld(), run: idle },
+	{ name: "favorites-glass-overlap-light", world: favoritesGlassScrolledWorld(), run: scrollFavoritesOverTabs },
+	{ name: "favorites-glass-overlap-dark", colorScheme: "dark", world: favoritesGlassScrolledWorld(), run: scrollFavoritesOverTabs },
 );
