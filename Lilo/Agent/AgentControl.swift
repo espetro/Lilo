@@ -423,6 +423,7 @@ final class AgentControl {
             }
         }
         unsafe consentCore.requestAttention = { if !NSApp.isActive { NSApp.requestUserAttention(.informationalRequest) } }
+        unsafe consentCore.withdraw = { [weak self] requestId in self?.dropConsent(requestId) }
         return await consentCore.ask(name + "\n" + UUID().uuidString, request: request, tabId: tabId, timeout: timeout, canPresent: !notify)
     }
 
@@ -600,6 +601,12 @@ final class AgentControl {
            let data = try? JSONEncoder().encode(sites), let list = String(bytes: data, encoding: .utf8) {
             context?.settingsStore?.set(AgentConsentRules.alwaysAllowedSitesKey, value: list)
         }
+        dropConsent(requestId)
+    }
+
+    /// A question nobody answers any more leaves the drawers and the notification: the caller gave up
+    /// on it, or it timed out.
+    private func dropConsent(_ requestId: String) {
         for window in context?.windows.windows ?? [] {
             window.bridgeRouter.send(event: "permissionRequestClosed", data: ["requestId": requestId])
         }

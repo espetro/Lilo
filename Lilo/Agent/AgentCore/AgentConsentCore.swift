@@ -40,6 +40,9 @@ final class AgentConsentCore {
     /// A question's surface went away (all windows closed): it is never answered by absence, it waits
     /// in a notification whose tap reopens a surface at it.
     var presentAsNotification: (_ requestId: String, _ request: [String: Any]) -> Void = { _, _ in }
+    /// Drops a question from the surfaces without an answer: its caller gave up on it. The driver
+    /// clears its drawers and notification here.
+    var withdraw: (_ requestId: String) -> Void = { _ in }
 
     /// Asks the user the question `request` describes for client `key` (its name and identity, so two
     /// connections of one client share it). Answered with `.allowed`/`.denied` from a surface, `.expired`
@@ -55,7 +58,13 @@ final class AgentConsentCore {
             return answer
         }
         pendingConsents[key] = Pending(question: question, waiting: (pendingConsents[key]?.waiting ?? 0) + 1)
-        let answer = await question.value
+        // Cancellation does not reach into `question`, so the caller's own cancellation withdraws the
+        // question here: a tool call the client gave up on leaves nothing waiting on the surfaces.
+        let answer = await withTaskCancellationHandler {
+            await question.value
+        } onCancel: {
+            Task { @MainActor [weak self] in self?.expire(requestId) }
+        }
         if let pending = pendingConsents[key], pending.question == question {
             pendingConsents[key]?.waiting -= 1
             if pending.waiting == 1 { question.cancel() }
@@ -72,13 +81,20 @@ final class AgentConsentCore {
             requestAttention()
         }
         DispatchQueue.main.asyncAfter(deadline: .now() + timeout) { [weak self] in
-            Task { @MainActor [weak self] in self?.answer(requestId, granted: nil, allowedSites: []) }
+            Task { @MainActor [weak self] in self?.expire(requestId) }
         }
         return await withTaskCancellationHandler {
             await withCheckedContinuation { pendingConsentAnswers[requestId] = Waiting(answer: $0, request: shown, tabId: tabId) }
         } onCancel: {
-            Task { @MainActor [weak self] in self?.answer(requestId, granted: nil, allowedSites: []) }
+            Task { @MainActor [weak self] in self?.expire(requestId) }
         }
+    }
+
+    /// A question nobody answers any more: it leaves the surfaces, and its caller resolves as unanswered.
+    private func expire(_ requestId: String) {
+        guard pendingConsentAnswers[requestId] != nil else { return }
+        answer(requestId, granted: nil, allowedSites: [])
+        withdraw(requestId)
     }
 
     /// The user's answer from a surface, nil when nobody answered: the others drop the same question.
