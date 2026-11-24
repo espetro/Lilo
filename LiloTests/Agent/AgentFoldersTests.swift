@@ -520,6 +520,23 @@ final class AgentFoldersTests: AgentToolTestCase {
         XCTAssertEqual((sleeping["agent"] as? [String: Any])?["idlePosture"] as? String, "sleeping", sleepReply.text)
     }
 
+    func testASleptParkedTabIsCapturedAfterItsWakeCall() async throws {
+        let sleepDelay = AgentControl.sleepDelay
+        AgentControl.sleepDelay = 0.2
+        defer { AgentControl.sleepDelay = sleepDelay }
+        let number = try await agentTab(showing: "<body style='margin:0;background:#00ff00'>")
+        let engine = try engine(forTab: number)
+        let throttled = await pollUntil(timeout: 5) { (try? await engine.wkWebView.evaluateJavaScript("document.visibilityState")) as? String == "hidden" }
+
+        let shot = await client.callTool("computer", ["tabId": number, "action": "screenshot"])
+
+        XCTAssertTrue(throttled, "the capture starts from a tab WebKit hides")
+        let image = try XCTUnwrap(shot.images.first.flatMap(NSBitmapImageRep.init(data:)), shot.text)
+        let color = try XCTUnwrap(image.colorAt(x: image.pixelsWide / 2, y: image.pixelsHigh / 2)?.usingColorSpace(.sRGB))
+        XCTAssertGreaterThan(color.greenComponent, 0.65, "the page is painted, not blank: \(color)")
+        XCTAssertLessThan(color.redComponent, 0.35, "\(color)")
+    }
+
     func testAProfiledTabNeverSleeps() async throws {
         let sleepDelay = AgentControl.sleepDelay
         AgentControl.sleepDelay = 0.2

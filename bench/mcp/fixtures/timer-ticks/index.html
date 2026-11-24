@@ -1,0 +1,10 @@
+<!doctype html><meta charset="utf-8"><title>Timer</title>
+<h1>Timer</h1><p id="ticks">0 ticks</p>
+<script>
+  // Counts setInterval ticks and reports them once a second while the tab runs, so the run's
+  // recorded count shows how hard a hidden tab was throttled.
+  let n = 0;
+  const send = () => navigator.sendBeacon(`api/ticks`, JSON.stringify({ ticks: n }));
+  setInterval(() => { n++; ticks.textContent = n + ' ticks'; if (n % 10 === 0) send(); }, 1000);
+  addEventListener('pagehide', send);
+</script>
