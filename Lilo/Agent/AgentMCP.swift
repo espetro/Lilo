@@ -75,7 +75,8 @@ enum AgentMCP {
         case "ping":
             return result(id: id, [:])
         case "tools/list":
-            var tools = AgentTools.definitions + await AgentPluginTools.definitions(control: control)
+            let pluginTools = await AgentPluginTools.definitions(control: control)
+            var tools = AgentTools.definitions + pluginTools
             #if DEBUG
             tools.append(AgentWindowCapture.definition)
             #endif
