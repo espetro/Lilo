@@ -1,0 +1,3 @@
+kind: Changed
+body: 'Agent-app connectors now ship as the bundled Connectors plugin: detect and configure run through it, while Settings'' built-in Connect flow stays as the fallback when the plugin is off'
+time: 2026-11-24T12:05:14.437575-08:00
