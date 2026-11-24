@@ -45,10 +45,12 @@ def one(events, name):
 
 
 def _tick_ceiling(events, ceiling):
-    """True when the page's reported tick count stays under `ceiling`: a throttle keeps it low,
-    a full-rate tab crosses it within the run."""
+    """True when the page's reported tick count climbs without dropping and stays under `ceiling`:
+    a throttle keeps it low, a full-rate tab crosses it within the run. The count is cumulative,
+    so a drop means the run did the task twice."""
     ticks = [e["data"].get("ticks", 0) for e in events if e["event"] == "ticks"]
-    return (bool(ticks) and max(ticks) < ceiling), f"max {max(ticks) if ticks else 0} ticks vs ceiling {ceiling}"
+    ok = bool(ticks) and ticks == sorted(ticks) and max(ticks) < ceiling
+    return ok, f"max {max(ticks) if ticks else 0} ticks vs ceiling {ceiling}"
 
 
 def answer_has(*needles):
