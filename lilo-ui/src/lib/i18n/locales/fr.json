@@ -1850,7 +1850,8 @@
 		"agentClick": "veut cliquer sur « {label} » dans {tab} ({site}).",
 		"agentSubmit": "veut appuyer sur Entrée pour valider « {label} » dans {tab} ({site}).",
 		"agentUpload": "veut envoyer {label} à {site}.",
-		"agentFetch": "veut envoyer la requête « {label} » depuis {tab} ({site}), avec vos cookies."
+		"agentFetch": "veut envoyer la requête « {label} » depuis {tab} ({site}), avec vos cookies.",
+		"agentTool": "veut exécuter l'outil « {label} »."
 	},
 	"screenshot": {
 		"title": "Capture d'écran",
@@ -2182,6 +2183,7 @@
 		"%@ wants to press Enter to submit \"%@\" in %@ (%@).": "%@ veut appuyer sur Entrée pour valider « %@ » dans %@ (%@).",
 		"%@ wants to upload %@ to %@.": "%@ veut envoyer %@ à %@.",
 		"%@ wants to send \"%@\" from %@ (%@), with your cookies.": "%@ veut envoyer la requête « %@ » depuis %@ (%@), avec vos cookies.",
+		"%@ wants to run the tool \"%@\".": "%@ veut exécuter l'outil « %@ ».",
 		"Reply": "Répondre",
 		"Send": "Envoyer",
 		"%@ failed with exit code %d after %@.": "%@ a échoué avec le code %d après %@.",

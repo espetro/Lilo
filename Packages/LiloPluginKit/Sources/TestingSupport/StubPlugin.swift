@@ -19,6 +19,14 @@ while IFS= read -r line; do
         ping)
             printf '%s\n' "{\"jsonrpc\":\"2.0\",\"id\":$id,\"result\":{\"pong\":true}}"
             ;;
+        tools/call)
+            tool=$(printf '%s' "$line" | sed -n 's/.*"name":"\([^"]*\)".*/\1/p')
+            if [ "$tool" = "fail" ]; then
+                printf '%s\n' "{\"jsonrpc\":\"2.0\",\"id\":$id,\"error\":{\"code\":-32000,\"message\":\"stub tool failure\"}}"
+            else
+                printf '%s\n' "{\"jsonrpc\":\"2.0\",\"id\":$id,\"result\":{\"content\":[{\"type\":\"text\",\"text\":\"stub ran $tool\"}]}}"
+            fi
+            ;;
         fail)
             printf '%s\n' "{\"jsonrpc\":\"2.0\",\"id\":$id,\"error\":{\"code\":-32000,\"message\":\"stub failure\"}}"
             ;;
@@ -86,6 +94,20 @@ done
                 ])
             case "ping":
                 transport.emit(["jsonrpc": .string("2.0"), "id": requestID, "result": .object(["pong": .bool(true)])])
+            case "tools/call":
+                let params = object["params"] as? [String: Any]
+                let tool = params?["name"] as? String ?? ""
+                if tool == "fail" {
+                    transport.emit([
+                        "jsonrpc": .string("2.0"), "id": requestID,
+                        "error": .object(["code": .number(-32000), "message": .string("stub tool failure")])
+                    ])
+                } else {
+                    transport.emit([
+                        "jsonrpc": .string("2.0"), "id": requestID,
+                        "result": .object(["content": .array([.object(["type": .string("text"), "text": .string("stub ran \(tool)")])])])
+                    ])
+                }
             case "hang":
                 break
             case "exit":

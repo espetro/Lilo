@@ -1,0 +1,3 @@
+kind: Added
+body: 'Enabled plugins can contribute tools to the agent surface: they appear in the tool list owned by their plugin, calls run through the plugin''s sidecar, and a tool whose consent tier commits or is irreversible asks the user each time exactly as a built-in action would'
+time: 2026-11-24T00:00:00.000000Z

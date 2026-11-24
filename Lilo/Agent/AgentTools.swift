@@ -304,6 +304,7 @@ enum AgentTools {
             if let content = try await AgentFlows.call(name, arguments: arguments, session: session, control: control) { return content }
             if let content = try await AgentBrowserConfig.call(name, arguments: arguments, session: session, control: control) { return content }
             if let content = try await AgentConnectStatus.call(name, arguments: arguments, session: session, control: control) { return content }
+            if let content = try await AgentPluginTools.call(name, arguments: arguments, session: session, control: control) { return content }
             #if DEBUG
             if let content = try await AgentWindowCapture.call(name, arguments: arguments, control: control) { return content }
             #endif

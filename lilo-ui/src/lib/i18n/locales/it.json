@@ -1850,7 +1850,8 @@
 		"agentClick": "vuole fare clic su \"{label}\" in {tab} ({site}).",
 		"agentSubmit": "vuole premere Invio per inviare \"{label}\" in {tab} ({site}).",
 		"agentUpload": "vuole caricare {label} su {site}.",
-		"agentFetch": "vuole inviare \"{label}\" da {tab} ({site}), con i tuoi cookie."
+		"agentFetch": "vuole inviare \"{label}\" da {tab} ({site}), con i tuoi cookie.",
+		"agentTool": "vuole eseguire lo strumento \"{label}\"."
 	},
 	"screenshot": {
 		"title": "Istantanea",
@@ -2182,6 +2183,7 @@
 		"%@ wants to press Enter to submit \"%@\" in %@ (%@).": "%@ vuole premere Invio per inviare \"%@\" in %@ (%@).",
 		"%@ wants to upload %@ to %@.": "%@ vuole caricare %@ su %@.",
 		"%@ wants to send \"%@\" from %@ (%@), with your cookies.": "%@ vuole inviare \"%@\" da %@ (%@), con i tuoi cookie.",
+		"%@ wants to run the tool \"%@\".": "%@ vuole eseguire lo strumento \"%@\".",
 		"Reply": "Rispondi",
 		"Send": "Invia",
 		"%@ failed with exit code %d after %@.": "%@ non riuscito con codice di uscita %d dopo %@.",

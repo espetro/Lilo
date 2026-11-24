@@ -1850,7 +1850,8 @@
 		"agentClick": "が{tab}（{site}）で「{label}」をクリックしようとしています。",
 		"agentSubmit": "が{tab}（{site}）で Enter を押して「{label}」を送信しようとしています。",
 		"agentUpload": "が{label}を{site}にアップロードしようとしています。",
-		"agentFetch": "が{tab}（{site}）から、あなたの Cookie を使って「{label}」を送信しようとしています。"
+		"agentFetch": "が{tab}（{site}）から、あなたの Cookie を使って「{label}」を送信しようとしています。",
+		"agentTool": "がツール「{label}」を実行しようとしています。"
 	},
 	"screenshot": {
 		"title": "スクリーンショット",
@@ -2182,6 +2183,7 @@
 		"%@ wants to press Enter to submit \"%@\" in %@ (%@).": "%@ が%@（%@）で Enter を押して「%@」を送信しようとしています。",
 		"%@ wants to upload %@ to %@.": "%@ が%@を%@にアップロードしようとしています。",
 		"%@ wants to send \"%@\" from %@ (%@), with your cookies.": "%@ が%@（%@）から、あなたの Cookie を使って「%@」を送信しようとしています。",
+		"%@ wants to run the tool \"%@\".": "%@ がツール「%@」を実行しようとしています。",
 		"Reply": "回答",
 		"Send": "送信",
 		"%@ failed with exit code %d after %@.": "%@ が失敗しました（終了コード %d、経過時間 %@）。",

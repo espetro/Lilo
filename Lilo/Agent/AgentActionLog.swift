@@ -64,10 +64,11 @@ final class AgentActionLog {
         return ["redacted": true]
     }
 
-    /// Appends the call as one line, off the main thread.
+    /// Appends the call as one line, off the main thread. `plugin` is the id of the plugin
+    /// whose tool ran, so a line says who owned it: `plugin: <id>`.
     func record(
         tool: String, arguments: [String: Any], session: AgentSession, host: String?,
-        ok: Bool, code: String?, possibleCommit: Bool, startedAt: Date
+        ok: Bool, code: String?, possibleCommit: Bool, startedAt: Date, plugin: String? = nil
     ) {
         var line: [String: Any] = [
             "ts": startedAt.formatted(Date.ISO8601FormatStyle(includingFractionalSeconds: true)),
@@ -75,6 +76,7 @@ final class AgentActionLog {
             "duration_ms": Int(Date().timeIntervalSince(startedAt) * 1000)
         ]
         if let code { line["code"] = code }
+        if let plugin { line["plugin"] = plugin }
         if possibleCommit { line["possibleCommit"] = true }
         if let tab = (arguments["tabId"] as? NSNumber)?.intValue { line["tabId"] = tab }
         if let host { line["host"] = host }
