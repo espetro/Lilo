@@ -285,6 +285,7 @@
 		62FE0E7A53FF874F56ED4490 /* InstanceIDBridgeHandler.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0FE7D786B57EA99CAF5C3AE0 /* InstanceIDBridgeHandler.swift */; };
 		634843DA8378B4A62D64FE75 /* LinkTabPlacementTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 86904AA0C37B0F3F6F91D8FF /* LinkTabPlacementTests.swift */; };
 		6372DD0A5E435C78F6334480 /* WKEngineFactoryContentControllerReleaseTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8F68555120B760EFBC1B2538 /* WKEngineFactoryContentControllerReleaseTests.swift */; };
+		63C6CA4A9E9427CB5C04A280 /* SplitGeometryTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9B713731CD16645E00B074E6 /* SplitGeometryTests.swift */; };
 		664C6EA40A0FE906ECFB5A66 /* MainWindowController+Spaces.swift in Sources */ = {isa = PBXBuildFile; fileRef = B25951CBE4CBEC185444C6F2 /* MainWindowController+Spaces.swift */; };
 		674EF60D2DDF0C2828A2BD77 /* ScreenshotImageCodecTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A709004B722D4DA9E4578484 /* ScreenshotImageCodecTests.swift */; };
 		67A987C8161306883A9D624E /* Migrations.swift in Sources */ = {isa = PBXBuildFile; fileRef = E3F59C1BA931924CDADC360F /* Migrations.swift */; };
@@ -554,6 +555,7 @@
 		B857F69697B7CCF2751BC03A /* URLSessionBackend.swift in Sources */ = {isa = PBXBuildFile; fileRef = F7FEAC377AF4CE0C189E6558 /* URLSessionBackend.swift */; };
 		B89933942A655BCBDD21CDF1 /* AgentDevToolsTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2069CBABD9B82BC563744EEC /* AgentDevToolsTests.swift */; };
 		B9047DBE8E71E4932B1EDCDB /* ChromeInputCoordinator.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0446E557B73B38C0A986B42F /* ChromeInputCoordinator.swift */; };
+		B9097CFDF4F913DF71929AAA /* SplitGeometry.swift in Sources */ = {isa = PBXBuildFile; fileRef = 45F56B9B43134F5C16F08AE8 /* SplitGeometry.swift */; };
 		B9A5DAEA0B07415B34E29432 /* CaptureBridgeHandler.swift in Sources */ = {isa = PBXBuildFile; fileRef = 98539D73D9D0AF62B001E724 /* CaptureBridgeHandler.swift */; };
 		B9CF1E9A5521BA1B1B97EE1A /* AgentWindowCapture.swift in Sources */ = {isa = PBXBuildFile; fileRef = 02A5240CF87F6214736AB640 /* AgentWindowCapture.swift */; };
 		B9ECEACFB8360FFB6362D83C /* JSDialogPresenter.swift in Sources */ = {isa = PBXBuildFile; fileRef = B56DCD2782B9C38E7799E0D3 /* JSDialogPresenter.swift */; };
@@ -1048,6 +1050,7 @@
 		4549E15BF0BBE811DBBC6B7B /* AgentInspector.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AgentInspector.swift; sourceTree = "<group>"; };
 		4595B45175C3E57FAD9378B1 /* IdentityBridgeHandler.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = IdentityBridgeHandler.swift; sourceTree = "<group>"; };
 		45CA6916762B455944115350 /* TabLifecycleCoordinatorTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TabLifecycleCoordinatorTests.swift; sourceTree = "<group>"; };
+		45F56B9B43134F5C16F08AE8 /* SplitGeometry.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SplitGeometry.swift; sourceTree = "<group>"; };
 		460BE43167127B8E1F1CC4C6 /* ScreenshotImageCodec.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScreenshotImageCodec.swift; sourceTree = "<group>"; };
 		4656FEC628965639BB621024 /* Release.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = Release.xcconfig; sourceTree = "<group>"; };
 		47012AB9C09AC4E8830AD61D /* TabBridgeHandler.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TabBridgeHandler.swift; sourceTree = "<group>"; };
@@ -1318,6 +1321,7 @@
 		9B1BD2C68BF3CDCF19C4F6B2 /* DebuggerBridgeHandler.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DebuggerBridgeHandler.swift; sourceTree = "<group>"; };
 		9B3396B3C0B786201D65762F /* Localizable.strings */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = Localizable.strings; path = "zh-Hant.lproj/Localizable.strings"; sourceTree = "<group>"; };
 		9B4A29B20C87F53245DEF9AE /* TabsBridgeHandler.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TabsBridgeHandler.swift; sourceTree = "<group>"; };
+		9B713731CD16645E00B074E6 /* SplitGeometryTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SplitGeometryTests.swift; sourceTree = "<group>"; };
 		9B88080AECF44BDEDCB92DAA /* PageCaptureBridgeHandler.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PageCaptureBridgeHandler.swift; sourceTree = "<group>"; };
 		9B9876FA7435DE3C7DBE92CD /* PermissionOriginKeyTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PermissionOriginKeyTests.swift; sourceTree = "<group>"; };
 		9BD9873ADCDF856AF353A409 /* OverlayWebView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OverlayWebView.swift; sourceTree = "<group>"; };
@@ -2343,6 +2347,7 @@
 				66BA3D1A4F224E2732A5EE78 /* PagePopupController.swift */,
 				92ECBE0459CAFB1CAC2BF855 /* PopupCloseScriptHandler.swift */,
 				50F18350F0E5A5E8CD4A5A6B /* SidePanelController.swift */,
+				45F56B9B43134F5C16F08AE8 /* SplitGeometry.swift */,
 				824B18855F3600C939A2E78D /* TabLayout.swift */,
 				2EC8F5EAA928BD4155DF33F1 /* TrafficLightAnimator.swift */,
 				F2F642480C82D8687332852C /* WindowFrameView.swift */,
@@ -2966,6 +2971,7 @@
 				1957E0C36D17C64137430863 /* QRCodeTests.swift */,
 				BC423BCE8DBDE092FDE06546 /* ReleaseMediaCaptureTests.swift */,
 				42E6A2F13825700070354B2E /* SharedSpaceRuntimeTests.swift */,
+				9B713731CD16645E00B074E6 /* SplitGeometryTests.swift */,
 				14E58A0A08E9FB06A4BB77A8 /* SplitPaneChromePressTests.swift */,
 				E6180B1134D0FDD304CEB2AD /* SplitPaneFrameTests.swift */,
 				F13600639DAEB0FA8ED0BE36 /* SplitPanesControllerTests.swift */,
@@ -3513,6 +3519,7 @@
 				754C7FD9E97A61280041A22E /* SpaceTab.swift in Sources */,
 				CC6A2A0832F54534E4CDB7F0 /* SpaceTabState.swift in Sources */,
 				DDE7243753DAC385335EFD7B /* SpaceTabStateStore.swift in Sources */,
+				B9097CFDF4F913DF71929AAA /* SplitGeometry.swift in Sources */,
 				9CA0E1AEC7A7DC585C9F5ACA /* SplitLayout.swift in Sources */,
 				A709BC82F5507A4AF5DF8E39 /* StartupMetrics.swift in Sources */,
 				B40D5C7C968C67A32BA4109C /* StateSyncBridgeHandler.swift in Sources */,
@@ -3837,6 +3844,7 @@
 				F4D711532BC0F03A8BCDBAE3 /* SpaceTabStateStoreTests.swift in Sources */,
 				87A0CE80FFCC0F5E733B2A03 /* SpaceTabStateTests.swift in Sources */,
 				065A22042826A2D12C45B35D /* SpeedometerBenchmarkTests.swift in Sources */,
+				63C6CA4A9E9427CB5C04A280 /* SplitGeometryTests.swift in Sources */,
 				C6614F25C52FE416C5BAFA5D /* SplitLayoutTests.swift in Sources */,
 				064A5AB02CF29B011B3AA8AA /* SplitPaneChromePressTests.swift in Sources */,
 				B05E06B4AEE8D9C979330E4A /* SplitPaneFrameTests.swift in Sources */,
