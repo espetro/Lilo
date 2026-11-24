@@ -9,7 +9,8 @@
   import { parseHiddenAgents } from "../../lib/agentCommands";
   import { agentNote, agentStatus, isPickable, modelControl } from "../../lib/agentReadiness";
   import { readinessLabels } from "../../lib/agentReadinessLabels";
-  import type { BridgeAgentInfo } from "../../lib/bridge/protocol";
+  import type { BridgeAgentInfo, BridgeConversationPlacement } from "../../lib/bridge/protocol";
+  import type { IconName } from "../ui/icons";
   import Icon from "../ui/Icon.svelte";
   import { modelLogo } from "./modelLogos";
   import { t } from "../../lib/i18n/state.svelte";
@@ -26,6 +27,7 @@
   } from "../../stores/conversations.svelte";
   import { getSetting, setSetting } from "../../stores/settings.svelte";
   import { getActiveTab } from "../../stores/tabs.svelte";
+  import { registerPendingConversationSurface } from "../../stores/conversationSurfaces.svelte";
   import { tooltip } from "../../lib/tooltip";
   import { prefersReducedMotion } from "../../lib/motion/reducedMotion";
   import AgentTile from "./AgentTile.svelte";
@@ -33,6 +35,13 @@
   import PromptField, { type AttachmentDraft } from "./PromptField.svelte";
 
   const CHOOSE = "lilo:choose-folder";
+  const PLACEMENTS: BridgeConversationPlacement[] = ["mini", "dialog", "split", "tab"];
+  const PLACEMENT_ICONS: Record<BridgeConversationPlacement, IconName> = {
+    mini: "arrowUp",
+    dialog: "maximize",
+    split: "move",
+    tab: "file",
+  };
 
   const open = $derived(isAskBarOpen());
   let text = $state("");
@@ -158,6 +167,15 @@
   });
   const agent = $derived(getAgents().find((candidate) => candidate.id === agentId));
   const canStart = $derived(!!agentId && !!agent && isPickable(agent) && text.trim().length > 0);
+  const placementSetting = $derived(getSetting("agentConversationPlacement", "mini"));
+  const placement = $derived<BridgeConversationPlacement>(
+    PLACEMENTS.includes(placementSetting as BridgeConversationPlacement)
+      ? (placementSetting as BridgeConversationPlacement)
+      : "mini",
+  );
+  const placementOptions = $derived(
+    PLACEMENTS.map((value) => ({ value, label: t(`placement.${value}`), icon: PLACEMENT_ICONS[value] })),
+  );
   // The models the agent offered when last looked at, before any session exists to ask.
   const models = $derived.by(() => {
     const control = modelControl(agent, { hasModels: false, opened: false });
@@ -181,6 +199,21 @@
 
   function start(background: boolean): void {
     if (!canStart) return;
+    const source = getActiveTab();
+    const sourceTabId = source && (source.kind ?? "web") !== "agent" ? source.id : "";
+    const surfaceRequestId =
+      typeof crypto !== "undefined" && "randomUUID" in crypto
+        ? crypto.randomUUID()
+        : `surface-${Date.now()}-${Math.random().toString(36).slice(2)}`;
+    if (!background && sourceTabId && (placement === "mini" || placement === "dialog")) {
+      registerPendingConversationSurface({
+        surfaceRequestId,
+        sourceTabId,
+        placement,
+        agentId,
+        agentName: agent?.name ?? "",
+      });
+    }
     conversationActions.start({
       agentId,
       cwd: project,
@@ -188,6 +221,9 @@
       attachments: attachments.map((draft) => draft.attachment),
       background,
       ...(model && { model }),
+      placement,
+      sourceTabId,
+      surfaceRequestId,
     });
     setSetting("agentsLastAgent", agentId);
     setSetting("agentsLastProject", project);
@@ -270,6 +306,16 @@
             <span class="picker-label" class:quiet={!modelChoice}>{modelChoice?.name ?? t("agents.readiness.modelDefault")}</span>
           </MenuPicker>
         {/if}
+        <span class="placement-picker" use:tooltip={t("placement.label")}>
+          <MenuPicker
+            value={placement}
+            options={placementOptions}
+            ariaLabel={t("placement.label")}
+            onchange={(value) => setSetting("agentConversationPlacement", value)}
+          >
+            <Icon name={PLACEMENT_ICONS[placement]} size={13} />
+          </MenuPicker>
+        </span>
         <button
           type="button"
           class="send"
@@ -338,6 +384,11 @@
   .ask-controls :global(.menu-picker) {
     background: var(--bg-hover);
     color: var(--text-primary);
+  }
+
+  .placement-picker {
+    display: inline-flex;
+    align-items: center;
   }
 
   .picker-label {

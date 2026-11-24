@@ -29,6 +29,7 @@ const {
 	getVisibleFolderChildren,
 	countVisibleFolderChildren,
 	canNestFolder,
+	getConversationTab,
 } = await import("./folders.svelte");
 const { applySidebarFolderInitialState, applySidebarTabInitialState } = await import("./sidebar.svelte");
 const { computeSidebarView } = await import("./sidebarView");
@@ -45,6 +46,7 @@ type SeedTab = {
 	isPinned: boolean;
 	isBookmarked: boolean;
 	isClosed: boolean;
+	kind?: string;
 };
 
 // Seed the folder store through the host's initial-state appliers so getRootItems(spaceId, pinned)
@@ -52,7 +54,7 @@ type SeedTab = {
 function seedRoots(
 	spaceId: string,
 	tabs: SeedTab[],
-	folders: Array<{ id: string }>,
+	folders: Array<Partial<FolderState> & Pick<FolderState, "id">>,
 	treeItems: ReturnType<typeof treeItem>[],
 ): void {
 	const spaces = [
@@ -83,6 +85,21 @@ function makeFolder(folder: Partial<FolderState> & Pick<FolderState, "id">): Fol
 	return folder as FolderState;
 }
 
+
+test("getConversationTab: follows the folder's marked tab outside its children", () => {
+	const spaceId = "conversation-marked-tab";
+	seedRoots(
+		spaceId,
+		[{ id: "agent-tab", isPinned: false, isBookmarked: false, isClosed: false, kind: "agent" }],
+		[{ id: "conversation-folder", conversationTabId: "agent-tab" }],
+		[
+			treeItem("conversation-folder", spaceId, 0, "unpinned", "folder"),
+			treeItem("agent-tab", spaceId, 1),
+		],
+	);
+
+	assert.equal(getConversationTab("conversation-folder", spaceId)?.id, "agent-tab");
+});
 
 test("getRootItems: orders roots from treeItems", () => {
 	const spaceId = "resolve-roots-order";

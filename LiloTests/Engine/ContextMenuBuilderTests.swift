@@ -101,11 +101,15 @@ final class ContextMenuBuilderTests: XCTestCase {
         var little: URL?
         let linkURL = URL(string: "https://example.com/a")!
         let menu = NSMenu()
-        makeBuilder(onOpenInSplitView: { split = $0 }, onOpenInLittleWindow: { little = $0 })
-            .build(menu, linkURL: linkURL)
-        for title in ["Open Link in Split View".localized, "Open Link in Little Window".localized] {
-            let item = try! XCTUnwrap(menu.items.first { $0.title == title })
-            _ = item.target?.perform(item.action, with: item)
+        // The builder owns the items' target, and the target is a weak reference: a builder that
+        // goes out of scope leaves the menu items pointing at nothing.
+        let builder = makeBuilder(onOpenInSplitView: { split = $0 }, onOpenInLittleWindow: { little = $0 })
+        withExtendedLifetime(builder) {
+            builder.build(menu, linkURL: linkURL)
+            for title in ["Open Link in Split View".localized, "Open Link in Little Window".localized] {
+                let item = try! XCTUnwrap(menu.items.first { $0.title == title })
+                _ = item.target?.perform(item.action, with: item)
+            }
         }
         XCTAssertEqual(split, linkURL)
         XCTAssertEqual(little, linkURL)

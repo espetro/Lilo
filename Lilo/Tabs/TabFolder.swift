@@ -13,6 +13,8 @@ struct TabFolder: Sendable, Identifiable, Equatable {
     var isUnlocked: Bool
     /// Like `StoredFolder.isAgentOwned`.
     var isAgentOwned: Bool
+    /// A conversation's own tab, which a split can hold outside this folder of its pages.
+    var conversationTabId: UUID?
 
     var isSplit: Bool { splitLayout != nil }
     var isLocked: Bool { lock != nil && !isUnlocked }
@@ -26,7 +28,8 @@ struct TabFolder: Sendable, Identifiable, Equatable {
         splitLayout: SplitLayout? = nil,
         lock: FolderLock? = nil,
         isUnlocked: Bool = false,
-        isAgentOwned: Bool = false
+        isAgentOwned: Bool = false,
+        conversationTabId: UUID? = nil
     ) {
         self.id = id
         self.spaceId = spaceId
@@ -37,6 +40,7 @@ struct TabFolder: Sendable, Identifiable, Equatable {
         self.lock = lock
         self.isUnlocked = isUnlocked
         self.isAgentOwned = isAgentOwned
+        self.conversationTabId = conversationTabId
     }
 
     var bridgeData: [String: Any] {
@@ -54,6 +58,7 @@ struct TabFolder: Sendable, Identifiable, Equatable {
             } ?? NSNull()
         ]
         if let splitLayout { data["splitLayout"] = splitLayout.bridgeData }
+        if let conversationTabId { data["conversationTabId"] = conversationTabId.uuidString }
         return data
     }
 }

@@ -600,6 +600,11 @@
 				"description": "Talk to Claude Code, Codex, Gemini and other agents in a tab, with your own subscriptions.",
 				"keywords": "agent ai acp chat conversation ask claude codex gemini copilot"
 			},
+			"agentConversationPlacement": {
+				"title": "Conversation placement",
+				"description": "Where a conversation started from the ask bar appears.",
+				"keywords": "agent conversation placement mini dialog split tab open as"
+			},
 			"agentsNotifyDone": {
 				"title": "Notify when an agent finishes",
 				"description": "A notification when a conversation you are not looking at is done.",
@@ -2420,6 +2425,7 @@
 		},
 		"Commands are still running in them and will be stopped.": "Commands are still running in them and will be stopped.",
 		"The terminal could not start.": "The terminal could not start.",
+		"The conversation could not be started.": "The conversation could not be started.",
 		"Close the tab and try again.": "Close the tab and try again.",
 		"Choose an iTerm2 color preset (.itermcolors), a VS Code color theme (.json) or a Ghostty theme file.": "Choose an iTerm2 color preset (.itermcolors), a VS Code color theme (.json) or a Ghostty theme file.",
 		"This file is not a theme Lilo can read.": "This file is not a theme Lilo can read.",
@@ -3111,6 +3117,15 @@
 				}
 			}
 		}
+	},
+	"placement": {
+		"label": "Open as",
+		"mini": "Mini conversation",
+		"dialog": "Dialog",
+		"split": "Split beside page",
+		"tab": "Full tab",
+		"enlarge": "Open in a tab",
+		"surfaceFailed": "The conversation could not be started."
 	},
 	"splitPane": {
 		"close": "Close Split Pane",
