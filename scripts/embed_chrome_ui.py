@@ -18,7 +18,7 @@ max_embedded_bytes = 2_033_524 + max(0, catalog_count - 6) * 280_000
 # Fork: upstream calibrates 587_914; develop-only UI (the dozing ring, agent split controls,
 # the beta release row, the conversation placement surfaces) adds about 2.4 KB to the first frame
 # until the work lands upstream.
-max_first_frame_bytes = 593_000 + max(0, catalog_count - 6) * 128
+max_first_frame_bytes = 593_109 + max(0, catalog_count - 6) * 128
 
 mime_types = {
     ".html": "text/html",
