@@ -5,7 +5,7 @@ import WebKit
 /// and bites the pane corners beside it, so each pane reads as its own rounded card.
 final class SplitDividerView: NSView {
     /// Matches the window frame's inset around the content.
-    static let width: CGFloat = 8
+    static let width = SplitGeometry.dividerWidth
     private static let hoverFadeDuration: TimeInterval = 0.15
 
     /// The panes are stacked: the divider runs across and drags up and down.
@@ -443,9 +443,6 @@ final class SplitPaneDockView: NSView {
 /// ring. Also finds the pane under the pointer and tells the chrome where each pane sits.
 @MainActor
 final class SplitPanesController {
-    /// Smallest pane a divider drag may leave, along the axis of the cut.
-    private static let minimumPaneLength: CGFloat = 200
-
     private unowned let controller: MainWindowController
     /// The split currently laid out in the content area.
     private(set) var split: SplitGroup?
@@ -515,16 +512,13 @@ final class SplitPanesController {
         divider.onDrag = { [weak self, weak divider] point in
             guard let self, let divider, let layout = liveLayout ?? split?.layout else { return }
             let cut = divider.cutBounds
-            let length = (divider.isVertical ? cut.height : cut.width) - SplitDividerView.width
-            guard length > 0, case let .split(vertical, _, first, second)? = layout.subtree(at: path) else { return }
+            let length = (divider.isVertical ? cut.height : cut.width) - SplitGeometry.dividerWidth
+            guard let cutLayout = SplitGeometry.cut(at: path, in: layout), length > 0 else { return }
             // The first part is on top, and an unflipped view counts y from the bottom.
-            let offset = !vertical ? point.x - cut.minX
+            let offset = !divider.isVertical ? point.x - cut.minX
                 : controller.contentContainerView.isFlipped ? point.y - cut.minY : cut.maxY - point.y
-            let lowest = Self.minimumLength(of: first, vertical: vertical) / length
-            let highest = 1 - Self.minimumLength(of: second, vertical: vertical) / length
-            guard lowest <= highest else { return }
-            let ratio = min(max((offset - SplitDividerView.width / 2) / length, lowest), highest)
-            liveLayout = layout.updatingCut(at: path) { _, current in current = Double(ratio) }
+            guard let ratio = SplitGeometry.clampedRatio(offset: offset, length: length, cut: cutLayout) else { return }
+            liveLayout = layout.updatingCut(at: path) { _, current in current = ratio }
             applyFrames(animatesFocus: false)
         }
         divider.onDragEnd = { [weak self] in
@@ -601,17 +595,7 @@ final class SplitPanesController {
 
     /// The handle's strip: the top of the pane, inside it so it never covers a divider.
     private static func handleFrame(in pane: NSRect) -> NSRect {
-        let height = min(SplitPaneHandleView.revealHeight, pane.height)
-        return NSRect(x: pane.minX, y: pane.maxY - height, width: pane.width, height: height)
-    }
-
-    /// How short a part can get along a cut's axis: its panes' minimum, plus the dividers between
-    /// panes stacked along that same axis.
-    private static func minimumLength(of layout: SplitLayout, vertical: Bool) -> CGFloat {
-        guard case let .split(isVertical, _, first, second) = layout else { return minimumPaneLength }
-        let firstLength = minimumLength(of: first, vertical: vertical)
-        let secondLength = minimumLength(of: second, vertical: vertical)
-        return isVertical == vertical ? firstLength + SplitDividerView.width + secondLength : max(firstLength, secondLength)
+        SplitGeometry.handleStrip(in: pane, revealHeight: SplitPaneHandleView.revealHeight)
     }
 
     /// Each pane's frame and each cut's divider frame and bounds, in the container's coordinates.
@@ -619,28 +603,11 @@ final class SplitPanesController {
         _ layout: SplitLayout, in rect: NSRect, flipped: Bool, path: [Bool],
         panes: inout [UUID: NSRect], cuts: inout [[Bool]: (divider: NSRect, bounds: NSRect, vertical: Bool)]
     ) {
-        guard case let .split(vertical, ratio, first, second) = layout else {
-            if case let .pane(tabId) = layout { panes[tabId] = rect }
-            return
-        }
-        let gap = SplitDividerView.width
-        let firstRect: NSRect, divider: NSRect, secondRect: NSRect
-        if vertical {
-            let firstHeight = ((rect.height - gap) * CGFloat(ratio)).rounded()
-            let secondHeight = rect.height - firstHeight - gap
-            // First on top, whichever way the container counts y.
-            firstRect = NSRect(x: rect.minX, y: flipped ? rect.minY : rect.maxY - firstHeight, width: rect.width, height: firstHeight)
-            divider = NSRect(x: rect.minX, y: flipped ? rect.minY + firstHeight : rect.minY + secondHeight, width: rect.width, height: gap)
-            secondRect = NSRect(x: rect.minX, y: flipped ? rect.maxY - secondHeight : rect.minY, width: rect.width, height: secondHeight)
-        } else {
-            let firstWidth = ((rect.width - gap) * CGFloat(ratio)).rounded()
-            firstRect = NSRect(x: rect.minX, y: rect.minY, width: firstWidth, height: rect.height)
-            divider = NSRect(x: rect.minX + firstWidth, y: rect.minY, width: gap, height: rect.height)
-            secondRect = NSRect(x: divider.maxX, y: rect.minY, width: rect.maxX - divider.maxX, height: rect.height)
-        }
-        cuts[path] = (divider, rect, vertical)
-        frames(first, in: firstRect, flipped: flipped, path: path + [false], panes: &panes, cuts: &cuts)
-        frames(second, in: secondRect, flipped: flipped, path: path + [true], panes: &panes, cuts: &cuts)
+        var geometryPanes: [UUID: CGRect] = [:]
+        var geometryCuts: [[Bool]: SplitGeometry.Cut] = [:]
+        SplitGeometry.frames(layout, in: rect, flipped: flipped, panes: &geometryPanes, cuts: &geometryCuts)
+        panes = geometryPanes
+        cuts = geometryCuts.mapValues { ($0.divider, $0.bounds, $0.vertical) }
     }
 
     func applyFrames(animatesFocus: Bool = true) {
@@ -751,33 +718,7 @@ final class SplitPanesController {
     /// The pane abutting `tabId`'s frame on `direction`'s side, in the top-left-origin
     /// shares `sentPaneFrames` uses. Used by the menu's pane moves; a drag aims by edge instead.
     static func neighborPane(of tabId: UUID, in frames: [UUID: NSRect], direction: SplitPaneDirection) -> UUID? {
-        guard let frame = frames[tabId] else { return nil }
-        var best: (id: UUID, edge: CGFloat, cross: CGFloat)?
-        for (id, cand) in frames where id != tabId {
-            let overlap: CGFloat, edge: CGFloat, cross: CGFloat, reaches: Bool
-            switch direction {
-            case .left:
-                overlap = min(frame.maxY, cand.maxY) - max(frame.minY, cand.minY)
-                edge = cand.maxX; cross = cand.minY
-                reaches = cand.maxX <= frame.minX + 0.002
-            case .right:
-                overlap = min(frame.maxY, cand.maxY) - max(frame.minY, cand.minY)
-                edge = -cand.minX; cross = cand.minY
-                reaches = cand.minX >= frame.maxX - 0.002
-            case .up:
-                overlap = min(frame.maxX, cand.maxX) - max(frame.minX, cand.minX)
-                edge = cand.maxY; cross = cand.minX
-                reaches = cand.maxY <= frame.minY + 0.002
-            case .down:
-                overlap = min(frame.maxX, cand.maxX) - max(frame.minX, cand.minX)
-                edge = -cand.minY; cross = cand.minX
-                reaches = cand.minY >= frame.maxY - 0.002
-            }
-            guard overlap > 0, reaches else { continue }
-            if let current = best, edge < current.edge || (edge == current.edge && cross >= current.cross) { continue }
-            best = (id, edge, cross)
-        }
-        return best?.id
+        SplitGeometry.neighborPane(of: tabId, in: frames, direction: direction)
     }
 
     /// The split views that must survive an activation inside the same split.
@@ -882,9 +823,8 @@ final class SplitPanesController {
               (sender.draggingSource as? NSView)?.isDescendant(of: container) != true else { return false }
         let local = container.convert(sender.draggingLocation, from: nil)
         let paneFrames = split?.layout.paneIds.compactMap { tabManager.loadedContentView(forTabId: $0)?.frame } ?? []
-        guard let pane = (paneFrames.isEmpty ? [container.bounds] : paneFrames).first(where: { $0.contains(local) }) else { return false }
-        let band = min(pane.width / 6, 64)
-        guard local.x < pane.minX + band || local.x > pane.maxX - band else { return false }
+        guard let pane = (paneFrames.isEmpty ? [container.bounds] : paneFrames).first(where: { $0.contains(local) }),
+              SplitGeometry.isEdgeDrop(local: local, pane: pane) else { return false }
         if linkDragCache?.sequence != sender.draggingSequenceNumber {
             let url = (sender.draggingPasteboard.readObjects(forClasses: [NSURL.self]) as? [URL])?.first
             linkDragCache = (sender.draggingSequenceNumber, url?.scheme == "http" || url?.scheme == "https")
@@ -1123,28 +1063,5 @@ extension MainWindowController {
         guard let target = SplitPanesController.neighborPane(of: id, in: splitPanes.sentPaneFrames, direction: direction)
         else { return NSSound.beep() }
         replaceSplitPane(target, with: id)
-    }
-}
-
-/// A pane move's direction, as the menu item's tag carries it.
-enum SplitPaneDirection: Int {
-    case left, right, up, down
-}
-
-/// Where a tab dropped on the page lands: on one edge of a pane, or in its place.
-enum SplitDropSide {
-    case edge(vertical: Bool, before: Bool)
-    case replace
-
-    /// The chrome's drop zone names: left, right, top, bottom or replace.
-    init?(_ name: String?) {
-        switch name {
-        case "left": self = .edge(vertical: false, before: true)
-        case "right": self = .edge(vertical: false, before: false)
-        case "top": self = .edge(vertical: true, before: true)
-        case "bottom": self = .edge(vertical: true, before: false)
-        case "replace": self = .replace
-        default: return nil
-        }
     }
 }
