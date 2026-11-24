@@ -249,33 +249,6 @@ enum AgentMCP {
     }
 }
 
-enum AgentContent {
-    case text(String)
-    /// A PNG, base64 encoded off the main thread.
-    case image(String)
-
-    var json: [String: Any] {
-        switch self {
-        case .text(let text): ["type": "text", "text": text]
-        case .image(let base64): ["type": "image", "data": base64, "mimeType": "image/png"]
-        }
-    }
-}
-
-struct AgentToolError: LocalizedError {
-    let message: String
-    /// Stable and machine-readable, sent as `_meta["lilo/errorCode"]`: "needs_user" when only the user can unblock the call.
-    let code: String?
-    /// The consent answer behind a `needs_user` refusal, sent as `_meta["lilo/consent"]`.
-    let consent: ConsentAnswer?
-    init(_ message: String, code: String? = nil, consent: ConsentAnswer? = nil) {
-        self.message = message
-        self.code = code
-        self.consent = consent
-    }
-    var errorDescription: String? { message }
-}
-
 /// Marks a tool call that sent something that can change the site (a click, Enter, a write request), so its failure
 /// tells the agent to read the site back before trying again.
 @MainActor
