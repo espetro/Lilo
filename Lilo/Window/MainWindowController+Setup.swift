@@ -687,12 +687,10 @@ extension MainWindowController {
             engineFactory.setFeatureFlagOverrides(overrides)
         }
 
-        // The plugins panel's native side; the handler retains the host through the router.
+        // The plugins panel's native side, on the app's one host: the agent surface's sessions
+        // are these, so the panel's Stop reaches them. The handler retains the host through the router.
         // The launch refresh lets enabled plugins that hold `schedule` collect fires that landed while quit.
-        let pluginHost = PluginHost(
-            settingsStore: settingsStore,
-            tabs: PluginTabsAdapter(windows: context.windows, browserState: context.browserState)
-        )
+        let pluginHost = context.pluginHost(settingsStore: settingsStore)
         bridgeRouter.register(handler: PluginsBridgeHandler(host: pluginHost, bridgeRouter: bridgeRouter))
         Task { await pluginHost.refresh() }
 
