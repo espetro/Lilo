@@ -1850,7 +1850,8 @@
 		"agentClick": "wants to click \"{label}\" in {tab} ({site}).",
 		"agentSubmit": "wants to press Enter to submit \"{label}\" in {tab} ({site}).",
 		"agentUpload": "wants to upload {label} to {site}.",
-		"agentFetch": "wants to send \"{label}\" from {tab} ({site}), with your cookies."
+		"agentFetch": "wants to send \"{label}\" from {tab} ({site}), with your cookies.",
+		"agentTool": "wants to run the tool \"{label}\"."
 	},
 	"screenshot": {
 		"title": "Screenshot",
@@ -2182,6 +2183,7 @@
 		"%@ wants to press Enter to submit \"%@\" in %@ (%@).": "%@ wants to press Enter to submit \"%@\" in %@ (%@).",
 		"%@ wants to upload %@ to %@.": "%@ wants to upload %@ to %@.",
 		"%@ wants to send \"%@\" from %@ (%@), with your cookies.": "%@ wants to send \"%@\" from %@ (%@), with your cookies.",
+		"%@ wants to run the tool \"%@\".": "%@ wants to run the tool \"%@\".",
 		"Reply": "Reply",
 		"Send": "Send",
 		"%@ failed with exit code %d after %@.": "%@ failed with exit code %d after %@.",

@@ -1850,7 +1850,8 @@
 		"agentClick": "{tab} ({site}) içinde “{label}” öğesini tıklamak istiyor.",
 		"agentSubmit": "{tab} ({site}) içinde “{label}” öğesini göndermek için Enter'a basmak istiyor.",
 		"agentUpload": "{label} dosyasını {site} sitesine yüklemek istiyor.",
-		"agentFetch": "{tab} ({site}) üzerinden çerezlerinizi kullanarak “{label}” göndermek istiyor."
+		"agentFetch": "{tab} ({site}) üzerinden çerezlerinizi kullanarak “{label}” göndermek istiyor.",
+		"agentTool": "“{label}” aracını çalıştırmak istiyor."
 	},
 	"screenshot": {
 		"title": "Ekran Resmi",
@@ -2182,6 +2183,7 @@
 		"%@ wants to press Enter to submit \"%@\" in %@ (%@).": "%@, %@ (%@) içinde “%@” öğesini göndermek için Enter'a basmak istiyor.",
 		"%@ wants to upload %@ to %@.": "%@, %@ dosyasını %@ sitesine yüklemek istiyor.",
 		"%@ wants to send \"%@\" from %@ (%@), with your cookies.": "%@, %@ (%@) üzerinden çerezlerinizi kullanarak “%@” göndermek istiyor.",
+		"%@ wants to run the tool \"%@\".": "%@, “%@” aracını çalıştırmak istiyor.",
 		"Reply": "Yanıtla",
 		"Send": "Gönder",
 		"%@ failed with exit code %d after %@.": "%@, %d çıkış koduyla %@ sonra başarısız oldu.",

@@ -1850,7 +1850,8 @@
 		"agentClick": "{tab}({site})에서 ‘{label}’ 항목을 클릭하려고 합니다.",
 		"agentSubmit": "{tab}({site})에서 Enter를 눌러 ‘{label}’ 항목을 제출하려고 합니다.",
 		"agentUpload": "{label} 항목을 {site}에 업로드하려고 합니다.",
-		"agentFetch": "{tab}({site})에서 사용자의 쿠키로 ‘{label}’ 항목을 전송하려고 합니다."
+		"agentFetch": "{tab}({site})에서 사용자의 쿠키로 ‘{label}’ 항목을 전송하려고 합니다.",
+		"agentTool": "도구 '{label}'을(를) 실행하려고 합니다."
 	},
 	"screenshot": {
 		"title": "스크린샷",
@@ -2182,6 +2183,7 @@
 		"%@ wants to press Enter to submit \"%@\" in %@ (%@).": "%@이(가) %@(%@)에서 Enter를 눌러 ‘%@’ 항목을 제출하려고 합니다.",
 		"%@ wants to upload %@ to %@.": "%@이(가) %@ 항목을 %@에 업로드하려고 합니다.",
 		"%@ wants to send \"%@\" from %@ (%@), with your cookies.": "%@이(가) %@(%@)에서 사용자의 쿠키로 ‘%@’ 항목을 전송하려고 합니다.",
+		"%@ wants to run the tool \"%@\".": "%@이(가) 도구 '%@'을(를) 실행하려고 합니다.",
 		"Reply": "응답",
 		"Send": "전송",
 		"%@ failed with exit code %d after %@.": "%@ 명령이 종료 코드 %d로 %@ 후 실패했습니다.",

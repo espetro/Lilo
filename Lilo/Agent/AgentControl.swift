@@ -81,6 +81,12 @@ final class AgentControl {
     /// Screenshots an agent took, by id, for `upload_image`.
     var screenshots: [(id: String, png: Data)] = []
     var nextScreenshotNumber = 1
+    /// The host the agent surface reads plugin tools from: the app's shared one — the panel's
+    /// sessions are these — unless a test substituted `pluginHostOverride`.
+    var pluginHostOverride: PluginHost?
+    var pluginHost: PluginHost? {
+        pluginHostOverride ?? context?.settingsStore.flatMap { context?.pluginHost(settingsStore: $0) }
+    }
 
     init(context: BrowserContext, socketURL: URL = AgentControl.defaultSocketURL) {
         self.context = context
@@ -472,6 +478,7 @@ final class AgentControl {
             case "enter": unsafe String(format: "%@ wants to press Enter to submit \"%@\" in %@ (%@).".localized, name, label, tab, site)
             case "fetch": unsafe String(format: "%@ wants to send \"%@\" from %@ (%@), with your cookies.".localized, name, label, tab, site)
             case "upload": unsafe String(format: "%@ wants to upload %@ to %@.".localized, name, label, site)
+            case "tool": unsafe String(format: "%@ wants to run the tool \"%@\".".localized, name, label)
             default: unsafe String(format: "%@ wants to click \"%@\" in %@ (%@).".localized, name, label, tab, site)
             }
         } else {
@@ -527,12 +534,29 @@ final class AgentControl {
             sensitive: sensitive, site: site, globalAsks: globalAsks, globalSites: alwaysAllowedSites, client: client
         ) else { return false }
         let action = ["kind": kind, "label": label, "site": site, "tab": engine.currentTitle ?? ""]
-        switch await askAboutAction(action, engine: engine, session: session) {
+        switch await askAboutAction(action, who: session.clientName, tabId: engine.id, session: session) {
         case .allowed:
             return true
         case .denied:
             let what = ["enter": "pressing Enter to submit", "fetch": "sending"][kind] ?? "clicking"
             throw AgentToolError("The user declined \(what) \"\(label)\" on \(site): do not try again, report that it was declined and ask what to do instead", code: "needs_user", consent: .denied)
+        case .expired:
+            throw Self.expiredConsentError(timeout: Self.actionConsentTimeout)
+        case .unavailable:
+            throw Self.unavailableConsentError
+        }
+    }
+
+    /// Asks the user before a plugin's `commit`/`irreversible` tool runs: the same question a page
+    /// action gets, every call as the consent tiers require, only asked by the plugin's title
+    /// rather than the agent's. A plugin tool call is indistinguishable from a core one to the gate.
+    func approvePluginTool(_ name: String, pluginTitle: String, session: AgentSession) async throws {
+        let action = ["kind": "tool", "label": name, "site": "", "tab": ""]
+        switch await askAboutAction(action, who: pluginTitle, tabId: nil, session: session) {
+        case .allowed:
+            return
+        case .denied:
+            throw AgentToolError("The user declined \(pluginTitle) running \"\(name)\": do not try again, report that it was declined and ask what to do instead", code: "needs_user", consent: .denied)
         case .expired:
             throw Self.expiredConsentError(timeout: Self.actionConsentTimeout)
         case .unavailable:
@@ -546,14 +570,15 @@ final class AgentControl {
         return (label, flagged["sensitive"] as? Bool ?? true)
     }
 
-    /// Asks about an action on `engine`'s page in the window holding it, where its agent's conversation row turns amber
-    /// until the answer. Answered before the tool's own deadline, so the agent learns the user is needed.
-    private func askAboutAction(_ action: [String: String], engine: WKWebViewTab, session: AgentSession) async -> ConsentAnswer {
+    /// Asks `who` about an action in the window holding `tabId` (every window when nil, as a
+    /// plugin tool has no page), where the agent's conversation row turns amber until the answer.
+    /// Answered before the tool's own deadline, so the agent learns the user is needed.
+    private func askAboutAction(_ action: [String: String], who: String, tabId: UUID?, session: AgentSession) async -> ConsentAnswer {
         session.waitingForUser = true
         let conversation = session.conversationTabId
         if let conversation { askingConversations[conversation, default: 0] += 1; context?.conversations.questionChanged(tabId: conversation) }
         publishActivity()
-        let answer = await askConsent(session.clientName, action: action, tabId: engine.id, timeout: Self.actionConsentTimeout)
+        let answer = await askConsent(who, action: action, tabId: tabId, timeout: Self.actionConsentTimeout)
         session.waitingForUser = false
         if let conversation {
             askingConversations[conversation] = askingConversations[conversation].flatMap { $0 > 1 ? $0 - 1 : nil }
@@ -570,7 +595,7 @@ final class AgentControl {
         let site = engine.currentURL?.host() ?? ""
         let path = (file.path as NSString).abbreviatingWithTildeInPath
         let action = ["kind": "upload", "label": path, "site": site, "tab": engine.currentTitle ?? ""]
-        switch await askAboutAction(action, engine: engine, session: session) {
+        switch await askAboutAction(action, who: session.clientName, tabId: engine.id, session: session) {
         case .allowed:
             break
         case .denied:

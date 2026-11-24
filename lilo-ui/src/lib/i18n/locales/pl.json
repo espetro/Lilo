@@ -1850,7 +1850,8 @@
 		"agentClick": "chce kliknąć „{label}” w {tab} ({site}).",
 		"agentSubmit": "chce nacisnąć Enter, aby przesłać „{label}” w {tab} ({site}).",
 		"agentUpload": "chce przesłać {label} do {site}.",
-		"agentFetch": "chce wysłać „{label}” z {tab} ({site}) z użyciem Twoich plików cookie."
+		"agentFetch": "chce wysłać „{label}” z {tab} ({site}) z użyciem Twoich plików cookie.",
+		"agentTool": "chce uruchomić narzędzie „{label}”."
 	},
 	"screenshot": {
 		"title": "Zrzut ekranu",
@@ -2188,6 +2189,7 @@
 		"%@ wants to press Enter to submit \"%@\" in %@ (%@).": "%@ chce nacisnąć Enter, aby przesłać „%@” w %@ (%@).",
 		"%@ wants to upload %@ to %@.": "%@ chce przesłać %@ do %@.",
 		"%@ wants to send \"%@\" from %@ (%@), with your cookies.": "%@ chce wysłać „%@” z %@ (%@) z użyciem Twoich plików cookie.",
+		"%@ wants to run the tool \"%@\".": "%@ chce uruchomić narzędzie „%@”.",
 		"Reply": "Odpowiedz",
 		"Send": "Wyślij",
 		"%@ failed with exit code %d after %@.": "%@ nie powiodło się (kod %d) po %@.",
