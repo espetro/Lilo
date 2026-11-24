@@ -600,6 +600,11 @@
 				"description": "Спілкуйтеся з Claude Code, Codex, Gemini та іншими агентами у вкладці, з власними підписками.",
 				"keywords": "агент ші ai acp чат розмова запитати claude codex gemini copilot"
 			},
+			"agentConversationPlacement": {
+				"title": "Розміщення бесід",
+				"description": "Де з'являється бесіда, розпочата в рядку запиту.",
+				"keywords": "agent conversation placement mini dialog split tab open as"
+			},
 			"agentsNotifyDone": {
 				"title": "Сповіщати, коли агент завершить",
 				"description": "Сповіщення, коли завершується розмова, яку ви зараз не переглядаєте.",
@@ -3139,6 +3144,15 @@
 				}
 			}
 		}
+	},
+	"placement": {
+		"label": "Відкрити як",
+		"mini": "Міні-бесіда",
+		"dialog": "Діалог",
+		"split": "Поруч зі сторінкою",
+		"tab": "Окрема вкладка",
+		"enlarge": "Відкрити у вкладці",
+		"surfaceFailed": "Не вдалося розпочати бесіду."
 	},
 	"splitPane": {
 		"close": "Закрити панель розділеного перегляду",

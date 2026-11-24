@@ -149,6 +149,20 @@ export interface BridgeConversationOpened {
 
 export type BridgeConversationState = "idle" | "starting" | "busy" | "failed";
 
+export type BridgeConversationPlacement = "mini" | "dialog" | "split" | "tab";
+
+export interface BridgeConversationSurfaceRequested {
+	tabId: string;
+	sourceTabId: string;
+	placement: "mini" | "dialog";
+	surfaceRequestId: string;
+}
+
+export interface BridgeConversationSurfaceFailed {
+	surfaceRequestId: string;
+	message: string;
+}
+
 export interface BridgePermissionOption {
 	optionId: string;
 	name: string;
@@ -898,6 +912,9 @@ export interface BridgeCommandPayloadMap {
 		background: boolean;
 		/** A model of the agent's record, set once its session opens; absent keeps the agent's default. */
 		model?: string;
+		placement: BridgeConversationPlacement;
+		sourceTabId: string;
+		surfaceRequestId: string;
 	};
 	sendConversationPrompt: { tabId: string; text: string; attachments: BridgeConversationAttachment[]; interrupt: boolean };
 	cancelConversation: { tabId: string };
@@ -1159,6 +1176,10 @@ export interface BridgeEventPayloadMap {
 	tabGlanceEnded: EmptyPayload;
 	/** A conversation the chrome asked to show: its whole log, then `conversationUpdate` as it grows. */
 	conversationOpened: BridgeConversationOpened;
+	/** A mini or dialog surface's conversation exists; `surfaceRequestId` pairs it with the pending shell. */
+	conversationSurfaceRequested: BridgeConversationSurfaceRequested;
+	/** The matching `startConversation` failed before a conversation tab existed. */
+	conversationSurfaceFailed: BridgeConversationSurfaceFailed;
 	/** Updates of one conversation since the last delivery, oldest first. */
 	conversationUpdate: { tabId: string; updates: BridgeConversationUpdate[] };
 	/** Every conversation of every Space, for the Agents badge and popover. */
