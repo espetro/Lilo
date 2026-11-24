@@ -305,4 +305,41 @@ final class PluginHostTests: XCTestCase {
         XCTAssertTrue(received.contains("supportDir"), received)
         await host.stop(id: "app.lilo.test.stub")
     }
+
+    func testTheBundledConnectorsPluginListsAndAnswersItsTools() async throws {
+        // The real plugin folder from the checkout, seen as bundled.
+        let repo = URL(fileURLWithPath: #filePath).deletingLastPathComponent()
+            .deletingLastPathComponent().deletingLastPathComponent()
+        try FileManager.default.copyItem(
+            at: repo.appendingPathComponent("Plugins/connectors"),
+            to: bundledRoot.appendingPathComponent("connectors"))
+        let (host, _, _) = try makeHost()
+        await host.refresh()
+
+        // Disabled: nothing is contributed and the app's own install path owns the rows.
+        XCTAssertTrue(host.agentToolDefinitions(reserved: []).isEmpty)
+        host.setEnabled(true, for: "app.lilo.connectors")
+
+        let tools = host.agentToolDefinitions(reserved: [])
+        XCTAssertEqual(tools.count, 2)
+        for name in ["detect", "configure"] {
+            let tool = try XCTUnwrap(tools.first { $0["name"] as? String == name })
+            let owner = try XCTUnwrap(tool["_meta"] as? [String: Any])
+            XCTAssertEqual(owner["lilo/owner"] as? String, "plugin:app.lilo.connectors")
+            XCTAssertEqual(owner["lilo/consent"] as? String, "read")
+        }
+        let contributed = try XCTUnwrap(host.contributedTool(named: "detect"))
+        XCTAssertEqual(contributed.record.id, "app.lilo.connectors")
+        XCTAssertEqual(contributed.tool.consentTier, .read)
+
+        // A tools/call reaches the sidecar, which answers with the harness catalog.
+        let maybeSession = await host.session(for: "app.lilo.connectors")
+        let session = try XCTUnwrap(maybeSession)
+        let result = try await session.request("tools/call", params: [
+            "name": .string("detect"), "arguments": .object([:])
+        ])
+        let ids = result.objectValue?["harnesses"]?.arrayValue?
+            .compactMap { $0.objectValue?["id"]?.stringValue }
+        XCTAssertEqual(ids, ["claudeCode", "claudeDesktop", "codex", "cursor", "zed", "vscode", "opencode", "gemini"])
+    }
 }

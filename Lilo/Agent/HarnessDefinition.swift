@@ -1,7 +1,9 @@
 import Foundation
 
 /// One agent app Lilo can register its MCP server with: where it lives, where its configuration is and which
-/// first-party page the shape of that configuration comes from. A new harness is a row of `all`.
+/// first-party page the shape of that configuration comes from. The rows live in the bundled connectors
+/// plugin (`Plugins/connectors/harnesses.json`): the app's install path and the plugin's sidecar read the
+/// same catalog, so the knowledge exists once and a plugin the user disables changes nothing here.
 struct HarnessDefinition: Equatable, Sendable {
     /// How the server is added to the client, with the file `connectedClients` reads back, relative to the home.
     enum Config: Equatable, Sendable {
@@ -59,7 +61,7 @@ struct HarnessDefinition: Equatable, Sendable {
     /// The first-party page the configuration shape comes from, and the day it was last checked against it.
     let docsURL: String
     let verified: String
-    /// What the settings page says after Connect: a literal, so the native strings check finds it.
+    /// What the settings page says after Connect: the English key `NativeStrings` translates.
     let added: @Sendable () -> String
 
     static func == (lhs: Self, rhs: Self) -> Bool { lhs.id == rhs.id }
@@ -90,77 +92,92 @@ struct HarnessDefinition: Equatable, Sendable {
         self.added = added
     }
 
-    static let claudeCode = Self(
-        id: "claudeCode",
-        // `claude mcp add --scope user` keeps its servers in ~/.claude.json.
-        config: .claudeCLI(store: ".claude.json"),
-        detect: Detect(binary: "claude", binaryExtra: [".claude/local/claude"], folders: [".claude"]),
-        handshakes: ["claude-code"],
-        docsURL: "https://code.claude.com/docs/en/mcp", verified: "2026-11-21",
-        added: { "Added Lilo to Claude Code".localized })
+    /// The catalog's JSON shape; `key`/`entry`/`binaryExtra`/`folders`/`handshakePrefixes` default
+    /// like their Swift counterparts and `note` is the row's own documentation.
+    private struct Row: Decodable {
+        let id: String
+        let config: Config
+        let detect: Detect
+        let handshakes: [String]
+        let handshakePrefixes: [String]?
+        let docsURL: String
+        let verified: String
+        let added: String
 
-    static let claudeDesktop = Self(
-        id: "claudeDesktop",
-        config: .json(path: "Library/Application Support/Claude/claude_desktop_config.json"),
-        detect: Detect(bundleID: "com.anthropic.claudefordesktop"),
-        handshakes: ["claude-ai"], handshakePrefixes: ["local-agent-mode-"],
-        docsURL: "https://modelcontextprotocol.io/quickstart/user", verified: "2026-11-21",
-        added: { "Added Lilo to Claude Desktop: quit and reopen Claude to load it".localized })
+        struct Config: Decodable {
+            let kind: String
+            let path: String
+            let key: String?
+            let entry: String?
+        }
 
-    static let codex = Self(
-        id: "codex",
-        config: .toml(path: ".codex/config.toml"),
-        detect: Detect(bundleID: "com.openai.codex", binary: "codex", folders: [".codex"]),
-        handshakes: ["codex", "codex-mcp-client"],
-        docsURL: "https://developers.openai.com/codex/mcp", verified: "2026-11-21",
-        added: { "Added Lilo to Codex".localized })
+        struct Detect: Decodable {
+            let bundleID: String?
+            let binary: String?
+            let binaryExtra: [String]?
+            let folders: [String]?
+        }
+    }
 
-    static let cursor = Self(
-        id: "cursor",
-        config: .json(path: ".cursor/mcp.json"),
-        detect: Detect(bundleID: "com.todesktop.230313mzl4w4u92"),
-        handshakes: ["cursor", "cursor-vscode"],
-        docsURL: "https://cursor.com/docs/context/mcp", verified: "2026-11-21",
-        added: { "Added Lilo to Cursor".localized })
+    private init(row: Row) {
+        let config: Config
+        switch row.config.kind {
+        case "claudeCLI": config = .claudeCLI(store: row.config.path)
+        case "toml": config = .toml(path: row.config.path)
+        default:
+            let entry: Entry = switch row.config.entry {
+            case "stdio": .stdio
+            case "local": .local
+            default: .command
+            }
+            config = .json(path: row.config.path, key: row.config.key ?? "mcpServers", entry: entry)
+        }
+        let added = row.added
+        self.init(
+            id: row.id, config: config,
+            detect: Detect(
+                bundleID: row.detect.bundleID, binary: row.detect.binary,
+                binaryExtra: row.detect.binaryExtra ?? [], folders: row.detect.folders ?? []
+            ),
+            handshakes: row.handshakes, handshakePrefixes: row.handshakePrefixes ?? [],
+            docsURL: row.docsURL, verified: row.verified, added: { added.localized }
+        )
+    }
 
-    // Zed keeps MCP servers in `context_servers` of ~/.config/zed/settings.json (a command alone is enough).
-    // Its settings file is JSONC, so a file with comments is never rewritten.
-    static let zed = Self(
-        id: "zed",
-        config: .json(path: ".config/zed/settings.json", key: "context_servers"),
-        detect: Detect(bundleID: "dev.zed.Zed", binary: "zed", folders: [".config/zed"]),
-        handshakes: ["zed"],
-        docsURL: "https://zed.dev/docs/ai/mcp", verified: "2026-11-21",
-        added: { "Added Lilo to Zed".localized })
+    static let claudeCode = named("claudeCode")
+    static let claudeDesktop = named("claudeDesktop")
+    static let codex = named("codex")
+    static let cursor = named("cursor")
+    static let zed = named("zed")
+    static let vscode = named("vscode")
+    static let opencode = named("opencode")
+    static let gemini = named("gemini")
 
-    // VS Code's current MCP path is the Copilot harness, which reads `mcpServers` of ~/.copilot/mcp-config.json
-    // (the profile mcp.json it replaces is marked deprecated). The file is shared with Copilot CLI.
-    static let vscode = Self(
-        id: "vscode",
-        config: .json(path: ".copilot/mcp-config.json", entry: .stdio),
-        detect: Detect(bundleID: "com.microsoft.VSCode", binary: "code", folders: [".vscode"]),
-        handshakes: ["visual studio code", "vscode"],
-        docsURL: "https://code.visualstudio.com/docs/agents/reference/mcp-configuration", verified: "2026-11-21",
-        added: { "Added Lilo to VS Code".localized })
+    /// The catalog row, or an inert one when a broken bundle cannot name it: the empty `detect`
+    /// keeps it off every list and `init(rawValue:)` never finds it.
+    private static func named(_ id: String) -> HarnessDefinition {
+        all.first { $0.id == id } ?? HarnessDefinition(
+            id: id, config: .json(path: ""), detect: Detect(), handshakes: [], docsURL: "", verified: "", added: { "" }
+        )
+    }
 
-    // OpenCode V2 reads the V1 shape (`mcp.<name>`) of ~/.config/opencode/opencode.json, which also works on V1.
-    // The file may be opencode.jsonc: only a strict opencode.json is written.
-    static let opencode = Self(
-        id: "opencode",
-        config: .json(path: ".config/opencode/opencode.json", key: "mcp", entry: .local),
-        detect: Detect(binary: "opencode", binaryExtra: [".opencode/bin/opencode"], folders: [".config/opencode"]),
-        handshakes: ["opencode"],
-        docsURL: "https://opencode.ai/v1/docs/mcp-servers/", verified: "2026-11-21",
-        added: { "Added Lilo to OpenCode".localized })
+    /// In the order the settings page lists them: the connectors plugin's catalog, the single file
+    /// its sidecar also reads.
+    static let all: [HarnessDefinition] = {
+        guard let url = catalogURL,
+              let rows = try? JSONDecoder().decode([Row].self, from: Data(contentsOf: url)) else { return [] }
+        return rows.map(HarnessDefinition.init(row:))
+    }()
 
-    static let gemini = Self(
-        id: "gemini",
-        config: .json(path: ".gemini/settings.json"),
-        detect: Detect(binary: "gemini", folders: [".gemini"]),
-        handshakes: ["gemini-cli-mcp-client"],
-        docsURL: "https://github.com/google-gemini/gemini-cli/blob/main/docs/tools/mcp-server.md", verified: "2026-11-21",
-        added: { "Added Lilo to Gemini CLI".localized })
-
-    /// In the order the settings page lists them.
-    static let all = [claudeCode, claudeDesktop, codex, cursor, zed, vscode, opencode, gemini]
+    /// `Plugins/connectors/harnesses.json` inside the bundle, or the checkout's copy: `swift test`
+    /// has no bundle, so the fallback resolves the file from this file's place in the checkout.
+    private static let catalogURL: URL? = {
+        if let bundled = Bundle.main.url(forResource: "harnesses", withExtension: "json", subdirectory: "Plugins/connectors") {
+            return bundled
+        }
+        let checkout = URL(fileURLWithPath: #filePath)
+            .deletingLastPathComponent().deletingLastPathComponent().deletingLastPathComponent()
+            .appending(path: "Plugins/connectors/harnesses.json")
+        return FileManager.default.fileExists(atPath: checkout.path) ? checkout : nil
+    }()
 }
