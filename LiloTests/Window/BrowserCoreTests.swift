@@ -100,3 +100,96 @@ final class BrowserCoreTests: XCTestCase {
         XCTAssertNil(core.tabUpdateEvent(payload(id: "t1"), spaceId: spaceId))
     }
 }
+
+/// The command classification the window applies around the store's mutation.
+final class BrowserCoreEffectsTests: XCTestCase {
+    private let spaceId = UUID()
+    private let folderId = UUID()
+    private let tabId = UUID()
+
+    private func facts(
+        kind: Tab.Kind = .web, isPinned: Bool = false, isClosed: Bool = false, isBookmarked: Bool = false
+    ) -> BrowserCore.TabFacts {
+        BrowserCore.TabFacts(kind: kind, isPinned: isPinned, isClosed: isClosed, isBookmarked: isBookmarked)
+    }
+
+    private func effects(
+        _ command: BrowserCommand,
+        facts: BrowserCore.TabFacts? = nil,
+        folderTabs: Set<UUID> = []
+    ) -> BrowserCore.BrowserCommandEffects {
+        BrowserCore.effects(
+            of: command,
+            tabFacts: { _ in facts },
+            folderTabIds: { _, _ in folderTabs }
+        )
+    }
+
+    func testClosingATerminalTakesItsScreenAlong() {
+        let effects = effects(.closeTab(spaceId: spaceId, tabId: tabId), facts: facts(kind: .terminal))
+        XCTAssertEqual(effects.closingTerminalTabId, tabId)
+    }
+
+    func testClosingAWebTabLeavesNoTerminal() {
+        let effects = effects(.closeTab(spaceId: spaceId, tabId: tabId), facts: facts(kind: .web))
+        XCTAssertNil(effects.closingTerminalTabId)
+    }
+
+    func testClosingAnUnknownTabLeavesNoTerminal() {
+        let effects = effects(.closeTab(spaceId: spaceId, tabId: tabId))
+        XCTAssertNil(effects.closingTerminalTabId)
+    }
+
+    func testUnpinningAClosedPinnedTabTakesItOutOfTheSidebar() {
+        let effects = effects(
+            .setPinned(spaceId: spaceId, tabId: tabId, isPinned: false),
+            facts: facts(isPinned: true, isClosed: true)
+        )
+        XCTAssertEqual(effects.removedTabId, tabId)
+        XCTAssertEqual(effects.previousPinnedState, true)
+    }
+
+    func testUnpinningAnOpenTabKeepsItInTheSidebar() {
+        let effects = effects(
+            .setPinned(spaceId: spaceId, tabId: tabId, isPinned: false),
+            facts: facts(isPinned: true, isClosed: false)
+        )
+        XCTAssertNil(effects.removedTabId)
+    }
+
+    func testUnbookmarkingAClosedBookmarkTakesItOutOfTheSidebar() {
+        let effects = effects(
+            .setBookmarked(spaceId: spaceId, tabId: tabId, isBookmarked: false),
+            facts: facts(isClosed: true, isBookmarked: true)
+        )
+        XCTAssertEqual(effects.removedTabId, tabId)
+    }
+
+    func testPinningATabRecordsThePreviousState() {
+        let effects = effects(
+            .setPinned(spaceId: spaceId, tabId: tabId, isPinned: true),
+            facts: facts(isPinned: false)
+        )
+        XCTAssertEqual(effects.previousPinnedState, false)
+        XCTAssertNil(effects.removedTabId)
+    }
+
+    func testDeletingAFolderWithItsTabsNamesTheSpaceAndTabs() {
+        let ids: Set<UUID> = [UUID(), UUID()]
+        let effects = effects(
+            .deleteFolderWithTabs(spaceId: spaceId, folderId: folderId),
+            folderTabs: ids
+        )
+        XCTAssertEqual(effects.deletedFolderSpaceId, spaceId)
+        XCTAssertEqual(effects.deletedFolderTabIds, ids)
+    }
+
+    func testOtherCommandsHaveNoEffects() {
+        let effects = effects(.activateTab(spaceId: spaceId, tabId: tabId), facts: facts(kind: .terminal))
+        XCTAssertNil(effects.closingTerminalTabId)
+        XCTAssertNil(effects.removedTabId)
+        XCTAssertNil(effects.previousPinnedState)
+        XCTAssertNil(effects.deletedFolderSpaceId)
+        XCTAssertTrue(effects.deletedFolderTabIds.isEmpty)
+    }
+}
