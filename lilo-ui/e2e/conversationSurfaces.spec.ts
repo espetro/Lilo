@@ -1,4 +1,4 @@
-import { expect, test, type Page } from "@playwright/test";
+import { expect, test, type Locator, type Page } from "@playwright/test";
 import { bootChrome, sentCommands } from "./fakeHost";
 import { initialWorld } from "./fixtures";
 
@@ -32,6 +32,17 @@ async function startConversation(page: Page, bar: ReturnType<Page["locator"]>) {
 		| undefined;
 }
 
+// The surface lands with a scale-and-fade animation: a box measured mid-flight is a few percent
+// off its resting size. Wait for the animation to finish before reading the geometry.
+async function settledBox(
+	locator: Locator,
+): Promise<{ x: number; y: number; width: number; height: number } | null> {
+	await locator.evaluate((node) =>
+		Promise.all(node.getAnimations({ subtree: true }).map((animation) => animation.finished.catch(() => {}))),
+	);
+	return locator.boundingBox();
+}
+
 test("ask bar start opens a pending mini surface that swaps in the conversation and enlarges to its tab", async ({ page }) => {
 	const bar = await openAskBar(page);
 	const payload = await startConversation(page, bar);
@@ -54,7 +65,7 @@ test("ask bar start opens a pending mini surface that swaps in the conversation 
 	await expect(surface).not.toContainText("Starting the agent...");
 
 	// Spec geometry: min(700px, content - 32px) wide, min(420px, 100% - 48px) tall, bottom-centered.
-	const box = await surface.boundingBox();
+	const box = await settledBox(surface);
 	const root = await page.locator(".surface-root").boundingBox();
 	const expectedWidth = Math.min(700, (root?.width ?? 0) - 32);
 	const expectedHeight = Math.min(420, (root?.height ?? 0) - 48);
@@ -89,7 +100,7 @@ test("a dialog surface dismisses on Escape while pending and shows the failure b
 	await expect(surface).toBeVisible();
 	await expect(surface).toHaveAttribute("role", "dialog");
 	// Spec geometry: min(840px, 100% - 48px) wide, min(720px, 100% - 64px, 80vh) tall, centered.
-	const box = await surface.boundingBox();
+	const box = await settledBox(surface);
 	const root = await page.locator(".surface-root").boundingBox();
 	// The content column is narrower than the viewport, so the 840px cap loses to 100% - 48px here.
 	const expectedWidth = Math.min(840, (root?.width ?? 0) - 48);
