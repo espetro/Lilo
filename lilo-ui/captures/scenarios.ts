@@ -263,6 +263,25 @@ const scrollFavoritesOverTabs = async (page: Page) => {
 	await expect(page.locator(".space-pane").first().locator(".favorites-section")).toHaveClass(/scrolled/);
 };
 
+// An agent asking consent for an action: a click, or a plugin's tool call asked by its title.
+async function agentActionAsk(page: Page, action: Record<string, unknown>) {
+	await receive(page, [
+		{
+			event: "agentControlRequested",
+			requestId: "req-plugin-tool",
+			clientName: "Price Watcher",
+			executable: "",
+			profileName: "",
+			action,
+		},
+	]);
+}
+
+const agentToolAsk = (page: Page) =>
+	agentActionAsk(page, { kind: "tool", label: "archive_listings", site: "market.example.com", tab: "Saved listings" });
+const agentClickAsk = (page: Page) =>
+	agentActionAsk(page, { kind: "click", label: "Place bid", site: "market.example.com", tab: "Saved listings" });
+
 // Settings > Agents with agent control on, scrolled to the agent access switches.
 const agentAccessWorld = (): FakeHostWorld => ({ ...initialWorld(), settings: { agentControlEnabled: "true" } });
 
@@ -340,6 +359,10 @@ scenarios.push(
 	{ name: "cmdbar-compact-dark", colorScheme: "dark", world: compactWorld(), run: openCommandBarIdle },
 	{ name: "settings-agent-access-light", world: agentAccessWorld(), run: agentAccessSettings },
 	{ name: "settings-agent-access-dark", colorScheme: "dark", world: agentAccessWorld(), run: agentAccessSettings },
+	{ name: "agent-click-ask-light", run: agentClickAsk },
+	{ name: "agent-click-ask-dark", colorScheme: "dark", run: agentClickAsk },
+	{ name: "agent-tool-ask-light", run: agentToolAsk },
+	{ name: "agent-tool-ask-dark", colorScheme: "dark", run: agentToolAsk },
 	{ name: "favorites-glass-light", world: favoritesGlassWorld(), run: idle },
 	{ name: "favorites-glass-dark", colorScheme: "dark", world: favoritesGlassWorld(), run: idle },
 	{ name: "favorites-glass-overlap-light", world: favoritesGlassScrolledWorld(), run: scrollFavoritesOverTabs },
