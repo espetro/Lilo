@@ -980,6 +980,8 @@ final class ConversationHost {
         reportQueue(conversation)
         setState(conversation, .failed)
         save(conversation)
+        // The state may already read failed (the agent exited first), which `setState` does not drain on.
+        drain(conversation)
     }
 
     /// A v2 `state_update` of the conversation's own session: the agent's turns, those it starts on its own
