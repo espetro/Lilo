@@ -8,6 +8,7 @@
   import { conversationActions } from "./conversationActions";
   import { parseHiddenAgents } from "../../lib/agentCommands";
   import { agentNote, agentStatus, isPickable, modelControl } from "../../lib/agentReadiness";
+  import { readinessLabels } from "../../lib/agentReadinessLabels";
   import type { BridgeAgentInfo } from "../../lib/bridge/protocol";
   import Icon from "../ui/Icon.svelte";
   import { modelLogo } from "./modelLogos";
@@ -175,11 +176,7 @@
   const modelChoice = $derived(models.find((option) => option.id === model));
 
   function noteFor(candidate: BridgeAgentInfo): string | undefined {
-    return agentNote(candidate, {
-      needsSignIn: t("agents.readiness.needsSignIn"),
-      unavailable: t("agents.readiness.unavailable"),
-      unverified: t("agents.readiness.unverified"),
-    });
+    return agentNote(candidate, readinessLabels());
   }
 
   function start(background: boolean): void {

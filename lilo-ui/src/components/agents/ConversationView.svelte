@@ -18,7 +18,8 @@
 
 <script lang="ts">
   import { modeIcon, modelLogo, supersededModels } from "./modelLogos";
-  import { modelControl } from "../../lib/agentReadiness";
+  import { modelControl, agentNote, isPickable } from "../../lib/agentReadiness";
+  import { readinessLabels } from "../../lib/agentReadinessLabels";
   import ModelIdField from "./ModelIdField.svelte";
   import "../../lib/i18n/agentsCatalog";
   import { onDestroy, untrack } from "svelte";
@@ -150,7 +151,14 @@
     const hidden = parseHiddenAgents(getSetting("agentsHidden", "[]"));
     return getAgents()
       .filter((agent) => agent.id === header.agentId || !hidden.has(agent.id))
-      .map((agent) => ({ value: agent.id, label: agent.name, detail: agent.description || undefined, agentId: agent.id }));
+      .map((agent) => ({
+        value: agent.id,
+        label: agent.name,
+        // What keeps an agent from starting, or asks something of the user, replaces its description.
+        detail: agentNote(agent, readinessLabels()) ?? (agent.description || undefined),
+        disabled: !isPickable(agent),
+        agentId: agent.id,
+      }));
   });
   let text = $state(untrack(() => drafts[tabId]?.text ?? ""));
   let attachments = $state.raw<AttachmentDraft[]>(untrack(() => drafts[tabId]?.attachments ?? []));

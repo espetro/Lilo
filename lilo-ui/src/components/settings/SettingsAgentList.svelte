@@ -3,6 +3,7 @@
   import "../../lib/i18n/agentsCatalog";
   import { t } from "../../lib/i18n/state.svelte";
   import { agentNote, agentStatus, signInMethods } from "../../lib/agentReadiness";
+  import { readinessLabels } from "../../lib/agentReadinessLabels";
   import type { BridgeAgentInfo } from "../../lib/bridge/protocol";
   import { type AgentCommand, parseAgentCommands, parseHiddenAgents } from "../../lib/agentCommands";
   import { getAgent, getAgents } from "../../stores/conversations.svelte";
@@ -69,11 +70,7 @@
 
   // What the last probe found, and why when it is not simply ready. An agent nobody probed shows nothing.
   function noteFor(agent: BridgeAgentInfo): string | undefined {
-    return agentNote(agent, {
-      needsSignIn: t("agents.readiness.needsSignIn"),
-      unavailable: t("agents.readiness.unavailable"),
-      unverified: t("agents.readiness.unverified"),
-    });
+    return agentNote(agent, readinessLabels());
   }
 
   function readinessMenu(agent: BridgeAgentInfo | undefined): { label: string; onclick: () => void }[] {
