@@ -70,8 +70,10 @@ while IFS= read -r file; do
         # The docs site's reference generator reads these (docs-site/README.md, build watch paths).
         lilo-ui/src/components/settings/settingsPanelModel.ts | lilo-ui/src/lib/i18n/locales/en.json | lilo-ui/src/lib/i18n/locales/fr.json) ui=1; docs=1 ;;
         lilo-ui/*) ui=1 ;;
+        companion-extension/*) companion=1 ;;
         site/*) site=1 ;;
         docs-site/*) docs=1 ;;
+        Makefile) echo full; exit 0 ;;
         COMPATIBILITY.md) echo full; exit 0 ;;
         .changes/* | docs/* | *.md) ;;
         *) echo full; exit 0 ;;
@@ -80,5 +82,5 @@ done << EOL
 $files
 EOL
 
-checks=${ui:+ui-lint ui-test }${site:+site-check site-test }${docs:+docs-check docs-test }
+checks=${ui:+ui-lint ui-test }${site:+site-check site-test }${docs:+docs-check docs-test }${companion:+companion-ext-test }
 echo "${checks}release-status"
