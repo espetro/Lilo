@@ -177,10 +177,12 @@ final class CompanionHostProcessTests: XCTestCase {
 
         init() throws {
             listener = Darwin.socket(AF_UNIX, SOCK_STREAM, 0)
-            path = NSTemporaryDirectory() + "lilo-companion-test-\(UUID().uuidString).sock"
+            // sun_path holds 104 bytes; NSTemporaryDirectory alone can eat most of them on CI.
+            path = "/tmp/lilo-companion-test-\(UUID().uuidString).sock"
             var address = sockaddr_un()
             address.sun_family = sa_family_t(AF_UNIX)
             let bytes = Array(path.utf8)
+            precondition(bytes.count < MemoryLayout.size(ofValue: address.sun_path))
             withUnsafeMutableBytes(of: &address.sun_path) { buffer in
                 buffer.copyBytes(from: bytes)
             }
