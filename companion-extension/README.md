@@ -6,17 +6,25 @@ Chromium on Linux, where the Safari Web Extension bridge under `Lilo/Extensions/
 
 ## Status (this slice)
 
-- Message schema and validation: `src/protocol.ts`
-- Tool implementations over `chrome.tabs` / `chrome.scripting`: `src/tools.ts`
-- Native-messaging port plumbing with reconnect: `src/nativePort.ts`
-- The native-messaging **host**: `Lilo/Companion/` in the Lilo app, which answers every tool
-  call with `not implemented yet` until the slice that wires it to the running Lilo's agent
-  surface, and registers itself with the user's browsers at launch
-  (`Lilo/Companion/CompanionHostRegistration.swift`).
+- Message schema and validation: `src/protocol.ts` (the shared contract cases in
+  `src/protocol.fixtures.json` pin the TypeScript and the Swift mirror in `Lilo/Companion/` to
+  the same accepts and rejects).
+- Tool implementations over `chrome.tabs` / `chrome.scripting`: `src/tools.ts`.
+- Native-messaging port plumbing with reconnect: `src/nativePort.ts`.
+- The native-messaging **host**: on macOS the `lilo-companion` binary (`Lilo/Companion/`), on
+  Linux the shim in `packaging/linux/lilo-companion-shim.py`. Neither answers anything itself:
+  both are byte pipes into the unix socket the Lilo peer listens on (`LILO_COMPANION_SOCK`, or
+  `~/Library/Application Support/Lilo/companion.sock` on macOS and `$XDG_RUNTIME_DIR/lilo/companion.sock`
+  on Linux), so the schema is validated only where it is spoken. The peer that consumes the tool
+  surface — the running app's agent surface, or the headless container — is the next slice.
 
-The **Linux install path** (policy JSON, `.deb`/`.rpm` postinst, `native-messaging-hosts`
-manifests) is still a later slice; the manifest template in
-`Lilo/Resources/companion-host/` is written for it.
+## Linux install path
+
+`packaging/linux/` carries what a `.deb`/`.rpm` ships: the shim, the native-messaging-host
+manifest template (`com.getlilo.lilo.companion.json.in`), the opt-in force-install policy
+(`lilo-companion-policy.json`, self-hosted update URL), and `postinst`/`postrm` which write
+and remove exactly those files under `/etc/chromium`, `/etc/opt/chrome` and `/etc/edge`.
+There is no policy path on macOS or Windows — those install through the browser's own store flow.
 
 ## Build and test
 

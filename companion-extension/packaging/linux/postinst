@@ -1,0 +1,22 @@
+#!/bin/sh
+# postinst for the lilo-companion .deb/.rpm: registers the native-messaging host
+# system-wide for the Chromium-family browsers that read /etc, and drops the opt-in
+# extension policy. Both are plain files; postrm removes exactly these and nothing else.
+set -e
+
+install -m 0755 /usr/share/lilo/companion/lilo-companion-shim.py /usr/lib/lilo/lilo-companion-shim.py
+
+for browser_dir in /etc/chromium/native-messaging-hosts /etc/opt/chrome/native-messaging-hosts /etc/edge/native-messaging-hosts; do
+	mkdir -p "$browser_dir"
+	sed "s|@EXTENSION_ID@|pbjlfhpkfnmgnfmnljmmebmcmdgficod|" \
+		/usr/share/lilo/companion/com.getlilo.lilo.companion.json.in > "$browser_dir/com.getlilo.lilo.companion.json"
+done
+
+# The policy is opt-in: /etc/chromium/policies/managed is only consulted by browsers
+# the admin already manages, and force_installed there is how a managed Linux install
+# gets the extension without the Web Store. The update URL is self-hosted; a site that
+# does not serve it leaves the extension dormant rather than broken.
+for policy_dir in /etc/chromium/policies/managed /etc/opt/chrome/policies/managed; do
+	mkdir -p "$policy_dir"
+	cp /usr/share/lilo/companion/lilo-companion-policy.json "$policy_dir/lilo-companion.json"
+done
