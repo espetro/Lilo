@@ -1,0 +1,22 @@
+{
+	"name": "lilo-companion-extension",
+	"private": true,
+	"version": "0.21.0",
+	"license": "MIT",
+	"type": "module",
+	"packageManager": "npm@10.9.9",
+	"engines": {
+		"node": ">=22.6"
+	},
+	"scripts": {
+		"build": "tsc --noEmit && node esbuild.mjs",
+		"type-check": "tsc --noEmit",
+		"test": "node --test --experimental-strip-types 'src/*.test.ts'"
+	},
+	"devDependencies": {
+		"@types/node": "26.6.6",
+		"chrome-types": "0.1.461",
+		"esbuild": "0.28.2",
+		"typescript": "5.9.3"
+	}
+}

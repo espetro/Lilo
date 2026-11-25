@@ -1,0 +1,10 @@
+#!/bin/sh
+# postrm: remove exactly the files postinst wrote.
+set -e
+rm -f /usr/lib/lilo/lilo-companion-shim.py
+for browser_dir in /etc/chromium/native-messaging-hosts /etc/opt/chrome/native-messaging-hosts /etc/edge/native-messaging-hosts; do
+	rm -f "$browser_dir/com.getlilo.lilo.companion.json"
+done
+for policy_dir in /etc/chromium/policies/managed /etc/opt/chrome/policies/managed; do
+	rm -f "$policy_dir/lilo-companion.json"
+done
