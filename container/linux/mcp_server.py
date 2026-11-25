@@ -19,12 +19,18 @@ import os
 import re
 import signal
 import sys
-import threading
-import time
-import uuid
 
 sys.path.insert(0, os.path.dirname(__file__))
-from driver import Driver  # noqa: E402
+
+
+def load_driver(on_event):
+    """LILO_DRIVER picks the backend: the default WebKitGTK driver, or
+    `companion` for the user's Chromium through the companion extension."""
+    if os.environ.get("LILO_DRIVER") == "companion":
+        from companion_driver import Driver
+        return Driver(on_event=on_event)
+    from driver import Driver
+    return Driver(on_event=on_event, chrome_url=os.environ.get("LILO_CHROME_URL", "") or None)
 
 PROTOCOL_VERSIONS = ["2024-11-05", "2025-03-26", "2025-06-18"]
 TOOL_DEADLINE = 55.0
@@ -526,23 +532,26 @@ WebKit2_SnapshotOptions = None
 
 
 def main():
-    global WebKit2_SnapshotRegion, WebKit2_SnapshotOptions
-    import gi
-    gi.require_version("WebKit2", "4.0")
-    from gi.repository import WebKit2 as WK, GLib
-    WebKit2_SnapshotRegion = WK.SnapshotRegion
-    WebKit2_SnapshotOptions = WK.SnapshotOptions
-    globals()["GLib_Error"] = GLib.Error
-
-    import gi
-    gi.require_version("Gtk", "3.0")
-    from gi.repository import Gtk
 
     chrome_url = os.environ.get("LILO_CHROME_URL", "")
     auto_allow = os.environ.get("LILO_AGENT_ALLOW_ALL") == "1"
+    companion = os.environ.get("LILO_DRIVER") == "companion"
     signal.signal(signal.SIGPIPE, signal.SIG_IGN)
 
-    driver = Driver(on_event=lambda event, data: None, chrome_url=chrome_url or None)
+    if not companion:
+        global WebKit2_SnapshotRegion, WebKit2_SnapshotOptions, GLib_Error
+        import gi
+        gi.require_version("WebKit2", "4.0")
+        from gi.repository import WebKit2 as WK, GLib
+        WebKit2_SnapshotRegion = WK.SnapshotRegion
+        WebKit2_SnapshotOptions = WK.SnapshotOptions
+        globals()["GLib_Error"] = GLib.Error
+
+        import gi
+        gi.require_version("Gtk", "3.0")
+        from gi.repository import Gtk
+
+    driver = load_driver(lambda event, data: None)
     server = Server(driver, chrome_url, auto_allow=auto_allow)
 
     def serve_stdio():
@@ -561,7 +570,11 @@ def main():
         os._exit(0)
 
     # The Gtk main loop owns the main thread (WebKitGTK aborts on cross-thread
-    # GLib use); MCP runs on a worker thread.
+    # GLib use); MCP runs on a worker thread. The companion driver has no
+    # loop: stdio runs on the main thread directly.
+    if companion:
+        serve_stdio()
+        return
     threading.Thread(target=serve_stdio, daemon=True).start()
     driver.start()
 
