@@ -161,7 +161,7 @@ final class CompanionHostProcessTests: XCTestCase {
         let process = Process()
         process.executableURL = executable
         process.arguments = ["chrome-extension://\(CompanionHostRegistration.extensionId)/"]
-        process.environment = ["LILO_COMPANION_SOCK": socket]
+        process.environment = ProcessInfo.processInfo.environment.merging(["LILO_COMPANION_SOCK": socket]) { _, new in new }
         let input = Pipe(), output = Pipe()
         process.standardInput = input
         process.standardOutput = output
