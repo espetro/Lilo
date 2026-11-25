@@ -71,7 +71,8 @@ final class CompanionHostMain {
 
         mutating func next() -> Data? {
             guard let header = exactly(4) else { return nil }
-            let length = Int(unsafe header.withUnsafeBytes { unsafe $0.loadUnaligned(as: UInt32.self).littleEndian })
+            let bytes = [UInt8](header)
+            let length = Int(bytes[0]) | (Int(bytes[1]) << 8) | (Int(bytes[2]) << 16) | (Int(bytes[3]) << 24)
             guard length <= CompanionProtocol.maxMessageBytes, let payload = exactly(length) else { return nil }
             return header + payload
         }
