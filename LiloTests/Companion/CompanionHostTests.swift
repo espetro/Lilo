@@ -80,7 +80,7 @@ final class CompanionHostTests: XCTestCase {
         ]) else { return XCTFail("a valid snapshot request must be accepted") }
         XCTAssertEqual(request.id, "r1")
         XCTAssertEqual(request.tool, "snapshot")
-        XCTAssertEqual(request.params["tabId"] as? Double, 3)
+        XCTAssertEqual(request.params["tabId"] as? NSNumber, 3)
     }
 
     func testTheHelloIsRecognizedAndCarriesTheProtocolVersion() {
@@ -90,13 +90,13 @@ final class CompanionHostTests: XCTestCase {
     }
 
     func testASuccessResponseCarriesTheIdTheToolAndTheResult() {
-        let reply = CompanionProtocol.response(id: "r1", tool: "tabs.open", result: .success(["tabId": 9]))
+        let reply = CompanionProtocol.response(id: "r1", tool: "tabs.open", result: .success(["tool": "tabs.open", "tabId": 9]))
         XCTAssertEqual(reply["id"] as? String, "r1")
         XCTAssertEqual(reply["ok"] as? Bool, true)
         XCTAssertEqual(reply["tool"] as? String, "tabs.open")
         let result = try? XCTUnwrap(reply["result"] as? [String: Any])
         XCTAssertEqual(result?["tool"] as? String, "tabs.open")
-        XCTAssertEqual((result?["result"] as? [String: Any])?["tabId"] as? Double, 9)
+        XCTAssertEqual(result?["tabId"] as? NSNumber, 9)
     }
 
     func testAFailureResponseCarriesTheIdTheToolAndTheMessage() {
@@ -125,11 +125,11 @@ final class CompanionHostTests: XCTestCase {
     }
 
     func testTheFilledManifestIsTheJSONChromiumReads() throws {
-        let filled = try CompanionHostRegistration.manifest(
+        let filled = CompanionHostRegistration.manifest(
             template: "{\"name\": \"com.getlilo.lilo.companion\", \"path\": \"@HOST_PATH@\", \"type\": \"stdio\", \"allowed_origins\": [\"chrome-extension://@EXTENSION_ID@/\"]}",
             hostPath: "/Applications/Lilo.app/Contents/MacOS/lilo-companion"
         )
-        let object = try XCTUnwrap(filled as? [String: Any])
+        let object = try XCTUnwrap(try JSONSerialization.jsonObject(with: Data(filled.utf8)) as? [String: Any])
         XCTAssertEqual(object["name"] as? String, CompanionProtocol.hostName)
         XCTAssertEqual(object["path"] as? String, "/Applications/Lilo.app/Contents/MacOS/lilo-companion")
         XCTAssertEqual(object["type"] as? String, "stdio")

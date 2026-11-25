@@ -34,7 +34,8 @@ enum CompanionProtocol {
     /// Decodes one framed message: a UInt32 little-endian length, then that many UTF-8 JSON bytes.
     static func decodeFrame(_ data: Data) throws -> [String: Any] {
         guard data.count >= 4 else { throw MessageError.truncated }
-        let length = Int(unsafe data.withUnsafeBytes { unsafe $0.loadUnaligned(fromByteOffset: 0, as: UInt32.self).littleEndian })
+        let bytes = [UInt8](data.prefix(4))
+        let length = Int(bytes[0]) | (Int(bytes[1]) << 8) | (Int(bytes[2]) << 16) | (Int(bytes[3]) << 24)
         let payload = data.dropFirst(4)
         guard length == payload.count, length <= maxMessageBytes else { throw MessageError.tooLarge(length) }
         guard let message = try JSONSerialization.jsonObject(with: payload) as? [String: Any] else {
@@ -46,7 +47,9 @@ enum CompanionProtocol {
     /// Encodes a framed message, or nil when it is not valid JSON.
     static func encodeFrame(_ message: [String: Any]) -> Data? {
         guard JSONSerialization.isValidJSONObject(message), let payload = try? JSONSerialization.data(withJSONObject: message) else { return nil }
-        var frame = unsafe withUnsafeBytes(of: UInt32(payload.count).littleEndian) { unsafe Data($0) }
+        // The length header, little-endian, as Chrome frames it.
+        let count = UInt32(payload.count)
+        var frame = Data([UInt8(count & 0xff), UInt8((count >> 8) & 0xff), UInt8((count >> 16) & 0xff), UInt8((count >> 24) & 0xff)])
         frame.append(payload)
         return frame
     }
@@ -66,6 +69,23 @@ enum CompanionProtocol {
         "snapshot": [("tabId", "n", true), ("maxChars", "n", false)],
         "scripting.execute": [("tabId", "n", true), ("funcSource", "s", true), ("args", "aa", false)]
     ]
+
+    /// What JSONSerialization handed over for `value`, as the JSON type `protocol.ts` checks:
+    /// numbers and booleans both arrive as NSNumber, and `as?` blurs them (`1 as? Bool` is
+    /// true, an integer is not a Double).
+    private static func jsonType(of value: Any) -> String? {
+        guard let number = value as? NSNumber else {
+            switch value {
+            case is String: return "string"
+            case is [Any]: return "array"
+            case is [String: Any]: return "object"
+            default: return nil
+            }
+        }
+        // CFBooleanRef-backed NSNumbers are JSON's true and false; anything else is a number.
+        if CFGetTypeID(number) == CFBooleanGetTypeID() { return "boolean" }
+        return number.doubleValue.isFinite ? "number" : nil
+    }
 
     /// A request the extension sent, or the error string the schema rejects it with, as
     /// `parseRequest` in `protocol.ts` builds them: host and extension must agree, so a
@@ -87,28 +107,30 @@ enum CompanionProtocol {
             }
             switch type {
             case "s":
-                guard value is String else { return .failure(RequestError(reason: "params.\(name) must be string")) }
+                guard jsonType(of: value) == "string" else { return .failure(RequestError(reason: "params.\(name) must be string")) }
             case "n":
-                guard let number = value as? Double, number.isFinite else { return .failure(RequestError(reason: "params.\(name) must be number")) }
+                guard jsonType(of: value) == "number" else { return .failure(RequestError(reason: "params.\(name) must be number")) }
             case "b":
-                guard value is Bool else { return .failure(RequestError(reason: "params.\(name) must be boolean")) }
+                guard jsonType(of: value) == "boolean" else { return .failure(RequestError(reason: "params.\(name) must be boolean")) }
             case "as":
-                guard let list = value as? [Any], list.allSatisfy({ $0 is String }) else {
+                guard let list = value as? [Any], list.allSatisfy({ jsonType(of: $0) == "string" }) else {
                     return .failure(RequestError(reason: "params.\(name) must be string[]"))
                 }
             default:
-                guard value is [Any] else { return .failure(RequestError(reason: "params.\(name) must be an array")) }
+                guard jsonType(of: value) == "array" else { return .failure(RequestError(reason: "params.\(name) must be an array")) }
             }
         }
         return .success((id, tool, params))
     }
 
-    /// What the host answered, ready for `encodeFrame`: the request id and tool echoed, and the
-    /// result under the tool key the extension's `dispatchTool` reads, or the error message.
-    static func response(id: String, tool: String, result: Result<Any?, RequestError>) -> [String: Any] {
+    /// What the host answered, ready for `encodeFrame`: the request id and tool echoed, and
+    /// the result under the tool key the extension reads, or the error message. The result is
+    /// the `CompanionResult` of the schema (`{tool: "tabs.open", tabId: 9}`), which carries the
+    /// tool's own name: `successResponse` in `protocol.ts` wraps it as it is.
+    static func response(id: String, tool: String, result: Result<[String: Any], RequestError>) -> [String: Any] {
         switch result {
         case .success(let value):
-            ["id": id, "ok": true, "tool": tool, "result": ["tool": tool, "result": value ?? NSNull()]]
+            ["id": id, "ok": true, "tool": tool, "result": value]
         case .failure(let error):
             ["id": id, "ok": false, "tool": tool, "error": error.reason]
         }
