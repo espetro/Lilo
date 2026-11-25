@@ -137,7 +137,8 @@
 			"privacy": "Gizlilik",
 			"extensions": "Genişletmeler",
 			"advanced": "İleri Düzey",
-			"agents": "Ajanlar"
+			"agents": "Ajanlar",
+			"plugins": "Eklentiler"
 		},
 		"groups": {
 			"browser": "Tarayıcı",
@@ -881,7 +882,8 @@
 			"terminal": "Değişiklikler her terminal sekmesine uygulanır",
 			"agents": "Lilo'nun kendi yapay zekâsı yoktur",
 			"advanced": "Geliştirme ve test için",
-			"searchMatches": "{count, plural, one{\"{query}\" ile eşleşen # ayar} other{\"{query}\" ile eşleşen # ayar}}"
+			"searchMatches": "{count, plural, one{\"{query}\" ile eşleşen # ayar} other{\"{query}\" ile eşleşen # ayar}}",
+			"plugins": "{count, plural, one{# eklenti} other{# eklenti}}"
 		},
 		"callDock": {
 			"sidebar": "Kenar çubuğunda",
@@ -1291,6 +1293,37 @@
 		"reloadHint": "Değişikliklerinizi almak için klasörünü yeniden okur",
 		"reload": "Yeniden yükle",
 		"installed": "Yüklü"
+	},
+	"plugins": {
+		"installed": "Yüklü",
+		"empty": "Henüz eklenti yok. Bir eklenti klasörünü Lilo'nun Plugins klasörüne koyun, burada görünür.",
+		"openDetailsLabel": "{name} ayrıntılarını aç",
+		"enabledToggleLabel": "{name} öğesini etkinleştir",
+		"running": "Çalışıyor",
+		"required": "Zorunlu",
+		"rejectedTitle": "Bu eklenti çalıştırılamıyor",
+		"permissions": "İzinler",
+		"noPermissions": "Bu eklenti izin istemiyor.",
+		"notGranted": "İzin verilmedi",
+		"revoke": "Geri al",
+		"revokeLabel": "{name} için {capability} iznini geri al",
+		"settings": "Ayarlar",
+		"folder": "Eklenti klasörü",
+		"process": "İşlem",
+		"stop": "İşlemi durdur",
+		"grantTitle": "{name} etkinleştirilsin mi?",
+		"grantMessage": "{name} bu izinleri istiyor. Her birini daha sonra eklentinin ayarlarından geri alabilirsiniz.",
+		"grantEnable": "Etkinleştir",
+		"capabilities": {
+			"schedule": "Zamanlamaya göre çalış",
+			"tabsRead": "Sekmelerini oku",
+			"tabsOpen": "Sekme aç",
+			"pageRead": "Sayfa içeriğini oku",
+			"pageAct": "Sayfalarda işlem yap (önce sorar)",
+			"settingsStore": "Kendi ayarlarını sakla",
+			"uiSurface": "Kendi panelini göster",
+			"filesPluginDir": "Kendi klasörünü kullan"
+		}
 	},
 	"commandBar": {
 		"hintPeek": "Önizle",
@@ -1817,7 +1850,8 @@
 		"agentClick": "{tab} ({site}) içinde “{label}” öğesini tıklamak istiyor.",
 		"agentSubmit": "{tab} ({site}) içinde “{label}” öğesini göndermek için Enter'a basmak istiyor.",
 		"agentUpload": "{label} dosyasını {site} sitesine yüklemek istiyor.",
-		"agentFetch": "{tab} ({site}) üzerinden çerezlerinizi kullanarak “{label}” göndermek istiyor."
+		"agentFetch": "{tab} ({site}) üzerinden çerezlerinizi kullanarak “{label}” göndermek istiyor.",
+		"agentTool": "“{label}” aracını çalıştırmak istiyor."
 	},
 	"screenshot": {
 		"title": "Ekran Resmi",
@@ -2149,6 +2183,7 @@
 		"%@ wants to press Enter to submit \"%@\" in %@ (%@).": "%@, %@ (%@) içinde “%@” öğesini göndermek için Enter'a basmak istiyor.",
 		"%@ wants to upload %@ to %@.": "%@, %@ dosyasını %@ sitesine yüklemek istiyor.",
 		"%@ wants to send \"%@\" from %@ (%@), with your cookies.": "%@, %@ (%@) üzerinden çerezlerinizi kullanarak “%@” göndermek istiyor.",
+		"%@ wants to run the tool \"%@\".": "%@, “%@” aracını çalıştırmak istiyor.",
 		"Reply": "Yanıtla",
 		"Send": "Gönder",
 		"%@ failed with exit code %d after %@.": "%@, %d çıkış koduyla %@ sonra başarısız oldu.",

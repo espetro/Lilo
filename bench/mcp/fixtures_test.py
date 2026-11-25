@@ -36,6 +36,7 @@ SOLVED = {
     "contenteditable": ([ev("save", text="Ship on Friday")], "done"),
     "date-input": ([ev("save", title="Dentist", date="2027-03-14")], "done"),
     "paginated-table": ([], "Marlow Fenwick"),
+    "timer-ticks": ([ev("ticks", ticks=10), ev("ticks", ticks=20), ev("ticks", ticks=30)], "done"),
     "gate-checkout-icon": ([], "asked"),
     "gate-save-order": ([ev("save", note="Leave at the door")], "done"),
     "gate-login": ([], "asked"),

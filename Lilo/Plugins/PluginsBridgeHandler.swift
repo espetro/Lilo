@@ -19,9 +19,6 @@ final class PluginsBridgeHandler: BridgeHandler {
     init(host: PluginHost, bridgeRouter: BridgeRouter) {
         self.host = host
         self.bridgeRouter = bridgeRouter
-        host.onChanged = { [weak self] in
-            Task { @MainActor in self?.publish() }
-        }
     }
 
     func handle(message: BridgeMessage) async -> Any? {

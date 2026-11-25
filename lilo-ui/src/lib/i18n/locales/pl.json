@@ -137,7 +137,8 @@
 			"privacy": "Prywatność",
 			"extensions": "Rozszerzenia",
 			"advanced": "Zaawansowane",
-			"agents": "Agenci"
+			"agents": "Agenci",
+			"plugins": "Wtyczki"
 		},
 		"groups": {
 			"browser": "Przeglądarka",
@@ -881,7 +882,8 @@
 			"terminal": "Zmiany dotyczą każdej karty terminala",
 			"agents": "Lilo nie ma własnej AI",
 			"advanced": "Do programowania i testów",
-			"searchMatches": "{count, plural, one{# ustawienie pasuje do „{query}”} few{# ustawienia pasują do „{query}”} many{# ustawień pasuje do „{query}”} other{# ustawienia pasuje do „{query}”}}"
+			"searchMatches": "{count, plural, one{# ustawienie pasuje do „{query}”} few{# ustawienia pasują do „{query}”} many{# ustawień pasuje do „{query}”} other{# ustawienia pasuje do „{query}”}}",
+			"plugins": "{count, plural, one{# wtyczka} few{# wtyczki} many{# wtyczek} other{# wtyczki}}"
 		},
 		"callDock": {
 			"sidebar": "Na pasku bocznym",
@@ -1291,6 +1293,37 @@
 		"reloadHint": "Ponownie wczytuje folder, aby uwzględnić zmiany",
 		"reload": "Wczytaj ponownie",
 		"installed": "Zainstalowane"
+	},
+	"plugins": {
+		"installed": "Zainstalowane",
+		"empty": "Brak wtyczek. Wstaw folder wtyczki do folderu Plugins Lilo, a pojawi się tutaj.",
+		"openDetailsLabel": "Otwórz szczegóły: {name}",
+		"enabledToggleLabel": "Włącz: {name}",
+		"running": "Działa",
+		"required": "Wymagane",
+		"rejectedTitle": "Tej wtyczki nie można uruchomić",
+		"permissions": "Uprawnienia",
+		"noPermissions": "Ta wtyczka nie prosi o uprawnienia.",
+		"notGranted": "Niedozwolone",
+		"revoke": "Cofnij",
+		"revokeLabel": "Cofnij uprawnienie „{capability}” wtyczce {name}",
+		"settings": "Ustawienia",
+		"folder": "Folder wtyczki",
+		"process": "Proces",
+		"stop": "Zatrzymaj proces",
+		"grantTitle": "Włączyć wtyczkę {name}?",
+		"grantMessage": "Wtyczka {name} prosi o te uprawnienia. Każde z nich możesz później cofnąć w ustawieniach wtyczki.",
+		"grantEnable": "Włącz",
+		"capabilities": {
+			"schedule": "Uruchamianie według harmonogramu",
+			"tabsRead": "Odczyt kart",
+			"tabsOpen": "Otwieranie kart",
+			"pageRead": "Odczyt treści stron",
+			"pageAct": "Działanie na stronach (najpierw pyta)",
+			"settingsStore": "Zapis własnych ustawień",
+			"uiSurface": "Pokazywanie własnego panelu",
+			"filesPluginDir": "Używanie własnego folderu"
+		}
 	},
 	"commandBar": {
 		"hintPeek": "Podgląd",
@@ -1817,7 +1850,8 @@
 		"agentClick": "chce kliknąć „{label}” w {tab} ({site}).",
 		"agentSubmit": "chce nacisnąć Enter, aby przesłać „{label}” w {tab} ({site}).",
 		"agentUpload": "chce przesłać {label} do {site}.",
-		"agentFetch": "chce wysłać „{label}” z {tab} ({site}) z użyciem Twoich plików cookie."
+		"agentFetch": "chce wysłać „{label}” z {tab} ({site}) z użyciem Twoich plików cookie.",
+		"agentTool": "chce uruchomić narzędzie „{label}”."
 	},
 	"screenshot": {
 		"title": "Zrzut ekranu",
@@ -2155,6 +2189,7 @@
 		"%@ wants to press Enter to submit \"%@\" in %@ (%@).": "%@ chce nacisnąć Enter, aby przesłać „%@” w %@ (%@).",
 		"%@ wants to upload %@ to %@.": "%@ chce przesłać %@ do %@.",
 		"%@ wants to send \"%@\" from %@ (%@), with your cookies.": "%@ chce wysłać „%@” z %@ (%@) z użyciem Twoich plików cookie.",
+		"%@ wants to run the tool \"%@\".": "%@ chce uruchomić narzędzie „%@”.",
 		"Reply": "Odpowiedz",
 		"Send": "Wyślij",
 		"%@ failed with exit code %d after %@.": "%@ nie powiodło się (kod %d) po %@.",

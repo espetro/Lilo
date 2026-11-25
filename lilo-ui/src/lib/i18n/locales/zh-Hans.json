@@ -137,7 +137,8 @@
 			"privacy": "隐私",
 			"extensions": "扩展",
 			"advanced": "高级",
-			"agents": "智能体"
+			"agents": "智能体",
+			"plugins": "插件"
 		},
 		"groups": {
 			"browser": "浏览器",
@@ -881,7 +882,8 @@
 			"terminal": "更改适用于每个终端标签页",
 			"agents": "Lilo 本身不内置 AI",
 			"advanced": "供开发和测试使用",
-			"searchMatches": "{count, plural, one{# 项设置与“{query}”匹配} other{# 项设置与“{query}”匹配}}"
+			"searchMatches": "{count, plural, one{# 项设置与“{query}”匹配} other{# 项设置与“{query}”匹配}}",
+			"plugins": "{count, plural, one{# 个插件} other{# 个插件}}"
 		},
 		"callDock": {
 			"sidebar": "在边栏中",
@@ -1291,6 +1293,37 @@
 		"reloadHint": "重新读取其文件夹以应用你的更改",
 		"reload": "重新载入",
 		"installed": "已安装"
+	},
+	"plugins": {
+		"installed": "已安装",
+		"empty": "还没有插件。把插件文件夹放进 Lilo 的 Plugins 文件夹,它就会出现在这里。",
+		"openDetailsLabel": "打开 {name} 的详情",
+		"enabledToggleLabel": "启用 {name}",
+		"running": "运行中",
+		"required": "必填",
+		"rejectedTitle": "无法运行此插件",
+		"permissions": "权限",
+		"noPermissions": "此插件不需要任何权限。",
+		"notGranted": "未允许",
+		"revoke": "撤销",
+		"revokeLabel": "撤销 {name} 的“{capability}”权限",
+		"settings": "设置",
+		"folder": "插件文件夹",
+		"process": "进程",
+		"stop": "停止进程",
+		"grantTitle": "启用 {name}?",
+		"grantMessage": "{name} 请求以下权限。你之后可以在插件的设置中逐项撤销。",
+		"grantEnable": "启用",
+		"capabilities": {
+			"schedule": "按计划运行",
+			"tabsRead": "读取你的标签页",
+			"tabsOpen": "打开标签页",
+			"pageRead": "读取页面内容",
+			"pageAct": "对页面执行操作(先询问)",
+			"settingsStore": "保存自己的设置",
+			"uiSurface": "显示自己的面板",
+			"filesPluginDir": "使用自己的文件夹"
+		}
 	},
 	"commandBar": {
 		"hintPeek": "预览",
@@ -1817,7 +1850,8 @@
 		"agentClick": "想要在 {tab}（{site}）中点按“{label}”。",
 		"agentSubmit": "想要在 {tab}（{site}）中按 Enter 提交“{label}”。",
 		"agentUpload": "想要将 {label} 上传到 {site}。",
-		"agentFetch": "想要使用你的 Cookie，从 {tab}（{site}）发送“{label}”。"
+		"agentFetch": "想要使用你的 Cookie，从 {tab}（{site}）发送“{label}”。",
+		"agentTool": "想要运行工具“{label}”。"
 	},
 	"screenshot": {
 		"title": "屏幕快照",
@@ -2149,6 +2183,7 @@
 		"%@ wants to press Enter to submit \"%@\" in %@ (%@).": "%@ 想要在 %@（%@）中按 Enter 提交“%@”。",
 		"%@ wants to upload %@ to %@.": "%@ 想要将 %@ 上传到 %@。",
 		"%@ wants to send \"%@\" from %@ (%@), with your cookies.": "%@ 想要使用你的 Cookie，从 %@（%@）发送“%@”。",
+		"%@ wants to run the tool \"%@\".": "%@ 想要运行工具“%@”。",
 		"Reply": "回复",
 		"Send": "发送",
 		"%@ failed with exit code %d after %@.": "%@ 失败，退出码为 %d，用时 %@。",

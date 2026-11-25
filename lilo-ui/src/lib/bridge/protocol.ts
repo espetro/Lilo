@@ -1581,8 +1581,8 @@ export interface BridgeShortcutConflict {
 
 /** A click ("click") or form submission ("enter") an agent is about to make on a control labelled `label`. */
 export interface BridgeAgentAction {
-	/** For "upload", `label` is the file's path; for "fetch", the request's method and URL. */
-	kind: "click" | "enter" | "fetch" | "upload";
+	/** For "upload", `label` is the file's path; for "fetch", the request's method and URL; for "tool", a plugin's tool name. */
+	kind: "click" | "enter" | "fetch" | "upload" | "tool";
 	label: string;
 	site: string;
 	tab: string;
