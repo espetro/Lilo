@@ -687,6 +687,15 @@ extension MainWindowController {
             engineFactory.setFeatureFlagOverrides(overrides)
         }
 
+        // The plugins panel's native side; the handler retains the host through the router.
+        bridgeRouter.register(handler: PluginsBridgeHandler(
+            host: PluginHost(
+                settingsStore: settingsStore,
+                tabs: PluginTabsAdapter(windows: context.windows, browserState: context.browserState)
+            ),
+            bridgeRouter: bridgeRouter
+        ))
+
         let downloadHandler = DownloadBridgeHandler(
             downloadManager: context.downloadManager,
             bridgeRouter: bridgeRouter,
