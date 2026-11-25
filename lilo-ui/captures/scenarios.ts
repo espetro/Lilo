@@ -2,7 +2,7 @@ import { expect, type Page } from "@playwright/test";
 
 import type { FakeHostWorld } from "../e2e/fakeHost";
 import type { BridgeLittleState } from "../src/lib/bridge";
-import { initialWorld, installFakeHost, pressAndLift, SPACE_1, SPACE_2, splitWorld, tab, treeItem } from "./support";
+import { initialWorld, installFakeHost, pluginFixtures, pressAndLift, SPACE_1, SPACE_2, splitWorld, tab, treeItem } from "./support";
 
 export interface CaptureScenario {
 	name: string;
@@ -344,4 +344,50 @@ scenarios.push(
 	{ name: "favorites-glass-dark", colorScheme: "dark", world: favoritesGlassWorld(), run: idle },
 	{ name: "favorites-glass-overlap-light", world: favoritesGlassScrolledWorld(), run: scrollFavoritesOverTabs },
 	{ name: "favorites-glass-overlap-dark", colorScheme: "dark", world: favoritesGlassScrolledWorld(), run: scrollFavoritesOverTabs },
+);
+
+// Settings > Plugins on the made-up plugins: one running, one idle, one off with a setting of each type, one rejected.
+// Steps that only exist after a change are guarded, so the same scenarios still record Settings at a merge base,
+// which has no Plugins section.
+const pluginsWorld = (): FakeHostWorld => ({ ...initialWorld(), plugins: pluginFixtures() });
+
+async function pluginsSection(page: Page) {
+	await receive(page, [{ event: "openSettings" }]);
+	await page.locator(".section-nav-button").filter({ hasText: "Plugins" }).click({ timeout: 3000 }).catch(() => {});
+	await page.locator(".plugin-row").first().waitFor({ state: "visible", timeout: 3000 }).catch(() => {});
+}
+
+async function pluginsList(page: Page) {
+	await pluginsSection(page);
+	await page.waitForTimeout(400);
+}
+
+async function pluginDetail(page: Page) {
+	await pluginsSection(page);
+	await page.locator(".plugin-row").filter({ hasText: "Reading List" }).locator(".row-main").click({ timeout: 3000 }).catch(() => {});
+	await page.getByRole("textbox", { name: "Keep at most" }).waitFor({ state: "visible", timeout: 3000 }).catch(() => {});
+	await page.waitForTimeout(400);
+}
+
+// Switching a plugin on: the permissions sheet first, then the row running.
+async function pluginEnable(page: Page, finish: boolean) {
+	await pluginsSection(page);
+	const toggle = page.locator(".ui-toggle", { has: page.getByRole("checkbox", { name: "Enable Reading List" }) });
+	await toggle.click({ timeout: 3000 }).catch(() => {});
+	await page.getByRole("dialog").waitFor({ state: "visible", timeout: 3000 }).catch(() => {});
+	await page.waitForTimeout(500);
+	if (!finish) return;
+	await page.getByRole("button", { name: "Enable", exact: true }).click({ timeout: 3000 }).catch(() => {});
+	await page.waitForTimeout(600);
+}
+
+scenarios.push(
+	{ name: "plugins-list-light", world: pluginsWorld(), run: pluginsList },
+	{ name: "plugins-list-dark", colorScheme: "dark", world: pluginsWorld(), run: pluginsList },
+	{ name: "plugins-detail-light", world: pluginsWorld(), run: pluginDetail },
+	{ name: "plugins-detail-dark", colorScheme: "dark", world: pluginsWorld(), run: pluginDetail },
+	{ name: "plugins-grants-light", world: pluginsWorld(), run: (page) => pluginEnable(page, false) },
+	{ name: "plugins-grants-dark", colorScheme: "dark", world: pluginsWorld(), run: (page) => pluginEnable(page, false) },
+	{ name: "plugins-enable-light", world: pluginsWorld(), run: (page) => pluginEnable(page, true) },
+	{ name: "plugins-enable-dark", colorScheme: "dark", world: pluginsWorld(), run: (page) => pluginEnable(page, true) },
 );
