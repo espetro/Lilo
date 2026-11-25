@@ -63,6 +63,10 @@ targets:
         embed: true
         copy:
           destination: executables
+      - target: LiloCompanionHost
+        embed: true
+        copy:
+          destination: executables
     sources:
       # Every folder under Lilo/ is a source group; the entries below cover what needs other handling.
       - path: Lilo
@@ -73,6 +77,11 @@ targets:
           - ContentBlocker/BlockerResources
           - Generated
           - Resources
+          # The lilo-companion tool target's own files: its entry point and the process loop the
+          # app never runs. The protocol and the registration stay in the app, which writes the
+          # manifest the browser reads.
+          - Companion/main.swift
+          - Companion/CompanionHostMain.swift
       # Copied whole into the content blocker's built-in extension: kept as one folder.
       - path: Lilo/ContentBlocker/BlockerResources
         type: folder
@@ -122,6 +131,11 @@ targets:
       - path: Lilo/Resources/AppIcons
         type: folder
         buildPhase: resources
+      # The companion host's manifest template, which CompanionHostRegistration fills with the
+      # running app's host path and the pinned extension id.
+      - path: Lilo/Resources/companion-host
+        type: folder
+        buildPhase: resources
       - path: Lilo/Resources/shell-integration
         type: folder
         buildPhase: resources
@@ -168,6 +182,26 @@ targets:
     sources:
       - path: LiloMCP/main.swift
       - path: Lilo/App/BuildIdentity.swift
+
+  # What the companion extension's browser launches as its native-messaging host: serves the
+  # protocol.ts schema over stdio. Ships in the app bundle; the app registers it with the user's
+  # Chromium browsers from the manifest template in Contents/Resources/companion-host.
+  LiloCompanionHost:
+    type: tool
+    platform: macOS
+    configFiles: *configFiles
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: fr.arouillard.lilo.companion
+        PRODUCT_NAME: lilo-companion
+        GENERATE_INFOPLIST_FILE: YES
+        CREATE_INFOPLIST_SECTION_IN_BINARY: YES
+        SKIP_INSTALL: YES
+    sources:
+      - path: Lilo/Companion/main.swift
+      - path: Lilo/Companion/CompanionHost.swift
+      - path: Lilo/Companion/CompanionHostMain.swift
+      - path: Lilo/App/Logging.swift
 
   LiloTests:
     type: bundle.unit-test

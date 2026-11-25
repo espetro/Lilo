@@ -9,9 +9,14 @@ Chromium on Linux, where the Safari Web Extension bridge under `Lilo/Extensions/
 - Message schema and validation: `src/protocol.ts`
 - Tool implementations over `chrome.tabs` / `chrome.scripting`: `src/tools.ts`
 - Native-messaging port plumbing with reconnect: `src/nativePort.ts`
+- The native-messaging **host**: `Lilo/Companion/` in the Lilo app, which answers every tool
+  call with `not implemented yet` until the slice that wires it to the running Lilo's agent
+  surface, and registers itself with the user's browsers at launch
+  (`Lilo/Companion/CompanionHostRegistration.swift`).
 
-The native-messaging **host** (the Lilo app or headless container side) and the **Linux install
-path** (policy JSON, `.deb`/`.rpm` postinst, `native-messaging-hosts` manifests) are later slices.
+The **Linux install path** (policy JSON, `.deb`/`.rpm` postinst, `native-messaging-hosts`
+manifests) is still a later slice; the manifest template in
+`Lilo/Resources/companion-host/` is written for it.
 
 ## Build and test
 

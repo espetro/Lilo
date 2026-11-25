@@ -1,0 +1,22 @@
+{
+	"comment": "Shared contract cases for the companion protocol: the Swift host (LiloTests/Companion/CompanionHostTests.swift) and the TypeScript schema (companion-extension/src/protocol.test.ts) must accept and reject the same messages with the same words. A case with an \"error\" is a rejection with that exact message; a case without one is accepted.",
+	"cases": [
+		{ "name": "a valid snapshot request", "message": { "id": "r1", "tool": "snapshot", "params": { "tabId": 3, "maxChars": 100 } } },
+		{ "name": "optional params left out", "message": { "id": "r2", "tool": "tabs.list", "params": {} } },
+		{ "name": "a tabs.open request with its optional flag", "message": { "id": "r3", "tool": "tabs.open", "params": { "url": "https://example.com/", "background": true } } },
+		{ "name": "a scripting.execute request with its array", "message": { "id": "r4", "tool": "scripting.execute", "params": { "tabId": 1, "funcSource": "() => 1", "args": [1, "two"] } } },
+		{ "name": "a tabs.list request with its prefixes", "message": { "id": "r5", "tool": "tabs.list", "params": { "urlPrefixes": ["https://example.com/"] } } },
+		{ "name": "a request with extra fields", "message": { "id": "r6", "tool": "tabs.list", "params": { "unknown": 1 } } },
+		{ "name": "a missing id", "message": { "tool": "snapshot", "params": { "tabId": 1 } }, "error": "request.id must be a non-empty string" },
+		{ "name": "an empty id", "message": { "id": "", "tool": "snapshot", "params": { "tabId": 1 } }, "error": "request.id must be a non-empty string" },
+		{ "name": "an id that is not a string", "message": { "id": 7, "tool": "snapshot", "params": { "tabId": 1 } }, "error": "request.id must be a non-empty string" },
+		{ "name": "an unknown tool", "message": { "id": "r7", "tool": "cookies.read", "params": {} }, "error": "unknown tool: cookies.read" },
+		{ "name": "params that are not an object", "message": { "id": "r8", "tool": "snapshot", "params": [1] }, "error": "request.params must be an object" },
+		{ "name": "a param of the wrong type", "message": { "id": "r9", "tool": "snapshot", "params": { "tabId": "3" } }, "error": "params.tabId must be number" },
+		{ "name": "a required param left out", "message": { "id": "r10", "tool": "tabs.open", "params": {} }, "error": "tabs.open requires params.url" },
+		{ "name": "an array where a string is expected", "message": { "id": "r11", "tool": "tabs.open", "params": { "url": ["https://example.com/"] } }, "error": "params.url must be string" },
+		{ "name": "a number where a boolean is expected", "message": { "id": "r12", "tool": "tabs.open", "params": { "url": "https://example.com/", "background": 1 } }, "error": "params.background must be boolean" },
+		{ "name": "a string array with a number in it", "message": { "id": "r13", "tool": "tabs.list", "params": { "urlPrefixes": ["https://example.com/", 7] } }, "error": "params.urlPrefixes must be string[]" },
+		{ "name": "an array where an array of anything is expected", "message": { "id": "r14", "tool": "scripting.execute", "params": { "tabId": 1, "funcSource": "()", "args": "x" } }, "error": "params.args must be an array" }
+	]
+}

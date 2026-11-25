@@ -10,6 +10,9 @@
 	},
 	"permissions": ["nativeMessaging", "tabs", "scripting", "storage"],
 	"host_permissions": ["<all_urls>"],
+	// Pins the extension id (the SHA-256 of this key's first half, hex mapped a-p), so the
+	// native-messaging manifest's allowed_origins stays valid across unpacked reloads.
+	"key": "MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAr+HJlU+hOnN4VINAVFflWeo15IpnoQg8/lrAjoBCL8fHehUXnm3ccAMt9Me/2hlNaiqGI0jb6RQOy9VCPfWAJHH35UbF+DGeI1l7aW5mFNmr6X3HQYvtbZ4C5aJHXM5RtHsNjNLX9NljneUxJbwHWVoDl0/yVToI1UT+ibdJXzXl7EEBhD5nmjK5EQw2Hgwo9KWMH9qS38OOlyxe7UesbiUNq9spLBPV3FpXcoOdAQFrFOwdc6eCsBDgrG7p5iSNWAHyxwZrK+yKLut7fNWauUi+ug7xdcTUMg/0UOLVOppEN5V3mXY91Tjo4vE2bM64mlCGYBowXxR3HJ0WYQ0muwIDAQAB",
 	"content_scripts": [
 		{
 			"matches": ["http://*/*", "https://*/*"],
