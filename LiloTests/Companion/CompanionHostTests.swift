@@ -171,12 +171,12 @@ final class CompanionHostProcessTests: XCTestCase {
 
     /// One accepted unix-socket peer: answers every request the way the tool surface does.
     private final class Peer {
-        let socket: Int32
+        let listener: Int32
         let path: String
         private(set) var connection: Int32 = -1
 
         init() throws {
-            socket = socket(AF_UNIX, SOCK_STREAM, 0)
+            listener = socket(AF_UNIX, SOCK_STREAM, 0)
             path = NSTemporaryDirectory() + "lilo-companion-test-\(UUID().uuidString).sock"
             var address = sockaddr_un()
             address.sun_family = sa_family_t(AF_UNIX)
@@ -186,16 +186,16 @@ final class CompanionHostProcessTests: XCTestCase {
             }
             let length = socklen_t(MemoryLayout<sockaddr_un>.size)
             let bound = withUnsafePointer(to: &address) { pointer in
-                pointer.withMemoryRebound(to: sockaddr.self, capacity: 1) { bind(socket, $0, length) }
+                pointer.withMemoryRebound(to: sockaddr.self, capacity: 1) { bind(listener, $0, length) }
             }
-            guard bound == 0, listen(socket, 1) == 0 else { throw NSError(domain: "companion-test", code: 1) }
+            guard bound == 0, listen(listener, 1) == 0 else { throw NSError(domain: "companion-test", code: 1) }
         }
 
-        deinit { close(socket); if connection >= 0 { close(connection) } }
+        deinit { close(listener); if connection >= 0 { close(connection) } }
 
         /// Blocks until the host connects, then relays frames: each request gets a canned answer.
         func serve() {
-            connection = accept(socket, nil, nil)
+            connection = accept(listener, nil, nil)
             var buffered = Data()
             var chunk = [UInt8](repeating: 0, count: 64 * 1024)
             while true {
