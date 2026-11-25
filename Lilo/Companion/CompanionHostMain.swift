@@ -2,90 +2,72 @@ import Foundation
 import Darwin
 import os
 
-/// The companion extension's native-messaging host process (`lilo-companion`), speaking the
-/// `protocol.ts` schema over stdin and stdout as Chrome frames them. This slice stops at the
-/// wire: serving requests against the browser's real tabs is the next slice, and every tool
-/// call is answered with a `not implemented yet` error until then. The Lilo app ships the
-/// binary and registers it with the user's Chromium browsers through
-/// `CompanionHostRegistration`, which writes the manifest template's concrete form into each
-/// browser's native-messaging-hosts directory.
+/// The companion extension's native-messaging host process (`lilo-companion`). Chrome starts it
+/// with the caller's origin as its only argument and speaks native messaging over its standard
+/// input and output. The host answers nothing itself: it is a byte pipe between that stdio and
+/// the unix socket a Lilo peer listens on (the app, or the headless container of the Linux
+/// install path), so the validation of the `protocol.ts` schema happens exactly once on each
+/// side that speaks it — the extension in `nativePort.ts`, the peer in its tool surface — and
+/// never here.
 ///
-/// Chrome starts the host with one argument, the origin of the caller (`chrome-extension://<id>/`),
-/// as an unspoofable identification of the extension that opened the port.
+/// The socket path is `LILO_COMPANION_SOCK` when set (tests, the container), else
+/// `~/Library/Application Support/Lilo/companion.sock`. When no peer is listening the host exits
+/// at once: the extension's port disconnects and it retries on its own backoff, which is how a
+/// not-yet-running Lilo and a browser restart converge without any state on this side.
 final class CompanionHostMain {
-    /// Ends the run: EOF or a write failure on the pipe, or input the schema rejects.
     static func run(input: FileHandle = .standardInput, output: FileHandle = .standardOutput, origin: String?) -> Never {
-        Logger(liloCategory: "companion-host").log("serving \(CompanionProtocol.hostName) for \(origin ?? "an unknown origin")")
-        var reader = Reader(input)
+        let logger = Logger(liloCategory: "companion-host")
+        guard let path = socketPath(), let fd = connectUnixSocket(path) else {
+            logger.log("no companion peer listening, leaving \(CompanionProtocol.hostName) dormant")
+            exit(1)
+        }
+        logger.log("piping \(CompanionProtocol.hostName) for \(origin ?? "an unknown origin") to \(path)")
+        // stdin to the socket on a worker, the socket to stdout here; either side closing ends
+        // the process, which closes the other direction through the process exit itself.
+        let writeEnd = dup(fileno(stdout))
+        Thread.detachNewThread {
+            copyBytes(from: fileno(stdin), to: fd)
+            shutdown(fd, SHUT_WR)
+        }
+        copyBytes(from: fd, to: writeEnd)
+        exit(0)
+    }
+
+    static func socketPath(environment: [String: String] = ProcessInfo.processInfo.environment, home: String = NSHomeDirectory()) -> String? {
+        if let override = environment["LILO_COMPANION_SOCK"], !override.isEmpty { return override }
+        return "\(home)/Library/Application Support/Lilo/companion.sock"
+    }
+
+    private static func connectUnixSocket(_ path: String) -> Int32? {
+        let fd = socket(AF_UNIX, SOCK_STREAM, 0)
+        guard fd >= 0 else { return nil }
+        var address = sockaddr_un()
+        address.sun_family = sa_family_t(AF_UNIX)
+        let capacity = MemoryLayout.size(ofValue: address.sun_path) - 1
+        guard path.utf8.count <= capacity else { close(fd); return nil }
+        _ = withUnsafeMutablePointer(to: &address.sun_path) { pointer in
+            path.withCString { strlcpy(UnsafeMutableRawPointer(pointer).assumingMemoryBound(to: CChar.self), $0, capacity + 1) }
+        }
+        let length = socklen_t(MemoryLayout<sockaddr_un>.size)
+        let connected = withUnsafePointer(to: &address) { pointer in
+            pointer.withMemoryRebound(to: sockaddr.self, capacity: 1) { connect(fd, $0, length) }
+        }
+        guard connected == 0 else { close(fd); return nil }
+        return fd
+    }
+
+    /// Blocks copying `from` into `to` until the read end closes or either side fails.
+    private static func copyBytes(from source: Int32, to destination: Int32) {
+        var buffer = [UInt8](repeating: 0, count: 64 * 1024)
         while true {
-            guard let data = reader.next() else { exit(0) }
-            let message: [String: Any]
-            do {
-                message = try CompanionProtocol.decodeFrame(data)
-            } catch {
-                // The extension drops a malformed message too (nativePort.ts), so one bad frame
-                // must not end a connection its later requests still need.
-                Logger(liloCategory: "companion-host").error("dropping malformed message: \(error)")
-                continue
+            let count = buffer.withUnsafeMutableBytes { read(source, $0.baseAddress, $0.count) }
+            guard count > 0 else { return }
+            var written = 0
+            while written < count {
+                let step = buffer.withUnsafeBytes { write(destination, $0.baseAddress?.advanced(by: written), count - written) }
+                guard step > 0 else { return }
+                written += step
             }
-            if CompanionProtocol.isHello(message) {
-                // The version check keeps an extension built against a future schema from
-                // assuming a host that would silently drop its requests.
-                let spoken = (message["protocolVersion"] as? NSNumber)?.intValue
-                guard spoken == CompanionProtocol.version else {
-                    Logger(liloCategory: "companion-host").error(
-                        "extension speaks protocol \(spoken ?? 0), host speaks \(CompanionProtocol.version)"
-                    )
-                    exit(1)
-                }
-                continue
-            }
-            guard case .success(let request) = CompanionProtocol.parseRequest(message) else {
-                Logger(liloCategory: "companion-host").error("dropping malformed request")
-                continue
-            }
-            // No browser behind the wire yet: the tool implementations land with the next slice,
-            // which wires this to the running Lilo's agent surface.
-            let reply = CompanionProtocol.response(id: request.id, tool: request.tool, result: .failure(CompanionProtocol.RequestError(reason: "not implemented yet")))
-            guard let frame = CompanionProtocol.encodeFrame(reply), writeAll(output, frame) else { exit(0) }
-        }
-    }
-
-    private static func writeAll(_ handle: FileHandle, _ data: Data) -> Bool {
-        do {
-            try handle.write(contentsOf: data)
-            return true
-        } catch {
-            return false
-        }
-    }
-
-    /// Reads whole frames off the pipe: the 4-byte little-endian length, then its payload.
-    private struct Reader {
-        private let handle: FileHandle
-        private var buffered = Data()
-
-        init(_ handle: FileHandle) {
-            self.handle = handle
-        }
-
-        mutating func next() -> Data? {
-            guard let header = exactly(4) else { return nil }
-            let bytes = [UInt8](header)
-            let length = Int(bytes[0]) | (Int(bytes[1]) << 8) | (Int(bytes[2]) << 16) | (Int(bytes[3]) << 24)
-            guard length <= CompanionProtocol.maxMessageBytes, let payload = exactly(length) else { return nil }
-            return header + payload
-        }
-
-        /// Exactly `count` bytes, buffered across reads; nil only at end of input or on an oversized frame.
-        private mutating func exactly(_ count: Int) -> Data? {
-            while buffered.count < count, let chunk = try? handle.read(upToCount: count - buffered.count), !chunk.isEmpty {
-                buffered.append(chunk)
-            }
-            guard buffered.count >= count else { return nil }
-            let frame = Data(buffered.prefix(count))
-            buffered.removeSubrange(..<count)
-            return frame
         }
     }
 }

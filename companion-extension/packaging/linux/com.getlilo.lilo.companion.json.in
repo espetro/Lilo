@@ -1,0 +1,9 @@
+{
+	"name": "com.getlilo.lilo.companion",
+	"description": "Lilo companion extension host",
+	"path": "/usr/lib/lilo/lilo-companion-shim.py",
+	"type": "stdio",
+	"allowed_origins": [
+		"chrome-extension://@EXTENSION_ID@/"
+	]
+}
