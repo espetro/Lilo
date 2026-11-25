@@ -10,7 +10,7 @@ Timings marked "this Mac" come from an Apple M1 with 8 GB of RAM under load from
 
 ## What runs on Linux
 
-`make linux-checks` runs every check that needs no Xcode, in the order `make validate` runs them: it is `validate` without the app build and the Swift tests.
+`make linux-checks` runs every check that needs no Xcode, in the order `make validate` runs them: it is `validate` without the app build and the Swift tests, plus `docker-mcp-test`, the containerized agent surface's own check (see below).
 CI runs the same targets on `ubuntu-latest` already (the `release-tooling`, `ui`, `e2e` and `bridge` jobs), so what passes there passes in a Linux sandbox.
 
 | Target | Checks | Result on Debian 13 |
@@ -51,6 +51,28 @@ These pass on Linux too, and sit outside `linux-checks` because they are heavier
 | `site-deploy-check`, `docs-deploy-check` | `Makefile:895`, `:923` | what the Cloudflare builds run. |
 | `bridge-gen`, `ui-build`, `vt-build` | `Makefile:664`, `:319`, `:670` | The generated sources come out identical to macOS (`ui-build` writes both generated Swift files; `vt-build` fetches the prebuilt libghostty-vt). |
 | `lint-commits` | `Makefile:159` | Conventional Commits check of a range. |
+
+## The agent MCP surface in a container
+
+`make docker-mcp` builds a headless image of Lilo's agent tool surface: the same `Lilo/Agent/AgentPage.js` page logic the macOS app injects, driven by WebKitGTK under Xvfb instead of WKWebView, speaking MCP on stdio (`container/linux/`).
+An MCP client launches it directly — no macOS, no app build:
+
+```bash
+make docker-mcp                                # builds the lilo-mcp image
+docker run -i --rm lilo-mcp                    # MCP on stdin/stdout
+claude mcp add lilo -- docker run -i --rm lilo-mcp
+```
+
+`make docker-mcp-test` is the end-to-end check (part of `linux-checks`): initialize, `tools/list`, then a tab, a navigation, a `read_page` with refs, `find`, text, `form_input` and synthetic input against a `data:` page.
+It needs docker or podman (whichever is on `PATH`) and nothing else.
+
+What the container covers, and what it does not:
+
+- **Same tool names and shapes** as the macOS surface (`tabs_context_mcp`, `navigate`, `read_page`, `find`, `wait_for`, `get_page_text`, `form_input`, `javascript_tool`, `computer`, `browser_batch`, ...), so an agent's prompts and fixtures transfer unchanged.
+- **Same page logic**: `AgentPage.js` runs verbatim as a user script in a `lilo-agent` isolated world, so refs, roles and the settle logic behave as on macOS.
+- **Consent differs.** The macOS surface asks in the app window; the container has none. Set `LILO_AGENT_ALLOW_ALL=1` to admit a client unattended (what the test does), or `LILO_CHROME_URL` to point at the Svelte chrome, which renders the same consent drawer over the same bridge events.
+- **WebKitGTK, not WKWebView**: script calls are asynchronous with `a{sv}` arguments, and the set of quirks [COMPATIBILITY.md](COMPATIBILITY.md) documents for the web side still describes macOS's WebKit. Known container-only gaps: no cross-origin subframe access (script runs in the main frame only) and no network-quiet half in the navigation settle (DOM quiet only).
+- **No profiles, no `fetch`, no screenshots of native UI**: `list_profiles`/`reset_profile` report an empty single profile, `fetch` says to use `javascript_tool` from a page, and `resize_window` resizes the Xvfb viewport.
 
 `make swiftlint` on Linux downloads the static `swiftlint_linux_amd64.zip` (its own pinned checksum, in the Makefile beside the macOS one) and runs the same rules as macOS with two exceptions: `statement_position` and `vertical_whitespace_closing_braces` need SourceKit, which the static binary does not have, so it prints a warning and skips them.
 The macOS job in CI runs all of them, so a violation only those two rules find shows up there and not on Linux.
