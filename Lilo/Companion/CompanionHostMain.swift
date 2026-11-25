@@ -22,12 +22,13 @@ final class CompanionHostMain {
             exit(1)
         }
         logger.log("piping \(CompanionProtocol.hostName) for \(origin ?? "an unknown origin") to \(path)")
-        // stdin to the socket on a worker, the socket to stdout here; either side closing ends
-        // the process, which closes the other direction through the process exit itself.
+        // stdin to the socket on a worker, the socket to stdout here. stdin reaching EOF means the
+        // browser closed the port, so the host exits rather than lingering on a half-closed socket.
         let writeEnd = dup(fileno(stdout))
         Thread.detachNewThread {
             copyBytes(from: fileno(stdin), to: fd)
             shutdown(fd, SHUT_WR)
+            exit(0)
         }
         copyBytes(from: fd, to: writeEnd)
         exit(0)
