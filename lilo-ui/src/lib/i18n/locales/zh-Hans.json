@@ -1850,7 +1850,8 @@
 		"agentClick": "想要在 {tab}（{site}）中点按“{label}”。",
 		"agentSubmit": "想要在 {tab}（{site}）中按 Enter 提交“{label}”。",
 		"agentUpload": "想要将 {label} 上传到 {site}。",
-		"agentFetch": "想要使用你的 Cookie，从 {tab}（{site}）发送“{label}”。"
+		"agentFetch": "想要使用你的 Cookie，从 {tab}（{site}）发送“{label}”。",
+		"agentTool": "想要运行工具“{label}”。"
 	},
 	"screenshot": {
 		"title": "屏幕快照",
@@ -2182,6 +2183,7 @@
 		"%@ wants to press Enter to submit \"%@\" in %@ (%@).": "%@ 想要在 %@（%@）中按 Enter 提交“%@”。",
 		"%@ wants to upload %@ to %@.": "%@ 想要将 %@ 上传到 %@。",
 		"%@ wants to send \"%@\" from %@ (%@), with your cookies.": "%@ 想要使用你的 Cookie，从 %@（%@）发送“%@”。",
+		"%@ wants to run the tool \"%@\".": "%@ 想要运行工具“%@”。",
 		"Reply": "回复",
 		"Send": "发送",
 		"%@ failed with exit code %d after %@.": "%@ 失败，退出码为 %d，用时 %@。",

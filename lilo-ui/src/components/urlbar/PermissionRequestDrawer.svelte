@@ -47,6 +47,7 @@
         enter: "permissionPrompt.agentSubmit",
         fetch: "permissionPrompt.agentFetch",
         upload: "permissionPrompt.agentUpload",
+        tool: "permissionPrompt.agentTool",
         click: "permissionPrompt.agentClick",
       }[agentAction.kind], {
         label: agentAction.label,

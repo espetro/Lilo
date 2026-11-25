@@ -1850,7 +1850,8 @@
 		"agentClick": "wil op \"{label}\" klikken in {tab} ({site}).",
 		"agentSubmit": "wil op Enter drukken om \"{label}\" te versturen in {tab} ({site}).",
 		"agentUpload": "wil {label} uploaden naar {site}.",
-		"agentFetch": "wil \"{label}\" versturen vanuit {tab} ({site}) met jouw cookies."
+		"agentFetch": "wil \"{label}\" versturen vanuit {tab} ({site}) met jouw cookies.",
+		"agentTool": "wil de tool \"{label}\" uitvoeren."
 	},
 	"screenshot": {
 		"title": "Schermafbeelding",
@@ -2182,6 +2183,7 @@
 		"%@ wants to press Enter to submit \"%@\" in %@ (%@).": "%@ wil op Enter drukken om \"%@\" te versturen in %@ (%@).",
 		"%@ wants to upload %@ to %@.": "%@ wil %@ uploaden naar %@.",
 		"%@ wants to send \"%@\" from %@ (%@), with your cookies.": "%@ wil \"%@\" versturen vanuit %@ (%@) met jouw cookies.",
+		"%@ wants to run the tool \"%@\".": "%@ wil de tool \"%@\" uitvoeren.",
 		"Reply": "Antwoord",
 		"Send": "Verstuur",
 		"%@ failed with exit code %d after %@.": "%@ is mislukt met afsluitcode %d na %@.",

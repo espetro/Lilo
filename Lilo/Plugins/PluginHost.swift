@@ -240,6 +240,38 @@ final class PluginHost {
         record?.manifest?.contributes.settings.first { $0.name == name }
     }
 
+    // MARK: - Agent tool surface
+
+    /// `tools/list` entries of every enabled plugin's contributed tools, each attributed to
+    /// `plugin:<id>` with its consent tier. `reserved` (the core names) and a name an earlier
+    /// plugin already emitted shadow a tool out of the list rather than letting it shadow.
+    func agentToolDefinitions(reserved: Set<String>) -> [[String: Any]] {
+        var seen = reserved
+        var definitions: [[String: Any]] = []
+        for record in records where record.valid && isEnabled(record) {
+            for tool in record.manifest?.contributes.tools ?? [] where seen.insert(tool.name).inserted {
+                definitions.append([
+                    "name": tool.name,
+                    "description": tool.description,
+                    "inputSchema": tool.inputSchema.anyObject,
+                    "_meta": ["lilo/owner": "plugin:\(record.id)", "lilo/consent": tool.consentTier.rawValue]
+                ])
+            }
+        }
+        return definitions
+    }
+
+    /// The valid record whose manifest contributes `name`, enabled plugins first: a call names
+    /// the tool that was listed, and a disabled one's still resolves, for the "disabled" error.
+    func contributedTool(named name: String) -> (record: PluginRecord, tool: PluginManifest.Tool)? {
+        let valid = records.filter { $0.valid }
+        return (valid.filter { isEnabled($0) } + valid.filter { !isEnabled($0) })
+            .lazy.compactMap { record in
+                record.manifest?.contributes.tools.first { $0.name == name }.map { (record, $0) }
+            }
+            .first
+    }
+
     // MARK: - Sessions and the host-ward gate
 
     /// The enabled plugin's session, configured against its grants. Sidecars spawn lazily.

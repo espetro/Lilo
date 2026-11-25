@@ -1850,7 +1850,8 @@
 		"agentClick": "хоче клацнути «{label}» у вкладці {tab} ({site}).",
 		"agentSubmit": "хоче натиснути Enter, щоб надіслати «{label}» у вкладці {tab} ({site}).",
 		"agentUpload": "хоче передати {label} на {site}.",
-		"agentFetch": "хоче надіслати «{label}» із вкладки {tab} ({site}), використовуючи ваші файли cookie."
+		"agentFetch": "хоче надіслати «{label}» із вкладки {tab} ({site}), використовуючи ваші файли cookie.",
+		"agentTool": "хоче запустити інструмент «{label}»."
 	},
 	"screenshot": {
 		"title": "Знімок екрана",
@@ -2188,6 +2189,7 @@
 		"%@ wants to press Enter to submit \"%@\" in %@ (%@).": "%@ хоче натиснути Enter, щоб надіслати «%@» у вкладці %@ (%@).",
 		"%@ wants to upload %@ to %@.": "%@ хоче передати %@ на %@.",
 		"%@ wants to send \"%@\" from %@ (%@), with your cookies.": "%@ хоче надіслати «%@» із вкладки %@ (%@), використовуючи ваші файли cookie.",
+		"%@ wants to run the tool \"%@\".": "%@ хоче запустити інструмент «%@».",
 		"Reply": "Відповісти",
 		"Send": "Надіслати",
 		"%@ failed with exit code %d after %@.": "%@ завершилася помилкою з кодом %d через %@.",

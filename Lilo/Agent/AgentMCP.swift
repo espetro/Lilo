@@ -75,11 +75,12 @@ enum AgentMCP {
         case "ping":
             return result(id: id, [:])
         case "tools/list":
+            let pluginTools = await AgentPluginTools.definitions(control: control)
+            var tools = AgentTools.definitions + pluginTools
             #if DEBUG
-            return result(id: id, ["tools": AgentTools.definitions + [AgentWindowCapture.definition]])
-            #else
-            return result(id: id, ["tools": AgentTools.definitions])
+            tools.append(AgentWindowCapture.definition)
             #endif
+            return result(id: id, ["tools": tools])
         case "tools/call":
             // Queued behind a freeze, a request whose client cancelled it or left does nothing.
             guard !Task.isCancelled else { return nil }
@@ -150,10 +151,12 @@ enum AgentMCP {
             var timer: Task<Void, Never>?
             defer { timer?.cancel() }
             let record = { (ok: Bool, code: String?) in
-                guard control.context?.settingsStore?.get(AgentActionLog.settingKey) != "false", AgentTools.toolNames.contains(name) else { return }
+                guard control.context?.settingsStore?.get(AgentActionLog.settingKey) != "false" else { return }
+                let plugin = AgentTools.toolNames.contains(name) ? nil : control.pluginHost?.contributedTool(named: name)?.record.id
+                guard plugin != nil || AgentTools.toolNames.contains(name) else { return }
                 control.actionLog.record(
                     tool: name, arguments: arguments, session: session, host: control.actionHost(arguments, session: session),
-                    ok: ok, code: code, possibleCommit: sent.write, startedAt: startedAt
+                    ok: ok, code: code, possibleCommit: sent.write, startedAt: startedAt, plugin: plugin
                 )
             }
             do {
