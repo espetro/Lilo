@@ -1,0 +1,21 @@
+# Lilo's headless agent surface in a container: the MCP server (stdio) driving
+# WebKitGTK under Xvfb. Built by `make docker-mcp` from the repository root.
+FROM quay.io/centos/centos:stream9
+
+RUN dnf -y install --setopt=install_weak_deps=False \
+        python3 python3-pip webkit2gtk3 gtk3 xorg-x11-server-Xvfb \
+        xorg-x11-fonts-misc python3-gobject python3-gobject-base python3-cairo \
+    && dnf clean all
+
+# The page scripts the driver injects (the macOS app ships the same files in its bundle)
+COPY Lilo/Agent/AgentPage.js /app/Lilo/Agent/AgentPage.js
+COPY container/linux/ /app/container/linux/
+
+# WebKitGTK needs a display; Xvfb provides one at a fixed display number.
+ENV DISPLAY=:99 \
+    LILO_AGENT_PAGE=/app/Lilo/Agent/AgentPage.js
+
+COPY container/linux/entrypoint.sh /entrypoint.sh
+RUN chmod +x /entrypoint.sh
+
+ENTRYPOINT ["/entrypoint.sh"]
