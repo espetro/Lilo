@@ -153,7 +153,7 @@ final class CompanionHostTests: XCTestCase {
 /// wire end to end, not just the schema in process. Runs no window and takes no keyboard focus.
 @MainActor
 final class CompanionHostProcessTests: XCTestCase {
-    private func launch() throws -> (Process, FileHandle, FileHandle) {
+    private func launch(socket: String) throws -> (Process, FileHandle, FileHandle) {
         let executable = Bundle.main.bundleURL.appending(path: "Contents/MacOS/lilo-companion")
         guard FileManager.default.isExecutableFile(atPath: executable.path) else {
             throw XCTSkip("lilo-companion ships only in the Xcode-built app")
@@ -161,11 +161,61 @@ final class CompanionHostProcessTests: XCTestCase {
         let process = Process()
         process.executableURL = executable
         process.arguments = ["chrome-extension://\(CompanionHostRegistration.extensionId)/"]
+        process.environment = ["LILO_COMPANION_SOCK": socket]
         let input = Pipe(), output = Pipe()
         process.standardInput = input
         process.standardOutput = output
         try process.run()
         return (process, input.fileHandleForWriting, output.fileHandleForReading)
+    }
+
+    /// One accepted unix-socket peer: answers every request the way the tool surface does.
+    private final class Peer {
+        let socket: Int32
+        let path: String
+        private(set) var connection: Int32 = -1
+
+        init() throws {
+            socket = socket(AF_UNIX, SOCK_STREAM, 0)
+            path = NSTemporaryDirectory() + "lilo-companion-test-\(UUID().uuidString).sock"
+            var address = sockaddr_un()
+            address.sun_family = sa_family_t(AF_UNIX)
+            let bytes = Array(path.utf8)
+            withUnsafeMutableBytes(of: &address.sun_path) { buffer in
+                buffer.copyBytes(from: bytes)
+            }
+            let length = socklen_t(MemoryLayout<sockaddr_un>.size)
+            let bound = withUnsafePointer(to: &address) { pointer in
+                pointer.withMemoryRebound(to: sockaddr.self, capacity: 1) { bind(socket, $0, length) }
+            }
+            guard bound == 0, listen(socket, 1) == 0 else { throw NSError(domain: "companion-test", code: 1) }
+        }
+
+        deinit { close(socket); if connection >= 0 { close(connection) } }
+
+        /// Blocks until the host connects, then relays frames: each request gets a canned answer.
+        func serve() {
+            connection = accept(socket, nil, nil)
+            var buffered = Data()
+            var chunk = [UInt8](repeating: 0, count: 64 * 1024)
+            while true {
+                let count = Darwin.read(connection, &chunk, chunk.count)
+                guard count > 0 else { return }
+                buffered.append(contentsOf: chunk[0..<count])
+                while buffered.count >= 4 {
+                    let length = buffered.withUnsafeBytes { Int($0.loadUnaligned(as: UInt32.self).littleEndian) }
+                    guard buffered.count >= 4 + length else { break }
+                    let payload = buffered.subdata(in: 4..<(4 + length))
+                    buffered.removeSubrange(0..<(4 + length))
+                    guard let message = try? JSONSerialization.jsonObject(with: payload) as? [String: Any],
+                          let id = message["id"] as? String else { continue }
+                    let reply: [String: Any] = ["id": id, "ok": true, "tool": message["tool"] as? String ?? "", "result": ["tool": message["tool"] as? String ?? "", "tabId": 1]]
+                    if let frame = CompanionProtocol.encodeFrame(reply) {
+                        _ = frame.withUnsafeBytes { Darwin.write(connection, $0.baseAddress, $0.count) }
+                    }
+                }
+            }
+        }
     }
 
     private func send(_ handle: FileHandle, _ message: [String: Any]) throws {
@@ -188,22 +238,27 @@ final class CompanionHostProcessTests: XCTestCase {
     }
 
     func testTheHostServesTheSchemaEndToEnd() async throws {
-        let (process, input, output) = try launch()
+        let peer = try Peer()
+        defer { try? FileManager.default.removeItem(atPath: peer.path) }
+        let (process, input, output) = try launch(socket: peer.path)
         defer { process.terminate() }
+        let server = Task.detached { peer.serve() }
+        defer { server.cancel() }
 
         try send(input, ["type": "hello", "protocolVersion": CompanionProtocol.version, "peer": CompanionProtocol.hostName])
         try send(input, ["id": "e1", "tool": "tabs.list", "params": [:]])
         guard let reply = await receive(output) else { return XCTFail("the host answered nothing") }
         XCTAssertEqual(reply["id"] as? String, "e1")
-        XCTAssertEqual(reply["ok"] as? Bool, false)
+        XCTAssertEqual(reply["ok"] as? Bool, true)
         XCTAssertEqual(reply["tool"] as? String, "tabs.list")
-        XCTAssertEqual(reply["error"] as? String, "not implemented yet")
 
-        // A malformed request is dropped, and the next one is still served: the connection survives it.
+        // The host is a pipe: a malformed message reaches the peer untouched and the connection survives it.
         try send(input, ["id": "e2", "tool": "cookies.read", "params": [:]])
         try send(input, ["id": "e3", "tool": "snapshot", "params": ["tabId": 1]])
-        guard let next = await receive(output) else { return XCTFail("the host stopped after a malformed request") }
-        XCTAssertEqual(next["id"] as? String, "e3", "the malformed request is dropped without ending the connection")
+        guard let next = await receive(output) else { return XCTFail("the host stopped after a malformed message") }
+        XCTAssertEqual(next["id"] as? String, "e2", "every frame reaches the peer, malformed included")
+        guard let after = await receive(output) else { return XCTFail("the peer stopped answering") }
+        XCTAssertEqual(after["id"] as? String, "e3")
 
         try input.close()
         // The host reads to EOF and exits on its own, as a browser closing the port leaves it.
