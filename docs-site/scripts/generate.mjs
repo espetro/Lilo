@@ -17,6 +17,7 @@ export const SOURCES = {
   tools: ["Lilo/Agent/AgentTools.swift", "Lilo/Agent/AgentInteractionTools.swift", "Lilo/Agent/AgentDevTools.swift", "Lilo/Agent/AgentFlows.swift", "Lilo/Agent/AgentBrowserConfig.swift", "Lilo/Agent/AgentConnectStatus.swift"],
   summaries: "docs-site/scripts/mcp-tools.json",
   harnesses: "Lilo/Agent/HarnessDefinition.swift",
+  harnessCatalog: "Plugins/connectors/harnesses.json",
   clientConfig: "Lilo/Agent/AgentClientConfig.swift",
   compatibility: "COMPATIBILITY.md",
   catalog: (locale) => `lilo-ui/src/lib/i18n/locales/${locale}.json`,
@@ -416,30 +417,23 @@ const ENTRY_FIELDS = {
   local: (helper) => [["type", '"local"'], ["command", `[${JSON.stringify(helper)}]`]],
 };
 
-/** Every harness of `HarnessDefinition.all` in order: where its configuration lives and how Lilo's server is written there. */
-export function parseHarnesses(source, definition, file = SOURCES.harnesses) {
-  for (const line of ENTRY_SOURCE) if (!source.includes(line)) fail(file, `\`Entry.fields\` no longer reads \`${line}\`: update ENTRY_SOURCE and ENTRY_FIELDS in docs-site/scripts/generate.mjs with it`);
+/** Every harness of the connectors plugin's catalog in order: where its configuration lives and how Lilo's server is written there. */
+export function parseHarnesses(source, catalog, definition, file = SOURCES.harnessCatalog) {
+  for (const line of ENTRY_SOURCE) if (!source.includes(line)) fail(SOURCES.harnesses, `\`Entry.fields\` no longer reads \`${line}\`: update ENTRY_SOURCE and ENTRY_FIELDS in docs-site/scripts/generate.mjs with it`);
   if (!definition.includes("Contents/MacOS/lilo-mcp")) fail(SOURCES.clientConfig, "helperPath no longer ends in Contents/MacOS/lilo-mcp");
   for (const snippet of ['"claude mcp add --scope user lilo -- \\(helperPath)"', 'tomlTable([10])', 'newJSON(key: key, entry: entry)', '"command = \\"\\(helperPath)\\""', '"[mcp_servers.lilo]"']) {
     if (!definition.includes(snippet)) fail(SOURCES.clientConfig, `manualSnippet changed (no \`${snippet}\`): update parseHarnesses in docs-site/scripts/generate.mjs`);
   }
-  const all = source.match(/static let all = \[([^\]]*)\]/u)?.[1].split(",").map((name) => name.trim()) ?? fail(file, "no `static let all = [ … ]`");
-  const defined = [...source.matchAll(/static let (\w+) = Self\(/gu)].map((match) => match[1]);
-  if (all.length === 0 || [...all].sort().join() !== [...defined].sort().join()) fail(file, `\`all\` lists ${all.join(", ")} but ${defined.join(", ")} are defined`);
-  return all.map((name) => {
-    const start = source.indexOf(`static let ${name} = Self(`);
-    const body = source.slice(start, source.indexOf("\n        added:", start));
-    const id = body.match(/id: "(\w+)"/u)?.[1] ?? fail(file, `${name} has no id`);
-    const docs = body.match(/docsURL: "([^"]+)", verified: "(\d{4}-\d{2}-\d{2})"/u) ?? fail(file, `${name} has no docsURL and verified date`);
-    const config =
-      body.match(/config: \.claudeCLI\(store: "([^"]+)"\)/u)?.slice(1) ??
-      body.match(/config: \.toml\(path: "([^"]+)"\)/u)?.slice(1) ??
-      body.match(/config: \.json\(path: "([^"]+)"(?:, key: "(\w+)")?(?:, entry: \.(\w+))?\)/u)?.slice(1) ??
-      fail(file, `${name} has a config the reference cannot read`);
-    const kind = body.includes("config: .claudeCLI") ? "claude" : body.includes("config: .toml") ? "toml" : "json";
-    const entry = config[2] ?? "command";
-    if (kind === "json" && !ENTRY_FIELDS[entry]) fail(file, `${name} uses the entry shape .${entry}, which the reference does not know`);
-    return { id, kind, path: config[0], key: config[1] ?? "mcpServers", entry, url: docs[1], verified: docs[2] };
+  const rows = (() => { try { return JSON.parse(catalog); } catch { return fail(file, "the catalog is not JSON"); } })();
+  if (!Array.isArray(rows) || rows.length === 0) fail(file, "the catalog holds no rows");
+  return rows.map((row) => {
+    if (typeof row.id !== "string" || row.id === "") fail(file, "a row has no id");
+    const kind = row.config?.kind === "claudeCLI" ? "claude" : row.config?.kind;
+    if (!["claude", "toml", "json"].includes(kind) || typeof row.config.path !== "string") fail(file, `${row.id} has a config the reference cannot read`);
+    const entry = row.config.entry ?? "command";
+    if (kind === "json" && !ENTRY_FIELDS[entry]) fail(file, `${row.id} uses the entry shape ${entry}, which the reference does not know`);
+    if (typeof row.docsURL !== "string" || !/^\d{4}-\d{2}-\d{2}$/u.test(row.verified ?? "")) fail(file, `${row.id} has no docsURL and verified date`);
+    return { id: row.id, kind, path: row.config.path, key: row.config.key ?? "mcpServers", entry, url: row.docsURL, verified: row.verified };
   });
 }
 
@@ -550,7 +544,7 @@ export async function partials() {
     "/reference/extension-compatibility": ["Chrome extensions"],
     "/reference/web-compatibility": ["Web APIs", "Known Limitations (WebKit/macOS level - no fix possible in Lilo)"],
   });
-  const harnesses = parseHarnesses(read(SOURCES.harnesses), read(SOURCES.clientConfig));
+  const harnesses = parseHarnesses(read(SOURCES.harnesses), read(SOURCES.harnessCatalog), read(SOURCES.clientConfig));
   return {
     "content/reference/_generated/connect-snippets.md": connectPartial(harnesses, catalogs.en, "en"),
     "content/fr/reference/_generated/connect-snippets.md": connectPartial(harnesses, catalogs.fr, "fr"),

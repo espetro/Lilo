@@ -1,0 +1,33 @@
+{
+  "schemaVersion": 1,
+  "protocolVersion": 1,
+  "id": "app.lilo.connectors",
+  "title": "Connectors",
+  "version": "1.0.0",
+  "entry": "bin/connectors",
+  "capabilities": [],
+  "contributes": {
+    "settings": [],
+    "tools": [
+      {
+        "name": "detect",
+        "description": "The agent apps this Mac has and whether each one's configuration already names Lilo's MCP server (installed, configured, stale).",
+        "inputSchema": { "type": "object" },
+        "consent": "read"
+      },
+      {
+        "name": "configure",
+        "description": "The MCP server entry Lilo needs in one agent app's configuration: the file or command, and the exact snippet or command to hand the user. It only produces the payload: nothing is written.",
+        "inputSchema": {
+          "type": "object",
+          "properties": {
+            "client": { "type": "string", "description": "A harness id from detect, e.g. claudeCode, cursor" },
+            "remove": { "type": "boolean", "description": "Produce the removal command instead of the add payload" }
+          },
+          "required": ["client"]
+        },
+        "consent": "read"
+      }
+    ]
+  }
+}

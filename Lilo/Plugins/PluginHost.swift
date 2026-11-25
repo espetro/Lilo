@@ -281,7 +281,9 @@ final class PluginHost {
         let granted = grantedCapabilities(for: record).map { JSONValue.string($0.rawValue) }
         let support = record.supportDirectory.path
         let session = PluginSession(manifest: manifest, pluginRoot: record.folder, initializeParams: {
-            ["supportDir": .string(support), "capabilities": .array(granted)]
+            ["supportDir": .string(support), "capabilities": .array(granted),
+             "helperPath": .string(AgentClientConfig.helperPath),
+             "home": .string(FileManager.default.homeDirectoryForCurrentUser.path)]
         })
         let api = hostAPI(for: record)
         await session.set(onRequest: { method, params in

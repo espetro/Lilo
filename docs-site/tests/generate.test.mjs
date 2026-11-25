@@ -205,8 +205,8 @@ test("a shortcut title or setting without a catalog string fails", async () => {
 });
 
 test("every harness of the app has a connect snippet, in both locales", () => {
-  const harnesses = parseHarnesses(read(SOURCES.harnesses), read(SOURCES.clientConfig));
-  assert.equal(harnesses.length, read(SOURCES.harnesses).match(/^\s*static let \w+ = Self\(/gmu).length);
+  const harnesses = parseHarnesses(read(SOURCES.harnesses), read(SOURCES.harnessCatalog), read(SOURCES.clientConfig));
+  assert.equal(harnesses.length, JSON.parse(read(SOURCES.harnessCatalog)).length);
   for (const locale of ["en", "fr"]) {
     const markdown = output[`content/${locale === "fr" ? "fr/" : ""}reference/_generated/connect-snippets.md`];
     assert.equal(markdown.match(/^## .+ \[#[\w-]+\]$/gmu).length, harnesses.length, locale);
@@ -215,7 +215,7 @@ test("every harness of the app has a connect snippet, in both locales", () => {
 });
 
 test("a connect snippet is the text the app's manualSnippet builds", () => {
-  const byId = Object.fromEntries(parseHarnesses(read(SOURCES.harnesses), read(SOURCES.clientConfig)).map((harness) => [harness.id, connectSnippet(harness)]));
+  const byId = Object.fromEntries(parseHarnesses(read(SOURCES.harnesses), read(SOURCES.harnessCatalog), read(SOURCES.clientConfig)).map((harness) => [harness.id, connectSnippet(harness)]));
   const helper = "/Applications/Lilo.app/Contents/MacOS/lilo-mcp";
   assert.equal(byId.claudeCode.text, `claude mcp add --scope user lilo -- ${helper}`);
   assert.equal(byId.codex.text, `[mcp_servers.lilo]\ncommand = "${helper}"`);
@@ -227,9 +227,10 @@ test("a connect snippet is the text the app's manualSnippet builds", () => {
 
 test("a harness list or snippet shape the reader does not know fails loudly", () => {
   const source = read(SOURCES.harnesses);
+  const catalog = read(SOURCES.harnessCatalog);
   const config = read(SOURCES.clientConfig);
-  assert.throws(() => parseHarnesses(source.replace("[claudeCode, ", "["), config), /`all` lists/u);
-  assert.throws(() => parseHarnesses(source.replace("case .stdio:", "case .stdio2:"), config), /Entry\.fields.+ENTRY_SOURCE/u);
-  assert.throws(() => parseHarnesses(source.replace("entry: .stdio", "entry: .other"), config), /entry shape \.other/u);
-  assert.throws(() => parseHarnesses(source, config.replace("tomlTable([10])", "tomlTable([13])")), /manualSnippet changed/u);
+  assert.throws(() => parseHarnesses(source, catalog.replace('"kind": "toml"', '"kind": "xml"'), config), /config the reference cannot read/u);
+  assert.throws(() => parseHarnesses(source.replace("case .stdio:", "case .stdio2:"), catalog, config), /Entry\.fields.+ENTRY_SOURCE/u);
+  assert.throws(() => parseHarnesses(source, catalog.replace('"entry": "stdio"', '"entry": "other"'), config), /entry shape other/u);
+  assert.throws(() => parseHarnesses(source, catalog, config.replace("tomlTable([10])", "tomlTable([13])")), /manualSnippet changed/u);
 });
