@@ -4,12 +4,6 @@ import UserNotifications
 import WebKit
 import os
 
-/// How the user's answer to a consent question ended: allowed, declined, or no answer at all (the question
-/// expired unanswered, or no window could ask). `AgentToolError.consent` carries the raw value to the agent.
-enum ConsentAnswer: String {
-    case allowed, denied, expired, unavailable
-}
-
 /// Lets local AI agents drive Lilo over MCP: one session per socket connection.
 @MainActor
 final class AgentControl {
@@ -25,13 +19,20 @@ final class AgentControl {
     /// How long a dropped connection's session waits for lilo-mcp to reconnect (it tries for 30 seconds) before
     /// its tabs go.
     static var reconnectGrace: Duration = .seconds(35)
-    /// How long the question letting a client in waits for the user: long enough to come back to the Mac, as the
-    /// client is told it waits, so nothing times out meanwhile.
-    static var connectionConsentTimeout: TimeInterval = 600
-    /// How long a consent question waits for the user unless the caller says otherwise.
-    static var consentTimeout: TimeInterval = 120
-    /// How long a question about a page action waits, inside the tool call's deadline.
-    static var actionConsentTimeout: TimeInterval = 45
+    /// The consent timeouts, by kind: the question letting a client in waits long enough to come back to
+    /// the Mac, as the client is told it waits, so nothing times out meanwhile.
+    static var connectionConsentTimeout: TimeInterval {
+        get { AgentConsentCore.connectionConsentTimeout }
+        set { AgentConsentCore.connectionConsentTimeout = newValue }
+    }
+    static var consentTimeout: TimeInterval {
+        get { AgentConsentCore.consentTimeout }
+        set { AgentConsentCore.consentTimeout = newValue }
+    }
+    static var actionConsentTimeout: TimeInterval {
+        get { AgentConsentCore.actionConsentTimeout }
+        set { AgentConsentCore.actionConsentTimeout = newValue }
+    }
     /// Chrome-style integer ids for tabs, stable for the app's lifetime.
     var tabNumbers: [UUID: Int] = [:]
     var nextTabNumber = 1
@@ -126,20 +127,7 @@ final class AgentControl {
     }
 
     /// Handshake names as people know them: "claude-code" is Claude Code, "gemini-cli-mcp-client" Gemini CLI.
-    static func displayName(_ clientName: String) -> String {
-        let name = clientName.lowercased()
-        // The Claude app's agent mode names itself after the MCP server it connects to.
-        if name.hasPrefix("local-agent-mode-") { return "Claude" }
-        if let known = [
-            "claude-code": "Claude Code", "claude-ai": "Claude", "codex": "Codex", "codex-mcp-client": "Codex",
-            "cursor": "Cursor", "cursor-vscode": "Cursor"
-        ][name] { return known }
-        // A name the agent styled itself ("Test Agent", "Goose") stays as it is.
-        guard name == clientName, name.contains(where: { "-_.".contains($0) }) else { return clientName }
-        let words = name.split(whereSeparator: { "-_. ".contains($0) }).filter { $0 != "mcp" && $0 != "client" }
-        guard !words.isEmpty else { return clientName }
-        return words.map { ["ai": "AI", "cli": "CLI", "ide": "IDE", "vscode": "VS Code"][$0] ?? $0.capitalized }.joined(separator: " ")
-    }
+    static func displayName(_ clientName: String) -> String { AgentClientNaming.displayName(clientName) }
 
     /// The user stopped a conversation's turn: its agent's Lilo tools stop too, and each answers with an
     /// error, as the agent's turn waits on them to end.
@@ -246,13 +234,15 @@ final class AgentControl {
     }
 
     private static let allowedClientsKey = "agentAllowedClients"
-    /// The question asked of each client, by name and identity, and how many of its connections still wait on it.
-    private var pendingConsents: [String: (question: Task<Bool?, Never>, waiting: Int)] = [:]
-    /// Questions shown in the drawers, by request id, with what the drawers show, until the user answers. `tabId` is
-    /// the tab of a question about a page: only the window holding it shows the question.
-    private(set) var pendingConsentAnswers: [String: (answer: CheckedContinuation<ConsentAnswer, Never>, request: [String: Any], tabId: UUID?)] = [:]
+
+    /// The consent question state machine, over the drawers and notifications here: what waits, what the
+    /// windows show, how answers and timeouts resolve. See `AgentConsentCore`.
+    private(set) var consentCore = AgentConsentCore()
     /// The conversations whose agent waits on a question about a page, with how many: their rows turn amber.
     private var askingConversations: [UUID: Int] = [:]
+
+    /// Questions shown in the drawers, by request id, with what the drawers show, until the user answers.
+    var pendingConsentAnswers: [String: AgentConsentCore.Waiting] { consentCore.pendingConsentAnswers }
 
     func isAsking(conversation tabId: UUID) -> Bool { askingConversations[tabId] != nil }
 
@@ -363,39 +353,36 @@ final class AgentControl {
         guard asking else { return nil }
         let key = name + "\n" + session.identity
         let identity = session.identity
-        let question = pendingConsents[key]?.question ?? Task { @MainActor in
+        let question: Task<ConsentAnswer?, Never> = consentCore.pendingConsents[key]?.question ?? Task { @MainActor in
             Self.logger.notice("Asking the user to allow \(name, privacy: .public)")
             let answer = await self.askConsent(name, executable: session.executable, timeout: Self.connectionConsentTimeout)
-            // The connection gate's three outcomes: allowed, refused, and unanswered, asked again at the next call.
-            let allowed: Bool?
-            switch answer {
-            case .allowed: allowed = true
-            case .denied: allowed = false
-            case .expired, .unavailable: allowed = nil
-            }
-            Self.logger.notice("\(name, privacy: .public) \(allowed.map { $0 ? "allowed" : "denied" } ?? "unanswered", privacy: .public)")
+            Self.logger.notice("\(name, privacy: .public) \(answer == .allowed ? "allowed" : answer == .denied ? "denied" : "unanswered", privacy: .public)")
             // Dropped here, as every connection waiting on it may have left: a finished question is never reused.
-            self.pendingConsents[key] = nil
+            self.consentCore.pendingConsents[key] = nil
             // Remembered here rather than by a waiting connection: a client that reconnects in between is let in.
-            if allowed == true, !identity.isEmpty, self.allowedClients[name]?.contains(identity) != true {
+            if answer == .allowed, !identity.isEmpty, self.allowedClients[name]?.contains(identity) != true {
                 var clients = self.allowedClients
                 clients[name, default: []].append(identity)
                 self.saveAllowedClients(clients)
                 self.markSeen(name)
             }
-            return allowed
+            return answer
         }
-        pendingConsents[key] = (question, (pendingConsents[key]?.waiting ?? 0) + 1)
+        consentCore.pendingConsents[key] = .init(question: question, waiting: (consentCore.pendingConsents[key]?.waiting ?? 0) + 1)
         // Clients such as an agent app's local mode open a connection per try and leave while the user is
         // still on the way: the question stays up for the next one. Only an unidentified client's question
         // goes with its last connection, as its approval could reach no one.
-        return await withTaskCancellationHandler { await question.value } onCancel: {
+        let value = await withTaskCancellationHandler {
+            await question.value
+        } onCancel: {
             Task { @MainActor in
-                guard let pending = self.pendingConsents[key], pending.question == question else { return }
-                self.pendingConsents[key]?.waiting -= 1
+                guard let pending = self.consentCore.pendingConsents[key], pending.question == question else { return }
+                self.consentCore.pendingConsents[key]?.waiting -= 1
                 if pending.waiting == 1, identity.isEmpty { question.cancel() }
             }
         }
+        // The connection gate's three outcomes: allowed, refused, and unanswered, asked again at the next call.
+        return value == .allowed ? true : value == .denied ? false : nil
     }
 
     /// Asked in the address-bar drawer, which leaves the user's typing alone, of every window, or of the one holding
@@ -418,36 +405,36 @@ final class AgentControl {
         }
         #endif
         guard let context else { return .unavailable }
-        let requestId = UUID().uuidString
         let request: [String: Any] = [
-            "requestId": requestId, "clientName": Self.displayName(name), "executable": executable, "profileName": profileName ?? "",
+            "clientName": Self.displayName(name), "executable": executable, "profileName": profileName ?? "",
             "action": action ?? NSNull()
         ]
         let windows = context.windows.windows
-        if windows.isEmpty || Headless.isOn {
-            // Nothing on screen can ask: the question holds in a notification whose tap opens a
-            // window at it. It is never answered by absence: it waits for the user or expires.
+        // The drawers know the question by its request id, which the core adds; the notification carries
+        // the same dictionary, whose tap opens a window at the question.
+        let notify = windows.isEmpty || Headless.isOn
+        unsafe consentCore.presentAsNotification = { [weak self] requestId, request in
+            guard let self else { return }
             unsafe Self.consentNotificationPoster(Self.notification(requestId: requestId, request: request))
-        } else {
-            for window in shows(tabId, among: windows) { window.bridgeRouter.send(event: "agentControlRequested", data: request) }
-            if !NSApp.isActive { NSApp.requestUserAttention(.informationalRequest) }
         }
-        DispatchQueue.main.asyncAfter(deadline: .now() + timeout) { [weak self] in self?.answerConsent(requestId, granted: nil) }
-        return await withTaskCancellationHandler {
-            await withCheckedContinuation { pendingConsentAnswers[requestId] = ($0, request, tabId) }
-        } onCancel: {
-            Task { @MainActor [weak self] in self?.answerConsent(requestId, granted: nil) }
+        unsafe consentCore.present = { [weak self] _, request in
+            for window in (self?.shows(tabId, among: self?.context?.windows.windows ?? []) ?? []) {
+                window.bridgeRouter.send(event: "agentControlRequested", data: request)
+            }
         }
+        unsafe consentCore.requestAttention = { if !NSApp.isActive { NSApp.requestUserAttention(.informationalRequest) } }
+        unsafe consentCore.withdraw = { [weak self] requestId in self?.dropConsent(requestId) }
+        return await consentCore.ask(name + "\n" + UUID().uuidString, request: request, tabId: tabId, timeout: timeout, canPresent: !notify)
     }
 
     /// Shows the questions still waiting in a window whose chrome page just loaded: one that loaded or reloaded
     /// after a question was sent never got it.
     func resendPendingConsents(to router: BridgeRouter?) {
+        guard let router else { return }
         let windows = context?.windows.windows ?? []
-        for pending in pendingConsentAnswers.values {
-            guard let router, pending.tabId == nil || shows(pending.tabId, among: windows).contains(where: { $0.bridgeRouter === router }) else { continue }
-            router.send(event: "agentControlRequested", data: pending.request)
-        }
+        consentCore.resendPending(to: [(holdsTab: { [weak self] tabId in
+            (self?.shows(tabId, among: windows).contains { $0.bridgeRouter === router }) == true
+        }, show: { request in router.send(event: "agentControlRequested", data: request) })])
     }
 
     private func shows(_ tabId: UUID?, among windows: [MainWindowController]) -> [MainWindowController] {
@@ -458,7 +445,7 @@ final class AgentControl {
     /// A consent notification's tap: a window shows the question it carried, asked again in its
     /// drawer. The question stays held: the user answers it, never the notification itself.
     func revealConsent(requestId: String) {
-        guard let pending = pendingConsentAnswers[requestId], let context else { return }
+        guard let pending = consentCore.pendingConsentAnswers[requestId], let context else { return }
         Headless.leave(revealing: context.windows.windows.compactMap(\.window))
         if context.windows.windows.isEmpty, let spaceId = context.spaceManager?.spaces.first?.id {
             context.openWindow(on: spaceId, opening: .nothing)
@@ -499,24 +486,15 @@ final class AgentControl {
         return UNNotificationRequest(identifier: consentNotificationId(requestId), content: content, trigger: nil)
     }
 
-    static let asksBeforeActionsKey = "agentAskBeforeActions"
-    static let alwaysAllowedSitesKey = "agentAlwaysAllowedSites"
-
-    /// Sites where the user always lets agents send, pay, delete or publish, their subdomains included.
-    var alwaysAllowedSites: [String] {
-        context?.settingsStore?.get(Self.alwaysAllowedSitesKey)
-            .flatMap { try? JSONDecoder().decode([String].self, from: Data($0.utf8)) } ?? []
-    }
+    var alwaysAllowedSites: [String] { AgentConsentRules.alwaysAllowedSites(from: context?.settingsStore) }
 
     /// How each agent acts on pages, by app id, or by agent name when no app is known.
     var clientPermissions: [String: AgentClientPermission] {
-        AgentClientPermission.decode(context?.settingsStore?.get(AgentClientPermission.settingKey))
+        AgentConsentRules.clientPermissions(from: context?.settingsStore)
     }
 
     func setClientPermission(_ key: String, _ permission: AgentClientPermission) {
-        var all = clientPermissions
-        all[key] = permission
-        context?.settingsStore?.set(AgentClientPermission.settingKey, value: AgentClientPermission.encode(all))
+        AgentConsentRules.setClientPermission(key, permission, store: context?.settingsStore)
     }
 
     /// Asks the user before a click or Enter whose target signs in, pays, buys, deletes, publishes, sends or signs
@@ -528,7 +506,7 @@ final class AgentControl {
         _ kind: String, target: [String: Any] = [:], label: String? = nil, sensitive: Bool = false,
         frame: WKFrameInfo?, engine: WKWebViewTab, session: AgentSession
     ) async throws -> Bool {
-        let globalAsks = context?.settingsStore?.get(Self.asksBeforeActionsKey) != "false"
+        let globalAsks = context?.settingsStore?.get(AgentConsentRules.asksBeforeActionsKey) != "false"
         let site = engine.currentURL?.host() ?? ""
         guard AgentClientPermission.asks(sensitive: true, site: site, globalAsks: globalAsks, globalSites: alwaysAllowedSites, client: nil) else { return false }
         var found = label.map { ($0, sensitive) }
@@ -607,27 +585,32 @@ final class AgentControl {
 
     /// `needs_user` for a question that expired unanswered: withdrawn, and the agent may ask once more.
     static func expiredConsentError(timeout: TimeInterval) -> AgentToolError {
-        AgentToolError("The user did not answer within \(Int(timeout)) s, so the question was withdrawn: call the tool again once to ask again; if it expires again, stop and tell the user what is waiting", code: "needs_user", consent: .expired)
+        AgentConsentRules.expiredConsentError(timeout: timeout)
     }
 
     /// `needs_user` for a question no window could show.
     static var unavailableConsentError: AgentToolError {
-        AgentToolError("Lilo has no window to ask the user in: ask them to open one, then call again", code: "needs_user", consent: .unavailable)
+        AgentConsentRules.unavailableConsentError
     }
 
     /// The user's answer from a window's drawer, nil when nobody answered: the others drop the same question.
     /// `alwaysAllowSite` is the site of an action the user always allows from now on.
     func answerConsent(_ requestId: String, granted: Bool?, alwaysAllowSite: String? = nil) {
-        guard let answer = pendingConsentAnswers.removeValue(forKey: requestId)?.answer else { return }
-        if granted == true, let site = alwaysAllowSite, !site.isEmpty, !alwaysAllowedSites.contains(site),
-           let data = try? JSONEncoder().encode(alwaysAllowedSites + [site]), let list = String(bytes: data, encoding: .utf8) {
-            context?.settingsStore?.set(Self.alwaysAllowedSitesKey, value: list)
+        guard consentCore.pendingConsentAnswers[requestId] != nil else { return }
+        if let sites = consentCore.answer(requestId, granted: granted, alwaysAllowSite: alwaysAllowSite, allowedSites: alwaysAllowedSites),
+           let data = try? JSONEncoder().encode(sites), let list = String(bytes: data, encoding: .utf8) {
+            context?.settingsStore?.set(AgentConsentRules.alwaysAllowedSitesKey, value: list)
         }
+        dropConsent(requestId)
+    }
+
+    /// A question nobody answers any more leaves the drawers and the notification: the caller gave up
+    /// on it, or it timed out.
+    private func dropConsent(_ requestId: String) {
         for window in context?.windows.windows ?? [] {
             window.bridgeRouter.send(event: "permissionRequestClosed", data: ["requestId": requestId])
         }
         UNUserNotificationCenter.current().removeDeliveredNotifications(withIdentifiers: [Self.consentNotificationId(requestId)])
-        answer.resume(returning: granted.map { $0 ? .allowed : .denied } ?? .expired)
     }
 
     /// The session's tabs go back to normal first, then close: an engine held elsewhere keeps no agent state.

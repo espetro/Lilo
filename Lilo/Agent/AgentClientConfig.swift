@@ -4,7 +4,6 @@ import Foundation
 /// Registers `lilo-mcp` with the agents people run, each in its own configuration file, as `HarnessDefinition` says.
 enum AgentClientConfig {
     typealias Client = HarnessDefinition
-
     /// The MCP server the agents launch: a pipe to Lilo's agent socket, shipped next to Lilo's own binary.
     static var helperPath: String {
         Bundle.main.bundleURL.appending(path: "Contents/MacOS/lilo-mcp").path

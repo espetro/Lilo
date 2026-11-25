@@ -357,21 +357,7 @@ final class MainWindowController: NSWindowController {
 
     /// Ships only the fields that differ from what this window's chrome last received for the tab.
     private func sendTabUpdate(_ tabPayload: [String: Any], spaceId: UUID) {
-        guard let id = tabPayload[TabBridgeField.id.rawValue] as? String else { return }
-        var patch = tabPayload
-        if let sent = sentTabPatches[id] {
-            patch = [TabBridgeField.id.rawValue: id]
-            for (key, value) in tabPayload where (sent[key] as? AnyHashable) != (value as? AnyHashable) {
-                patch[key] = value
-            }
-            guard patch.count > 1 else { return }
-            // The chrome falls back to the url for a blank title.
-            if patch[TabBridgeField.title.rawValue] != nil {
-                patch[TabBridgeField.url.rawValue] = tabPayload[TabBridgeField.url.rawValue]
-            }
-        }
-        sentTabPatches[id, default: [:]].merge(tabPayload) { $1 }
-        let event = BrowserChangePresenter.tabUpdatedEvent(tabPayload: patch, spaceId: spaceId)
+        guard let event = browserCore.tabUpdateEvent(tabPayload, spaceId: spaceId) else { return }
         bridgeRouter.send(event: event.name, data: event.data)
     }
 
@@ -392,20 +378,11 @@ final class MainWindowController: NSWindowController {
 
     func browserSnapshot(for spaceId: UUID, runtime: TabRuntimeSnapshot? = nil) -> BrowserStateStore.SpaceSnapshot {
         let runtime = runtime ?? tabManager.runtimeSnapshot()
-        let tabs = runtime.tabs.filter { $0.spaceId == spaceId }
-        let tabIds = Set(tabs.map(\.id))
         let state = tabManager.spaceTabState(
             forSpace: spaceId,
             activationHistory: context.browserState.space(id: spaceId)?.spaceTab.state.activationHistory ?? []
         )
-        return BrowserStateStore.SpaceSnapshot(
-            spaceTab: SpaceTab(spaceId: spaceId, state: state),
-            engines: runtime.engines.filter { tabIds.contains($0.key) },
-            tabAdapters: runtime.tabAdapters.filter { tabIds.contains($0.key) },
-            interactionStates: runtime.savedInteractionStates.filter { tabIds.contains($0.key) },
-            restoringTabIds: runtime.restoringTabIds.filter { tabIds.contains($0.key) },
-            lastAccessedAt: Date()
-        )
+        return BrowserCore.spaceSnapshot(for: spaceId, runtime: runtime, state: state)
     }
 
     /// Equality means the sync would write back exactly what the store already holds. The runtime
@@ -462,7 +439,7 @@ final class MainWindowController: NSWindowController {
     var chromeStaleFaviconTabIds: Set<UUID> = []
     /// Tab payloads by id as this window's chrome last received them through `tabUpdated`. Every other
     /// event that seeds a tab's state clears its entry, so the next patch after it is complete.
-    var sentTabPatches: [String: [String: Any]] = [:]
+    var browserCore = BrowserCore()
     /// Extension rows by id as this window's chrome last received them; `extensionsChanged` ships only the diff.
     var sentExtensionRows: [String: [String: Any]] = [:]
     /// Archived-tab favicons by host as this window's chrome last received them; `archivedTabs` ships only the new ones.
@@ -486,15 +463,9 @@ final class MainWindowController: NSWindowController {
                 // Tabs closed before this window showed their space would otherwise stay forever.
                 chromeStaleFaviconTabIds = chromeStaleFaviconTabIds.filter { context.browserState.owningSpaceId(forTab: $0) != nil }
             }
-            sentTabPatches.removeAll(keepingCapacity: true)
-        } else if !sentTabPatches.isEmpty, let operations = event.data["operations"] as? [[String: Any]] {
-            // A sidebar patch reseeds only the tabs it upserts or removes.
-            for operation in operations {
-                for tab in operation["upsertTabs"] as? [[String: Any]] ?? [] {
-                    if let id = tab[TabBridgeField.id.rawValue] as? String { sentTabPatches[id] = nil }
-                }
-                for id in operation["removedTabIds"] as? [String] ?? [] { sentTabPatches[id] = nil }
-            }
+            browserCore.clearAllSentTabPatches()
+        } else if !browserCore.sentTabPatches.isEmpty, let operations = event.data["operations"] as? [[String: Any]] {
+            browserCore.clearSentTabPatches(in: operations)
         }
         bridgeRouter.send(event: event.name, data: event.data)
     }
@@ -529,34 +500,30 @@ final class MainWindowController: NSWindowController {
 
     @discardableResult
     func applyBrowserCommand(_ command: BrowserCommand) throws -> BrowserChangeSet {
-        // A terminal closed for good takes its saved screen along, shown or not.
-        var closingTerminal: UUID?
-        if case let .closeTab(_, tabId) = command, tabManager.tab(for: tabId)?.kind == .terminal { closingTerminal = tabId }
-        // Unpinning a closed pinned tab, or unbookmarking a closed bookmark, takes it out of the sidebar: Undo and
-        // Reopen Closed Tab bring it back, whichever path removed it.
-        var removedTab: Tab?
-        var wasPinned: Bool?
-        if case let .setPinned(_, tabId, _) = command { wasPinned = tabManager.tab(for: tabId)?.isPinned }
-        if case let .setPinned(_, tabId, false) = command, let tab = tabManager.tab(for: tabId), tab.isClosed, tab.isPinned { removedTab = tab }
-        if case let .setBookmarked(_, tabId, false) = command, let tab = tabManager.tab(for: tabId), tab.isClosed, tab.isBookmarked { removedTab = tab }
+        let effects = BrowserCore.effects(
+            of: command,
+            tabFacts: { id in tabManager.tab(for: id).map {
+                BrowserCore.TabFacts(kind: $0.kind, isPinned: $0.isPinned, isClosed: $0.isClosed, isBookmarked: $0.isBookmarked)
+            } },
+            folderTabIds: { spaceId, folderId in
+                Set(context.browserState.space(id: spaceId)?.spaceTab.tabIds(inFolder: folderId) ?? [])
+            }
+        )
+        let removedTab = effects.removedTabId.flatMap { tabManager.tab(for: $0) }
         let removalRecorded = removedTab.map { recordClosedTabForRestore(id: $0.id) } ?? false
-        var deletedTabs: (spaceId: UUID, ids: Set<UUID>)?
-        if case let .deleteFolderWithTabs(spaceId, folderId) = command {
-            deletedTabs = (spaceId, Set(context.browserState.space(id: spaceId)?.spaceTab.tabIds(inFolder: folderId) ?? []))
-        }
         let changes = try browserRuntimeCoordinator.apply(command)
         // A folder deleted with its tabs takes their pages along, or one a window shows stays on screen.
-        if let deletedTabs {
-            if let host = context.windows.windows(showing: deletedTabs.spaceId).first {
-                deletedTabs.ids.forEach(host.tabManager.discardPreparedTabRuntime)
+        if let spaceId = effects.deletedFolderSpaceId {
+            if let host = context.windows.windows(showing: spaceId).first {
+                effects.deletedFolderTabIds.forEach(host.tabManager.discardPreparedTabRuntime)
             } else {
-                context.browserState.discardParkedEngines(deletedTabs.ids, spaceId: deletedTabs.spaceId) { context.discardEngine($0) }
+                context.browserState.discardParkedEngines(effects.deletedFolderTabIds, spaceId: spaceId) { context.discardEngine($0) }
             }
         }
         if removalRecorded, let removedTab { announceUndoableClose(of: removedTab) }
-        if let closingTerminal, tabManager.tab(for: closingTerminal) == nil { tabManager.terminalHost.forget(closingTerminal) }
+        if let closingTerminal = effects.closingTerminalTabId, tabManager.tab(for: closingTerminal) == nil { tabManager.terminalHost.forget(closingTerminal) }
         if case let .activateTab(_, tabId) = command { activationAnnouncedByCommand = tabId }
-        if case let .setPinned(_, tabId, isPinned) = command, wasPinned != isPinned, let adapter = tabManager.tabAdapter(for: tabId),
+        if case let .setPinned(_, tabId, isPinned) = command, effects.previousPinnedState != isPinned, let adapter = tabManager.tabAdapter(for: tabId),
            let registry = tabManager.extensionRegistry, registry.hasLoadedExtensions {
             registry.controller.didChangeTabProperties(.pinned, for: adapter)
         }
@@ -768,7 +735,7 @@ extension MainWindowController: TabManager.Delegate {
             guard didCompleteSessionRestore, !isPerformingSpaceSwitch else { return }
             if !announcedByCommand, let spaceId = tab.spaceId ?? manager.currentSpaceId {
                 let event = BrowserChangePresenter.activationSidebarEvent(tab: tab, spaceId: spaceId)
-                sentTabPatches[tab.id.uuidString] = nil
+                browserCore.sentTabPatches[tab.id.uuidString] = nil
                 bridgeRouter.send(event: event.name, data: event.data)
             }
             return
@@ -804,7 +771,7 @@ extension MainWindowController: TabManager.Delegate {
         // (space transfer, restore).
         if !announcedByCommand, let spaceId = tab.spaceId ?? manager.currentSpaceId {
             let event = BrowserChangePresenter.activationSidebarEvent(tab: tab, spaceId: spaceId)
-            sentTabPatches[tab.id.uuidString] = nil
+            browserCore.sentTabPatches[tab.id.uuidString] = nil
             bridgeRouter.send(event: event.name, data: event.data)
         } else if tab.isLoading {
             // A background load's progress never reached the chrome, and the command's diff does not carry it.

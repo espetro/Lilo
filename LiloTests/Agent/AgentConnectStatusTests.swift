@@ -55,7 +55,7 @@ final class AgentConnectStatusTests: AgentToolTestCase {
     }
 
     func testEveryAllowlistedKeySerializes() async throws {
-        context.settingsStore!.set(AgentControl.asksBeforeActionsKey, value: "false")
+        context.settingsStore!.set(AgentConsentRules.asksBeforeActionsKey, value: "false")
         control.setClientPermission("Test Agent", AgentClientPermission(act: .sites, sites: ["example.com"]))
 
         let object = try await snapshot()
@@ -75,7 +75,7 @@ final class AgentConnectStatusTests: AgentToolTestCase {
 
     func testNoKeyOutsideTheAllowlistIsExposed() async throws {
         // Keys an agent must not read stay unreadable even when the store holds them.
-        context.settingsStore!.set(AgentControl.alwaysAllowedSitesKey, value: #"["example.com"]"#)
+        context.settingsStore!.set(AgentConsentRules.alwaysAllowedSitesKey, value: #"["example.com"]"#)
         control.setClientPermission("Test Agent", AgentClientPermission(act: .sites, sites: ["example.net"]))
         let object = try await snapshot()
         XCTAssertEqual(paths(object), Set(AgentConnectStatus.allowlist))
