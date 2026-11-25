@@ -28,7 +28,9 @@ final class PluginHostTests: XCTestCase {
         super.tearDown()
     }
 
-    private func makeHost() throws -> (PluginHost, SettingsStore, InMemoryPluginSecretStore) {
+    private func makeHost(
+        scheduler: any PluginScheduler = RecordingPluginScheduler()
+    ) throws -> (PluginHost, SettingsStore, InMemoryPluginSecretStore) {
         let database = try TemporaryProfileDatabase(schema: .global)
         self.database = database
         let store = SettingsStore(dbPool: database.pool)
@@ -37,7 +39,8 @@ final class PluginHostTests: XCTestCase {
         let host = PluginHost(
             settingsStore: store,
             registry: PluginRegistry(userRoot: userRoot, bundledRoot: bundledRoot, supportRoot: supportRoot),
-            secrets: secrets
+            secrets: secrets,
+            makeScheduler: { _ in scheduler }
         )
         return (host, store, secrets)
     }
@@ -216,5 +219,90 @@ final class PluginHostTests: XCTestCase {
             PluginTab(id: tab.id.uuidString, url: "https://example.com/a", title: "Example")
         )
         XCTAssertEqual(PluginTabsAdapter.plugin(Tab(url: nil, title: "")).url, "")
+    }
+
+    // MARK: - schedule capability
+
+    private func scheduledStub(capabilities: [String] = ["settings:store", "schedule"]) throws {
+        try StubPlugin.write(at: userRoot.appendingPathComponent("stub"), manifest: ["capabilities": capabilities])
+    }
+
+    private func api(for host: PluginHost, id: String = "app.lilo.test.stub") throws -> PluginHostAPI {
+        try host.hostAPI(for: XCTUnwrap(host.record(id: id)))
+    }
+
+    func testScheduleRequestsReachTheSchedulerOnlyWithTheGrant() async throws {
+        try scheduledStub()
+        let scheduler = RecordingPluginScheduler()
+        let (host, _, _) = try makeHost(scheduler: scheduler)
+        await host.refresh()
+        host.setEnabled(true, for: "app.lilo.test.stub")
+        await host.refresh()
+        let api = try api(for: host)
+
+        let set = await api.handle("schedule.set", params: .object(["id": .string("job"), "delay": .number(90)]))
+        XCTAssertEqual(set, .success(.null))
+        XCTAssertEqual(scheduler.delays["job"], 90)
+
+        let cancel = await api.handle("schedule.cancel", params: .object(["id": .string("job")]))
+        XCTAssertEqual(cancel, .success(.null))
+        XCTAssertEqual(scheduler.cancelled, ["job"])
+
+        host.revokeCapability("schedule", for: "app.lilo.test.stub")
+        let denied = await api.handle("schedule.set", params: .object(["id": .string("x"), "delay": .number(1)]))
+        XCTAssertEqual(denied, .failure(.capabilityNotGranted))
+        XCTAssertNil(scheduler.delays["x"])
+    }
+
+    func testUnknownMethodsAnswerMethodNotFound() async throws {
+        try scheduledStub(capabilities: ["tabs:open"])
+        let (host, _, _) = try makeHost()
+        await host.refresh()
+        host.setEnabled(true, for: "app.lilo.test.stub")
+        let api = try api(for: host)
+
+        let unknown = await api.handle("tabs.close", params: .object([:]))
+        XCTAssertEqual(unknown, .failure(.methodNotFound))
+
+        host.revokeCapability("tabs:open", for: "app.lilo.test.stub")
+        let denied = await api.handle("tabs.open", params: .object(["url": .string("https://example.com")]))
+        XCTAssertEqual(denied, .failure(.capabilityNotGranted))
+    }
+
+    func testAFireIsDeliveredToTheSidecarAsANotification() async throws {
+        let folder = userRoot.appendingPathComponent("stub")
+        try scheduledStub()
+        // A sidecar that logs every line it receives, so delivery is observable.
+        let script = folder.appendingPathComponent("bin/stub.sh")
+        try """
+        #!/bin/sh
+        while IFS= read -r line; do
+            printf '%s\\n' "$line" >> "$(dirname "$0")/../received.log"
+            case "$line" in *'"method":"initialize"'*)
+                id=$(printf '%s' "$line" | sed -n 's/.*"id":\\([0-9][0-9]*\\).*/\\1/p')
+                printf '%s\\n' "{\\"jsonrpc\\":\\"2.0\\",\\"id\\":$id,\\"result\\":{\\"protocolVersion\\":1,\\"tools\\":[]}}" ;;
+            esac
+        done
+        """.write(to: script, atomically: true, encoding: .utf8)
+        try FileManager.default.setAttributes([.posixPermissions: 0o755], ofItemAtPath: script.path)
+
+        let scheduler = RecordingPluginScheduler()
+        let (host, _, _) = try makeHost(scheduler: scheduler)
+        await host.refresh()
+        host.setEnabled(true, for: "app.lilo.test.stub")
+        _ = await try api(for: host).handle("schedule.set", params: .object(["id": .string("job"), "delay": .number(5)]))
+
+        scheduler.fire("job")
+        let log = folder.appendingPathComponent("received.log")
+        var received = ""
+        for _ in 0..<100 {
+            received = (try? String(contentsOf: log, encoding: .utf8)) ?? ""
+            if received.contains("schedule.fire") { break }
+            try await Task.sleep(nanoseconds: 50_000_000)
+        }
+        XCTAssertTrue(received.contains("\"method\":\"schedule.fire\""), received)
+        XCTAssertTrue(received.contains("\"id\":\"job\""), received)
+        XCTAssertTrue(received.contains("supportDir"), received)
+        await host.stop(id: "app.lilo.test.stub")
     }
 }
