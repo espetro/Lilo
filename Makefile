@@ -143,7 +143,7 @@ swift-test swift-test-slow: export TEST_RUNNER_LILO_TEST_DEMOTE := $(filter 1,$(
 TEST_PARALLEL ?= YES
 TEST_WORKERS = $(shell cores=$$(sysctl -n hw.perflevel0.physicalcpu 2>/dev/null || sysctl -n hw.ncpu); echo $$((cores / $(TEST_SLOTS) / $(if $(filter 1,$(TEST_QUIET)),2,1) > 0 ? cores / $(TEST_SLOTS) / $(if $(filter 1,$(TEST_QUIET)),2,1) : 1)))
 
-.PHONY: help site-release-import validate validate-ui linux-checks swiftlint project-sync ui-build ui-watch ui-dev ui-lint ui-test e2e e2e-energy validate-scope check check-staged ui-check swiftlint-changed sync-check ui-capture swift-test ci-swift swift-test-slow blocker-coverage blocker-bench script-bench speedometer-bench page-bench preload-bench terminal-bench ext-bridge-build ext-bridge-test ext-smoke ext-nightly ext-e2e-passwords ext-e2e-passwords-trust top-extensions top-manifests chrome-surface test-disturbance chrome-contracts chrome-smoke public-suffix-list app install install-debug xcode-build xcode-build-release run-ui-dev release release-notarize release-archive dmg dmg-background bridge-gen vt-build vt-build-source vt-zip webkit-fork bootstrap bootstrap-test ui-preview check-commits startup-bench ext-bench energy-sample energy-compare energy-browsers perf-summary perf-compare perf-summary-test check-summary-test agent-app agent-app-stop agent-app-restart agent-call agent-eval agent-eval-test lockf-test slot-test scope-test retried-tests-test tier-test metrics metrics-on metrics-off metrics-test ci-metrics ci-metrics-test window-capture worktree-new worktree-gc worktree-gc-test logs logs-stream site-dev site-dev-stop site-preview site-native-preview site-generate site-check site-fix site-test site-e2e site-release-capture site-capture-server site-capture-deps site-lock site-audit site-add-svelte site-playground-deps site-demo-icons site-deploy site-deploy-check emoji-data password-manager-icons docs-dev docs-build docs-check docs-test docs-preview docs-deploy-check docs-deploy docs-translate docs-eval docs-lock hooks-install hooks-install-checks hooks-install-push-checks quick-deps hooks-test lint-commit-message lint-commits changie change release-status release-version release-discord release-test release-media-stage release-media-test changelog-context changelog-draft changelog-media
+.PHONY: help site-release-import validate validate-ui linux-checks swiftlint project-sync ui-build ui-watch ui-dev ui-lint ui-test e2e e2e-energy validate-scope check check-staged ui-check swiftlint-changed sync-check ui-capture swift-test ci-swift swift-test-slow blocker-coverage blocker-bench script-bench speedometer-bench page-bench preload-bench terminal-bench ext-bridge-build ext-bridge-test ext-smoke ext-nightly ext-e2e-passwords ext-e2e-passwords-trust top-extensions top-manifests chrome-surface test-disturbance chrome-contracts chrome-smoke public-suffix-list app install install-debug xcode-build xcode-build-release run-ui-dev release release-notarize release-archive dmg dmg-background bridge-gen vt-build vt-build-source vt-zip webkit-fork bootstrap bootstrap-test ui-preview check-commits startup-bench ext-bench energy-sample energy-compare energy-browsers perf-summary perf-compare perf-summary-test check-summary-test agent-app agent-app-stop agent-app-restart agent-call agent-eval agent-eval-test lockf-test slot-test scope-test retried-tests-test tier-test metrics metrics-on metrics-off metrics-test ci-metrics ci-metrics-test window-capture worktree-new worktree-gc worktree-gc-test logs logs-stream site-dev site-dev-stop site-preview site-native-preview site-generate site-check site-fix site-test site-e2e site-release-capture site-capture-server site-capture-deps site-lock site-audit site-add-svelte site-playground-deps site-demo-icons site-deploy site-deploy-check emoji-data password-manager-icons docs-dev docs-build docs-check docs-test docs-preview docs-deploy-check docs-deploy docs-translate docs-eval docs-lock hooks-install hooks-install-checks hooks-install-push-checks quick-deps hooks-test lint-commit-message lint-commits changie change release-status release-version release-discord release-test release-media-stage release-media-test changelog-context changelog-draft changelog-media docker-mcp docker-mcp-test
 
 ## List the targets
 help:
@@ -275,7 +275,7 @@ validate-ui: ui-lint ui-test ui-build
 
 # `validate` without the Xcode build and Swift tests: every other group, in order. Runs on macOS too.
 ## Run every check that needs no Xcode: UI, website, docs, bridge, hooks, release and Swift lint (what Linux can run)
-linux-checks: ui-lint ui-test site-check site-test docs-check docs-test hooks-test perf-summary-test retried-tests-test scope-test tier-test metrics-test ci-metrics-test check-summary-test lockf-test ext-bridge-test swiftlint release-status worktree-gc-test
+linux-checks: ui-lint ui-test site-check site-test docs-check docs-test hooks-test perf-summary-test retried-tests-test scope-test tier-test metrics-test ci-metrics-test check-summary-test lockf-test ext-bridge-test swiftlint release-status worktree-gc-test docker-mcp-test
 
 ## Run Swift lint only
 swiftlint: $(SWIFTLINT)
@@ -707,6 +707,23 @@ agent-eval:
 ## Test the fixture agent tasks' server and grading (no browser, no model)
 agent-eval-test:
 	@python3 -I bench/mcp/fixtures_test.py -q
+
+# The headless agent surface in a container (docs/LINUX-AGENTS.md): WebKitGTK under Xvfb, MCP on stdio.
+# DOCKER is docker or podman, whatever is on PATH; the image name is what `docker-mcp` runs.
+DOCKER := $(shell command -v docker >/dev/null 2>&1 && echo docker || echo podman)
+LILO_MCP_IMAGE := lilo-mcp
+
+## Build the headless MCP image (WebKitGTK under Xvfb) and run the MCP surface in it, MCP on stdio
+docker-mcp:
+	@$(DOCKER) build -t $(LILO_MCP_IMAGE) -f container/linux/Containerfile .
+	@echo "The image runs the MCP surface on stdio. An MCP client launches it as:"
+	@echo "  $(DOCKER) run -i --rm $(LILO_MCP_IMAGE)"
+	@echo "or, wired into claude-code: claude mcp add lilo -- $(DOCKER) run -i --rm $(LILO_MCP_IMAGE)"
+
+## Test the containerized MCP surface: build, then a tools/list and a navigate against a data: URL
+docker-mcp-test:
+	@$(DOCKER) build -t $(LILO_MCP_IMAGE) -f container/linux/Containerfile .
+	@python3 -I container/linux/mcp_container_test.py $(DOCKER) $(LILO_MCP_IMAGE)
 
 ## Build the UI bundle and create release artifacts
 release: vt-build $(UI_STAMP) $(BRIDGE_STAMP) $(if $(WEBKIT_FORK_URL),webkit-fork)
