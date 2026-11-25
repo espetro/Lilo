@@ -600,6 +600,11 @@
 				"description": "Claude Code, Codex, Gemini 등 여러 에이전트와 내 구독으로 탭에서 대화합니다.",
 				"keywords": "에이전트 AI ACP 채팅 대화 질문 Claude Codex Gemini Copilot"
 			},
+			"agentConversationPlacement": {
+				"title": "대화 위치",
+				"description": "Ask Bar에서 시작한 대화가 표시되는 위치입니다.",
+				"keywords": "agent conversation placement mini dialog split tab open as"
+			},
 			"agentsNotifyDone": {
 				"title": "에이전트가 끝나면 알림",
 				"description": "보고 있지 않은 대화가 끝나면 알려 줍니다.",
@@ -2420,6 +2425,7 @@
 		},
 		"Commands are still running in them and will be stopped.": "아직 실행 중인 명령이 있으며 해당 명령이 중단됩니다.",
 		"The terminal could not start.": "터미널을 시작할 수 없습니다.",
+		"The conversation could not be started.": "대화를 시작할 수 없습니다.",
 		"Close the tab and try again.": "탭을 닫고 다시 시도하세요.",
 		"Choose an iTerm2 color preset (.itermcolors), a VS Code color theme (.json) or a Ghostty theme file.": "iTerm2 색상 프리셋(.itermcolors), VS Code 색상 테마(.json) 또는 Ghostty 테마 파일을 선택하세요.",
 		"This file is not a theme Lilo can read.": "Lilo가 읽을 수 있는 테마 파일이 아닙니다.",
@@ -3111,6 +3117,15 @@
 				}
 			}
 		}
+	},
+	"placement": {
+		"label": "열기 방식",
+		"mini": "미니 대화",
+		"dialog": "대화상자",
+		"split": "페이지 옆 분할",
+		"tab": "전체 탭",
+		"enlarge": "탭에서 열기",
+		"surfaceFailed": "대화를 시작할 수 없습니다."
 	},
 	"splitPane": {
 		"close": "분할 창 닫기",

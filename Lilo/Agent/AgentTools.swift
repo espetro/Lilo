@@ -343,31 +343,27 @@ enum AgentTools {
         }
     }
 
+    /// The page logic over a tab (`AgentPageCore`): the tab adapts itself to `AgentPageHost` and the
+    /// snapshot, delta and settling logic stays framework-free, shared with future drivers.
     /// The page's interactive structure in the main frame and each subframe, kept for the delta an
     /// action reports. Best effort: a page mid-navigation simply has none.
     static func snapshot(_ engine: WKWebViewTab) async {
-        _ = try? await page(engine, "snapshot", [:])
-        for (_, frame) in await subframes(of: engine) { _ = try? await page(engine, "snapshot", [:], in: frame) }
+        nonisolated(unsafe) let host: AgentPageHost = unsafe engine.agentPageHost
+        unsafe await AgentPageCore.snapshot(host)
     }
 
     /// What the page's structure changed since `snapshot`, as compact +/- /~ lines, one block per frame
     /// that changed; nil when nothing did anywhere.
     static func delta(_ engine: WKWebViewTab) async -> String? {
-        var parts: [String] = []
-        if let text = try? await page(engine, "delta", [:]) as? String, !text.isEmpty { parts.append(text) }
-        for (_, frame) in await subframes(of: engine) {
-            if let text = try? await page(engine, "delta", [:], in: frame) as? String, !text.isEmpty { parts.append(text) }
-        }
-        return parts.isEmpty ? nil : parts.joined(separator: "\n\n")
+        nonisolated(unsafe) let host: AgentPageHost = unsafe engine.agentPageHost
+        return unsafe await AgentPageCore.delta(host)
     }
 
     /// The report an action's reply ends with: the tab's new URL when it navigated, then the structure
     /// delta, or that nothing changed.
     static func deltaReport(_ engine: WKWebViewTab, urlBefore: URL?) async -> String {
-        var parts: [String] = []
-        if engine.currentURL != urlBefore, let url = engine.currentURL { parts.append("The page is now at \(url.absoluteString)") }
-        if let delta = await delta(engine) { parts.append(delta) }
-        return parts.isEmpty ? "No page changes" : parts.joined(separator: "\n")
+        nonisolated(unsafe) let host: AgentPageHost = unsafe engine.agentPageHost
+        return unsafe await AgentPageCore.deltaReport(host, urlBefore: urlBefore)
     }
 
     /// The tab's live subframes, once each, by the ref prefix their script took. A frame that went
@@ -570,7 +566,7 @@ enum AgentTools {
     }
 
     /// Resolves true once the DOM held still for `quietMs`, false at `maxMs` or before the document completes.
-    private static let domQuietScript = """
+    static let domQuietScript = """
         return await new Promise(resolve => {
           let quiet
           const done = settled => { observer.disconnect(); clearTimeout(quiet); clearTimeout(cap); resolve(settled) }
@@ -583,13 +579,19 @@ enum AgentTools {
         """
 
     /// How long the DOM, then the network, must hold still for a page to count as settled.
-    static var settleQuiet = (dom: Duration.milliseconds(200), network: Duration.milliseconds(500))
+    static var settleQuiet: (dom: Duration, network: Duration) {
+        get { unsafe AgentSettle.quiet }
+        set { unsafe AgentSettle.quiet = newValue }
+    }
 
     /// Waits for the page to settle: no navigation running, no request in flight and the DOM still for a
     /// moment, so script redirects and pages that render after their load come out whole. Up to 30 s for the
     /// loads and 5 s past the last one to settle: past that the agent gets the page as it is, and false.
+    /// The load itself stays here, as a capture in flight defers settling past the DOM's quiet: the loop
+    /// is `AgentPageCore.waitForLoad` with that one extra condition.
     @discardableResult
     static func waitForLoad(_ engine: WKWebViewTab, capture: AgentCapture?) async -> Bool {
+        let settleQuiet = Self.settleQuiet
         let start = ContinuousClock.now
         let deadline = start + .seconds(30)
         // A load can take a moment to start after the request.

@@ -50,6 +50,10 @@
   } from "../../stores/conversations.svelte";
   import { getSetting } from "../../stores/settings.svelte";
   import { getSplitPanes } from "../../stores/splitPanes.svelte";
+  import {
+    dismissConversationSurfaceForTab,
+    promoteConversationSurfaceForTab,
+  } from "../../stores/conversationSurfaces.svelte";
   import { getTabsById, tabDisplayTitle } from "../../stores/tabs.svelte";
   import AgentTile from "./AgentTile.svelte";
   import type { ImageRef, PermissionItem, QuestionItem, SignInLinkItem, ThreadItem, ToolCallItem, UserMessageItem } from "./conversationModel";
@@ -71,9 +75,12 @@
     tabId: string;
     /** The pane's frame as shares of the content area. */
     frame: Pick<BridgeSplitPaneFrame, "x" | "y" | "width" | "height">;
+    /** Set when the conversation floats over its source tab instead of filling a pane or tab. */
+    presentation?: "surfaceMini" | "surfaceDialog";
   }
 
-  let { tabId, frame }: Props = $props();
+  let { tabId, frame, presentation }: Props = $props();
+  const isSurface = $derived(presentation !== undefined);
 
   type ItemRow = { kind: "item"; key: string; item: ThreadItem; sig: string; promptIndex: number; canRestore: boolean; turn: TurnSummary | null };
   type WorkRow = { kind: "work"; key: string; calls: ToolCallItem[]; sig: string; promptIndex: number; done: boolean };
@@ -622,12 +629,23 @@
     conversationActions.answerQuestion({ tabId, requestId: String(link.requestId), action: "cancel" });
     return true;
   }
+
+  function escapeConversation(): boolean {
+    return (
+      answerPending(false) ||
+      (questionForm?.answer("decline") ?? false) ||
+      declineSignInLink() ||
+      (isSurface ? dismissConversationSurfaceForTab(tabId) : stop())
+    );
+  }
 </script>
 
-<div class="conversation-root chrome-content-overlay-root">
+<div class="conversation-root chrome-content-overlay-root" class:surface={isSurface}>
   <!-- svelte-ignore a11y_no_noninteractive_element_interactions -->
   <section
     class="conversation"
+    class:surface-mini={presentation === "surfaceMini"}
+    class:surface-dialog={presentation === "surfaceDialog"}
     style:left="{frame.x * 100}%"
     style:top="{frame.y * 100}%"
     style:width="{frame.width * 100}%"
@@ -643,6 +661,11 @@
     }}
   >
     <header class="header">
+      {#if presentation === "surfaceDialog"}
+        <button type="button" class="pane-control" aria-label={t("common.close")} use:tooltip={t("common.close")} onclick={() => dismissConversationSurfaceForTab(tabId)}>
+          <Icon name="close" size={12} />
+        </button>
+      {/if}
       <AgentTile agentId={header.agentId} />
       <h1 class="title">{header.title}</h1>
       {#if header.project}
@@ -715,7 +738,16 @@
           {usagePercent}%
         </span>
       {/if}
-      {#if inSplit}
+      {#if isSurface}
+        <button type="button" class="pane-control" aria-label={t("placement.enlarge")} use:tooltip={t("placement.enlarge")} onclick={() => promoteConversationSurfaceForTab(tabId)}>
+          <Icon name="arrowUpRight" size={12} />
+        </button>
+        {#if presentation === "surfaceMini"}
+          <button type="button" class="pane-control" aria-label={t("common.close")} use:tooltip={t("common.close")} onclick={() => dismissConversationSurfaceForTab(tabId)}>
+            <Icon name="close" size={12} />
+          </button>
+        {/if}
+      {:else if inSplit}
         <!-- The native pane pill sits under this surface, so a conversation pane carries its own controls. -->
         <button type="button" class="pane-control" aria-label={t("splitPane.maximize")} use:tooltip={t("splitPane.maximize")} onclick={() => tabActions.maximizeSplitPane(tabId)}>
           <Icon name="maximize" size={12} />
@@ -943,7 +975,7 @@
           }}
           onsubmit={send}
           onemptyreturn={(always) => attachments.length === 0 && (answerPending(true, always) || (questionForm?.answer("accept") ?? false))}
-          onescape={() => answerPending(false) || (questionForm?.answer("decline") ?? false) || declineSignInLink() || stop()}
+          onescape={escapeConversation}
           onemptykey={(key) => questionForm?.pick(key) ?? false}
           onemptyup={() => {
             const items = conversation?.thread.items ?? [];
@@ -1111,6 +1143,17 @@
     overflow: hidden;
   }
 
+  /* Inside ConversationSurface the fixed content-area frame becomes the card's own box. */
+  .conversation-root.surface {
+    position: absolute;
+    inset: 0;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    border-radius: 0;
+  }
+
   .conversation {
     position: absolute;
     display: flex;
@@ -1127,6 +1170,21 @@
       --bg-primary: var(--conversation-bg);
       --float-surface: var(--conversation-surface);
     }
+  }
+
+  .conversation.surface-mini,
+  .conversation.surface-dialog {
+    border-radius: 0;
+  }
+
+  .conversation.surface-mini .header {
+    height: 40px;
+    padding-right: var(--space-12);
+    padding-left: var(--space-12);
+  }
+
+  .conversation.surface-mini .title {
+    font-size: var(--font-size-sm);
   }
 
   .header {

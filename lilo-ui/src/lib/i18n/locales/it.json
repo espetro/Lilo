@@ -600,6 +600,11 @@
 				"description": "Parla con Claude Code, Codex, Gemini e altri agenti in una scheda, con i tuoi abbonamenti.",
 				"keywords": "agente ia acp chat conversazione chiedi claude codex gemini copilot"
 			},
+			"agentConversationPlacement": {
+				"title": "Posizione delle conversazioni",
+				"description": "Dove appare una conversazione avviata dalla barra Chiedi.",
+				"keywords": "agent conversation placement mini dialog split tab open as"
+			},
 			"agentsNotifyDone": {
 				"title": "Notifica quando un agente finisce",
 				"description": "Una notifica quando termina una conversazione che non stai guardando.",
@@ -2420,6 +2425,7 @@
 		},
 		"Commands are still running in them and will be stopped.": "Sono ancora in esecuzione dei comandi, che verranno interrotti.",
 		"The terminal could not start.": "Impossibile avviare il terminale.",
+		"The conversation could not be started.": "Impossibile avviare la conversazione.",
 		"Close the tab and try again.": "Chiudi la scheda e riprova.",
 		"Choose an iTerm2 color preset (.itermcolors), a VS Code color theme (.json) or a Ghostty theme file.": "Scegli un preset di colori iTerm2 (.itermcolors), un tema colori di VS Code (.json) o un file di tema Ghostty.",
 		"This file is not a theme Lilo can read.": "Questo file non è un tema leggibile da Lilo.",
@@ -3111,6 +3117,15 @@
 				}
 			}
 		}
+	},
+	"placement": {
+		"label": "Apri come",
+		"mini": "Mini conversazione",
+		"dialog": "Finestra",
+		"split": "Dividi accanto alla pagina",
+		"tab": "Scheda intera",
+		"enlarge": "Apri in una scheda",
+		"surfaceFailed": "Impossibile avviare la conversazione."
 	},
 	"splitPane": {
 		"close": "Chiudi riquadro diviso",

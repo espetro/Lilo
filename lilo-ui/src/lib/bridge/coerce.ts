@@ -51,5 +51,6 @@ export function coerceTabFolderSnapshot(
 		isLocked: data.isLocked ?? false,
 		lock: data.lock ?? null,
 		...(data.splitLayout && { splitLayout: data.splitLayout }),
+		...(data.conversationTabId && { conversationTabId: data.conversationTabId }),
 	};
 }

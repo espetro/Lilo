@@ -600,6 +600,11 @@
 				"description": "Общайтесь с Claude Code, Codex, Gemini и другими агентами во вкладке, используя свои подписки.",
 				"keywords": "агент ии ai acp чат разговор спросить claude codex gemini copilot"
 			},
+			"agentConversationPlacement": {
+				"title": "Размещение бесед",
+				"description": "Где появляется беседа, начатая в строке запроса.",
+				"keywords": "agent conversation placement mini dialog split tab open as"
+			},
 			"agentsNotifyDone": {
 				"title": "Уведомлять, когда агент закончит",
 				"description": "Уведомление, когда завершается разговор, который вы сейчас не смотрите.",
@@ -2446,6 +2451,7 @@
 		},
 		"Commands are still running in them and will be stopped.": "В них ещё выполняются команды, которые будут остановлены.",
 		"The terminal could not start.": "Не удалось запустить терминал.",
+		"The conversation could not be started.": "Не удалось запустить разговор.",
 		"Close the tab and try again.": "Закройте вкладку и повторите попытку.",
 		"Choose an iTerm2 color preset (.itermcolors), a VS Code color theme (.json) or a Ghostty theme file.": "Выберите цветовую схему iTerm2 (.itermcolors), тему VS Code (.json) или файл темы Ghostty.",
 		"This file is not a theme Lilo can read.": "Lilo не может прочитать этот файл как тему.",
@@ -3139,6 +3145,15 @@
 				}
 			}
 		}
+	},
+	"placement": {
+		"label": "Открыть как",
+		"mini": "Мини-беседа",
+		"dialog": "Диалог",
+		"split": "Рядом со страницей",
+		"tab": "Отдельная вкладка",
+		"enlarge": "Открыть во вкладке",
+		"surfaceFailed": "Не удалось начать беседу."
 	},
 	"splitPane": {
 		"close": "Закрыть панель разделённого вида",

@@ -55,7 +55,7 @@ enum AgentConnectStatus {
             "status": status,
             "fix": fix,
             "consent": [
-                "askBeforeActions": store.get(AgentControl.asksBeforeActionsKey) != "false",
+                "askBeforeActions": store.get(AgentConsentRules.asksBeforeActionsKey) != "false",
                 "actsOnPages": (control.clientPermissions[client?.rawValue ?? session.clientName]?.act ?? .ask).rawValue
             ]
         ]

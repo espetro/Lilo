@@ -441,7 +441,7 @@ final class AgentComputerToolTests: AgentToolTestCase {
         }
         let tab = try await newAgentTab()
         _ = await client.callTool("navigate", ["tabId": tab, "url": "http://127.0.0.1:\(server.port)/"])
-        context.settingsStore!.set(AgentControl.asksBeforeActionsKey, value: "false")
+        context.settingsStore!.set(AgentConsentRules.asksBeforeActionsKey, value: "false")
         let wait = AgentInteractionTools.requestWait
         defer { AgentInteractionTools.requestWait = wait }
         AgentInteractionTools.requestWait = .seconds(2)

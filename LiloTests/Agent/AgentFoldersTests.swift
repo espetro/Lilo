@@ -387,6 +387,24 @@ final class AgentFoldersTests: AgentToolTestCase {
         XCTAssertTrue(navigate.isError, "the conversation's tab never loads a page")
     }
 
+    func testAConversationsAgentKeepsItsPagesInItsFolderWhenTheConversationIsSplit() async throws {
+        let anchor = try XCTUnwrap(window.tabManager.activeTab)
+        let agentTab = Tab(title: "Conversation", spaceId: space.id, kind: .agent, cwd: NSTemporaryDirectory(), agentId: "test-agent")
+        let folder = TabFolder(spaceId: space.id, name: "Conversation", color: "#795ceb", conversationTabId: agentTab.id)
+        _ = try window.applyBrowserCommand(.createFolder(spaceId: space.id, folder: folder, section: .unpinned))
+        _ = try window.applyBrowserCommand(.createTab(spaceId: space.id, tab: agentTab, activate: false))
+        _ = try window.applyBrowserCommand(.splitTabs(spaceId: space.id, tabId: agentTab.id, targetTabId: anchor.id, vertical: false, before: false))
+        context.conversations.register(agentTab, folderId: folder.id)
+        let session = try XCTUnwrap(control.sessions.first)
+        session.conversationTabId = agentTab.id
+        session.folders[nil] = nil
+
+        let number = try await newAgentTab()
+
+        let tabId = try tabId(of: number)
+        XCTAssertEqual(context.browserState.durableTab(for: tabId)?.tab.groupId, folder.id, "a split conversation tab still files its pages in its own folder")
+    }
+
     func testAConversationsAgentOpensItsTabsWhereTheConversationMoved() async throws {
         let first = TabFolder(spaceId: space.id, name: "Before", color: "#795ceb")
         let moved = TabFolder(spaceId: space.id, name: "After", color: "#795ceb")
