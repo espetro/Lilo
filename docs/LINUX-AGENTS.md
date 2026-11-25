@@ -74,6 +74,40 @@ What the container covers, and what it does not:
 - **WebKitGTK, not WKWebView**: script calls are asynchronous with `a{sv}` arguments, and the set of quirks [COMPATIBILITY.md](COMPATIBILITY.md) documents for the web side still describes macOS's WebKit. Known container-only gaps: no cross-origin subframe access (script runs in the main frame only) and no network-quiet half in the navigation settle (DOM quiet only).
 - **No profiles, no `fetch`, no screenshots of native UI**: `list_profiles`/`reset_profile` report an empty single profile, `fetch` says to use `javascript_tool` from a page, and `resize_window` resizes the Xvfb viewport.
 
+## The companion driver: the user's real Chromium
+
+`LILO_DRIVER=companion` swaps the backend: instead of WebKitGTK inside the container, the pages live in the user's own Chromium, driven through the [companion extension](../companion-extension/README.md).
+The pieces, in order:
+
+1. **Chromium + extension** — the MV3 extension (`companion-extension/`) is the *server* of tool executions: it exposes `tabs.list`, `tabs.open`, `snapshot` and `scripting.execute`.
+2. **Native-messaging host** — `lilo-companion` is a byte pipe: it connects Chrome's native-messaging stdio to the peer's unix socket.
+3. **The peer** — `container/linux/companion_peer.py` listens on the socket, reads the extension's `hello` (accepted and ignored), sends requests `{"id","tool","params"}` framed as UInt32 LE length + UTF-8 JSON, and matches responses by id with timeouts. Multiple host connections are accepted; the latest hello wins.
+4. **The driver** — `container/linux/companion_driver.py` implements the same driver interface the WebKitGTK driver does, so `mcp_server.py` (the MCP stdio surface) runs unchanged: tab bookkeeping via `tabs.list`/`tabs.open`, `AgentPage.js` injected once per tab into the page's persistent isolated world via `scripting.execute`, page methods (`readPage`, `find`, `waitFor`, `act`, ...) as plain method calls into that world.
+
+Run it:
+
+```bash
+docker run -i --rm -e LILO_DRIVER=companion \
+  -v /run/user/1000/lilo:/run/user/1000/lilo \
+  -e LILO_COMPANION_SOCK=/run/user/1000/lilo/companion.sock \
+  lilo-mcp
+```
+
+Socket path (Linux): `LILO_COMPANION_SOCK`, else `$XDG_RUNTIME_DIR/lilo/companion.sock`, else `/tmp/lilo-companion.sock` — the defaults the extension's packaging documents (the macOS default under `~/Library` never applies here).
+Env vars: `LILO_DRIVER=companion` selects the backend (default `webkitgtk`), `LILO_COMPANION_SOCK` overrides the socket path, `LILO_AGENT_ALLOW_ALL=1` admits MCP clients unattended (see consent below).
+
+`make companion-test` runs the peer and driver tests locally (plain `python3`, platform independent); `make docker-mcp-test` runs them inside the image too.
+
+**Honest limits vs the WebKitGTK driver:**
+
+- **Consent differs harder.** The WebKitGTK container can at least render a consent drawer (`LILO_CHROME_URL`); the companion driver has no surface at all, so every consent question expires immediately and the MCP server reports `[needs_user]` until the operator sets `LILO_AGENT_ALLOW_ALL=1`. There is no ask-a-human path — the user's browser is being driven, so the extension's own install-time consent is the only human gate.
+- **`tabs_close_mcp` is best-effort.** The companion protocol has no `tabs.close` tool; the driver falls back to the page's `window.close()`, which Chromium only honors for script-opened pages, so closing usually raises a clear error.
+- **No screenshots.** `computer`'s `screenshot` action cannot capture a real tab from the isolated world; it fails with a clear error (the WebKitGTK driver screenshots its own views).
+- **No `resize_window`.** The viewport belongs to the user's window manager, not the driver.
+- **No cross-origin subframes in page methods.** `scripting.execute` targets the main frame's isolated world, the same documented gap the WebKitGTK driver has (its refs carry no frame prefix here).
+- **The settle is DOM-quiet only** (same approximation as the WebKitGTK driver): the extension reports no network activity, so navigation waits for the DOM to go quiet, not the network.
+
+
 `make swiftlint` on Linux downloads the static `swiftlint_linux_amd64.zip` (its own pinned checksum, in the Makefile beside the macOS one) and runs the same rules as macOS with two exceptions: `statement_position` and `vertical_whitespace_closing_braces` need SourceKit, which the static binary does not have, so it prints a warning and skips them.
 The macOS job in CI runs all of them, so a violation only those two rules find shows up there and not on Linux.
 The Linux download is amd64 only; on arm64 the target stops with `Unsupported SwiftLint platform`.

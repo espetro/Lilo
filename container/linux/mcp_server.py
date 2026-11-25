@@ -437,6 +437,9 @@ class Server:
         return [content_text(reply if isinstance(reply, str) else str(reply))]
 
     def _screenshot(self, tab_id, arguments):
+        if os.environ.get("LILO_DRIVER") == "companion":
+            raise ToolError("screenshots are not supported by the companion driver: "
+                            "it cannot capture the user's real browser; use read_page instead")
         import base64
         response = {}
 
@@ -457,6 +460,9 @@ class Server:
         return [content_image(base64.b64encode(response["png"]).decode())]
 
     def tool_resize_window(self, arguments):
+        if os.environ.get("LILO_DRIVER") == "companion":
+            raise ToolError("resizing is not supported by the companion driver: "
+                            "the viewport belongs to the user's browser window")
         tab_id = self._tab(arguments)
         width = int(arguments.get("width") or 0)
         height = int(arguments.get("height") or 0)

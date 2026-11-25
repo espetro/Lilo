@@ -38,8 +38,11 @@ import time
 import companion_peer
 from companion_peer import PeerError
 
-AGENT_PAGE_JS = open(os.environ.get("LILO_AGENT_PAGE", "/app/Lilo/Agent/AgentPage.js"),
-                     encoding="utf-8").read()
+AGENT_PAGE_PATH = os.environ.get(
+    "LILO_AGENT_PAGE",
+    os.path.join(os.path.dirname(os.path.abspath(__file__)),
+                 "../../Lilo/Agent/AgentPage.js"))
+AGENT_PAGE_JS = open(AGENT_PAGE_PATH, encoding="utf-8").read()
 WORLD = "lilo-agent"
 
 SETTLE_QUIET_DOM_MS = 200
