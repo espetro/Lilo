@@ -50,7 +50,7 @@ enum AgentBrowserConfig {
             ],
             "agent": [
                 "profile": profile,
-                "askBeforeActions": store.get(AgentControl.asksBeforeActionsKey) != "false",
+                "askBeforeActions": store.get(AgentConsentRules.asksBeforeActionsKey) != "false",
                 "actionLog": store.get(AgentActionLog.settingKey) != "false",
                 "idlePosture": control.idlePosture(of: session)
             ]
