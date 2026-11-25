@@ -137,6 +137,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
 
         flushPendingExternalURLs()
         didFinishLaunching = true
+        // Registers the companion host with the user's Chromium browsers; idempotent and off the
+        // window path, so a stale manifest after an app move repairs itself in the background.
+        DispatchQueue.global().async { CompanionHostRegistration.registerIfNeeded() }
         Task { await restoreAdditionalWindows() }
         Task {
             guard (try? await browserContext.bootstrap()) != nil else { return }

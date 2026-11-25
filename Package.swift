@@ -26,6 +26,8 @@ let package = Package(
                 "Extensions/bridge-src",
                 "Lilo.entitlements",
                 "Lilo.Debug.entitlements",
+                // Top-level code of the lilo-companion tool target, built through Xcode only.
+                "Companion/main.swift",
                 // Compiled by Xcode into default.metallib; SwiftPM builds have no terminal renderer.
                 "Terminal/TerminalShaders.metal"
             ],
