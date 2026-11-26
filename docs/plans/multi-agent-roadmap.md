@@ -118,7 +118,7 @@ Understand what happens today, which workflows matter, and where the current pro
 
 ### Artifacts
 
-- `baseline evidence pack`: workflow recordings or traces, failure list and current overhead measurements.
+- `baseline evidence pack`: workflow recordings or traces, failure list and current overhead measurements. First entry: [evidence/tenant-isolation-audit.md](evidence/tenant-isolation-audit.md), a static audit of what the agent surface already isolates (per-session folders, isolated spaces, host-scoped cookie reads) and where it leaks (unscoped `cookies set`, global screenshot and flow stores, same-identity grants and adoption, shared-connection title races), with file:line evidence, eight attack walkthroughs and a fixture list.
 - Assumption register v1.
 - Terminology map.
 - External integration constraint matrix.
