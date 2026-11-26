@@ -707,6 +707,7 @@ agent-eval:
 ## Test the fixture agent tasks' server and grading (no browser, no model)
 agent-eval-test:
 	@python3 -I bench/mcp/fixtures_test.py -q
+	@python3 -I bench/mcp/probe_test.py -q
 
 # The headless agent surface in a container (docs/LINUX-AGENTS.md): WebKitGTK under Xvfb, MCP on stdio.
 # DOCKER is docker or podman, whatever is on PATH; the image name is what `docker-mcp` runs.
