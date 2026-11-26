@@ -983,6 +983,7 @@ export const createDemoHost = (
               busy: agentBusy || agentSessionActive,
               name: text().playgroundClient,
               spaceIds: ["playground-agents"],
+              waitingForUser: false,
             },
           ]
         : [],

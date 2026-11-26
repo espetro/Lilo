@@ -60,7 +60,7 @@
   function mcpState(client: BridgeAgentClient): string {
     if (client.waitingForUser) return t("agents.status.waiting");
     if (client.busy) return t("agents.row.working");
-    return t("agents.badge.mcpIdle");
+    return t("agents.status.connected");
   }
 
   // The acting tab is the most relevant target; with none, its Agents space. Lilo exposes no stop
