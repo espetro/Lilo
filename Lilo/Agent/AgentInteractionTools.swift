@@ -193,7 +193,7 @@ enum AgentInteractionTools {
             let (_, engine) = try control.agentTab(arguments["tabId"], session: session)
             let data: Data
             if let id = arguments["imageId"] as? String {
-                guard let shot = control.screenshots.first(where: { $0.id == id }) else { throw AgentToolError("No screenshot \(id)") }
+                guard let shot = session.screenshots.first(where: { $0.id == id }) else { throw AgentToolError("No screenshot \(id)") }
                 data = shot.png
             } else if let path = arguments["path"] as? String, FileManager.default.fileExists(atPath: path) {
                 let file = try await control.approveUpload(URL(fileURLWithPath: path), engine: engine, session: session)
@@ -359,7 +359,7 @@ enum AgentInteractionTools {
             _ = try await point(of: arguments, engine: engine)
             reply = "Scrolled \(arguments["ref"] as? String ?? "") into view"
         case "screenshot":
-            return try await AgentScreenshot.take(arguments, engine: engine, tabId: tab.id, control: control)
+            return try await AgentScreenshot.take(arguments, engine: engine, tabId: tab.id, session: session, control: control)
         case "zoom":
             guard let region = arguments["region"] as? [NSNumber], region.count == 4 else { throw AgentToolError("region is (x0, y0, x1, y1)") }
             let values = region.map { CGFloat($0.doubleValue) }

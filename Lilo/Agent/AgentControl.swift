@@ -78,8 +78,7 @@ final class AgentControl {
     /// Frames of each tab `gif_creator` recorded, and the tabs still recording.
     var recordings: [UUID: [CGImage]] = [:]
     var recordingTabs: Set<UUID> = []
-    /// Screenshots an agent took, by id, for `upload_image`.
-    var screenshots: [(id: String, png: Data)] = []
+    /// Numbers screenshot ids across sessions, so one session's id never names another's image.
     var nextScreenshotNumber = 1
     /// The host the agent surface reads plugin tools from: the app's shared one — the panel's
     /// sessions are these — unless a test substituted `pluginHostOverride`.
@@ -649,7 +648,6 @@ final class AgentControl {
         dropFolders(of: closing)
         dropIsolatedSpace(of: closing)
         publishActivity()
-        if sessions.isEmpty { screenshots = [] }
         // The last agent with tabs in the agents' profile gone, nothing it did there is kept for the next one.
         if !sessions.contains(where: { $0.profileId == nil && !agentsSpaceFolders(of: $0).isEmpty }) { Task { await wipeAgentsProfile() } }
     }
@@ -678,6 +676,7 @@ final class AgentControl {
         session.title = dropped.title
         session.projectName = dropped.projectName
         session.actedOn = dropped.actedOn
+        session.screenshots = dropped.screenshots
         session.profileId = dropped.profileId
         sessions.removeAll { $0 === dropped }
         context?.powerKeeper.terminalEnded(dropped.id)
@@ -796,6 +795,8 @@ final class AgentSession {
     var flow: AgentFlows.Recording?
     /// The name `flow_start` gave, which `flow_save` uses when its own `name` is empty.
     var flowName: String?
+    /// Screenshots it took, by id: `upload_image` looks nowhere else.
+    var screenshots: [(id: String, png: Data)] = []
 
     init(connection: AgentConnection) {
         self.connection = connection
