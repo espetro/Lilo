@@ -157,6 +157,12 @@ What is never logged: what you or the agent typed, a password, a card or a one-t
 
 Each file stops at 1 MB and rotates to a single `.1.jsonl` next to it, so a source never holds more than 2 MB. Closing a conversation deletes its log when Lilo quits. To delete the rest, quit Lilo and remove the `Agents/Actions` folder. To stop logging, turn off Settings > Agents > "Keep a log of agent actions"; lines already written stay until you delete them.
 
+## The run ledger
+
+Beside the per-call logs, `runs.jsonl` in the same folder keeps one `start` line when an agent is let in and one `end` line when its session finishes, so a restart can still show recent past runs: live sessions themselves are memory-only. Each run is the session's id, the client's handshake name and a pseudonymous hash of its name and signing identity (`clientKey`, never the identity itself), its connect and start times, how it ended (`disconnected`, `revoked`, `stopped` or `adopted` when a reconnect took its tabs over), coarse tool and error counts, and its tab, folder, space, profile, isolated-space and conversation ids when it had them. A run with a `start` but no `end` yet is live, or was cut short by a quit.
+
+It carries even less than the action log: no tool names, no hosts, no arguments, nothing a page or a person typed — only the shape of the work. It follows the same switch ("Keep a log of agent actions") and the same rotation, and it is deleted with the `Agents/Actions` folder. The chrome UI reads it through the `agentRuns` bridge event for the agent cockpit.
+
 ## Known limitations
 
 - An agent's `emulate` and an extension's `chrome.debugger` on the same tab share its Web Inspector, so each can overwrite the other's user agent, media and init script.
