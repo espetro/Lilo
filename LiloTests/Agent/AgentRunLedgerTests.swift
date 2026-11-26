@@ -89,6 +89,7 @@ final class AgentRunLedgerTests: AgentToolTestCase {
     }
 
     func testALiveRunHasNoEnd() throws {
+        control.actionLog.flush()
         let runs = AgentRunLedger.recent(in: logDirectory)
         let run = try XCTUnwrap(runs.first, "the setUp client's run is still open")
         XCTAssertEqual(run.id, try XCTUnwrap(control.sessions.first).id.uuidString)
