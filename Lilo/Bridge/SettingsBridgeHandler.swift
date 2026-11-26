@@ -48,6 +48,7 @@ final class SettingsBridgeHandler: BridgeHandler {
         "setAgentClientPermission",
         "getAgentActionLog",
         "openAgentActionLog",
+        "getAgentRuns",
         "getUpdaterStatus",
         "checkForUpdates",
         "installUpdate",
@@ -321,6 +322,9 @@ final class SettingsBridgeHandler: BridgeHandler {
                 try? FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true, attributes: [.posixPermissions: 0o700])
                 NSWorkspace.shared.open(directory)
             }
+
+        case "getAgentRuns":
+            await publishAgentRuns()
 
         case "getUpdaterStatus":
             publishUpdaterStatus()
@@ -650,6 +654,28 @@ final class SettingsBridgeHandler: BridgeHandler {
             ["name": client.name, "calls": client.calls.map { call in
                 ["time": call.time, "tool": call.tool, "host": call.host ?? NSNull(), "ok": call.ok, "code": call.code ?? NSNull()] as [String: Any]
             }] as [String: Any]
+        }])
+    }
+
+    /// The run ledger's recent runs, read off the main thread when the page asks: the record a cockpit
+    /// lists to say which agents worked, where and for how long, live ones included.
+    private func publishAgentRuns() async {
+        guard let control = context?.agentControl else { return }
+        let directory = control.actionLog.directory
+        let live = Set(control.sessions.map(\.id.uuidString))
+        let runs = await Task.detached { AgentRunLedger.recent(in: directory) }.value
+        bridgeRouter?.send(event: "agentRuns", data: ["runs": runs.map { run in
+            let state = run.ended != nil ? "ended" : live.contains(run.id) ? "running" : "interrupted"
+            return [
+                "id": run.id, "client": run.client, "clientKey": run.clientKey,
+                "started": run.started, "connected": run.connected ?? NSNull(),
+                "ended": run.ended ?? NSNull(), "reason": run.reason ?? NSNull(),
+                "state": state,
+                "tools": run.tools, "errors": run.errors, "tabs": run.tabs,
+                "folders": run.folders, "space": run.space ?? NSNull(),
+                "profile": run.profile ?? NSNull(), "isolated": run.isolated,
+                "conversation": run.conversation ?? NSNull()
+            ] as [String: Any]
         }])
     }
 
