@@ -370,6 +370,43 @@ scenarios.push(
 	{ name: "favorites-glass-overlap-dark", colorScheme: "dark", world: favoritesGlassScrolledWorld(), run: scrollFavoritesOverTabs },
 );
 
+// The Agents popover's MCP clients section: one acting on a tab, one waiting for an approval, one
+// connected with nothing of its own to show yet.
+async function agentsPopoverMcp(page: Page) {
+	await receive(page, [
+		{ event: "settingsLoaded", settings: { agentsEnabled: "true" } },
+		{
+			event: "agentClientsLoaded",
+			clients: [{ id: "claudeCode", configured: true, icon: null }],
+			allowed: [
+				{ name: "claude-code", displayName: "Claude Code", lastSeen: null, client: "claudeCode" },
+				{ name: "research-bot", displayName: "research-bot", lastSeen: null, client: null },
+			],
+			permissions: {},
+		},
+		{
+			event: "agentActivity",
+			moods: {},
+			clients: [
+				{ name: "claude-code", busy: true, actingTabIds: ["tab-alpha"], spaceIds: [SPACE_1], waitingForUser: false },
+				{ name: "research-bot", busy: false, actingTabIds: [], spaceIds: [SPACE_1], waitingForUser: true },
+				{ name: "quiet-script", busy: false, actingTabIds: [], spaceIds: [], waitingForUser: false },
+			],
+			agentsSpaceIds: [],
+			agentsProfileId: "",
+			hiddenAgentsSpaceIds: [],
+		},
+	]);
+	await page.locator(".agents-button").first().click({ timeout: 5000 }).catch(() => {});
+	await page.locator(".float-popover").waitFor({ state: "visible", timeout: 5000 }).catch(() => {});
+	await page.waitForTimeout(400);
+}
+
+scenarios.push(
+	{ name: "agents-popover-mcp-light", run: agentsPopoverMcp },
+	{ name: "agents-popover-mcp-dark", colorScheme: "dark", run: agentsPopoverMcp },
+);
+
 // Settings > Plugins on the made-up plugins: one running, one idle, one off with a setting of each type, one rejected.
 // Steps that only exist after a change are guarded, so the same scenarios still record Settings at a merge base,
 // which has no Plugins section.

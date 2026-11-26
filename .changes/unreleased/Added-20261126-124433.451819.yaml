@@ -1,0 +1,3 @@
+kind: Added
+body: 'The Agents popover''s MCP clients section shows external agents connected over lilo-mcp: their name, whether they are working, waiting for you, or just connected, the Agents space(s) they work in, and a way to reveal the right tab or space'
+time: 2026-11-26T12:44:33.451819-08:00

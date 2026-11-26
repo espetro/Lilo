@@ -7,13 +7,15 @@
   import { dismissable } from "../../lib/actions/dismissable";
   import { reportInteractiveZone } from "../../lib/actions/interactiveZone";
   import { portal } from "../../lib/actions/portal";
-  import { terminalActions } from "../../lib/bridge/actions";
-  import type { BridgeConversationSummary } from "../../lib/bridge/protocol";
+  import { spaceActions, terminalActions } from "../../lib/bridge/actions";
+  import type { BridgeAgentClient, BridgeConversationSummary } from "../../lib/bridge/protocol";
   import { getFormatLocale, t } from "../../lib/i18n/state.svelte";
   import { popoverOut } from "../../lib/motion/restingTransitions";
+  import { getAgentClients } from "../../stores/agents.svelte";
   import { openAskBar } from "../../stores/conversations.svelte";
+  import { getAgentClientsSnapshot } from "../../stores/settings.svelte";
   import { shortcutKeys } from "../../stores/shortcutKeys.svelte";
-  import { getActiveSpaceId } from "../../stores/spaces.svelte";
+  import { getActiveSpaceId, getSpaceById } from "../../stores/spaces.svelte";
 
   let { anchor, summaries, onclose }: { anchor: HTMLElement; summaries: BridgeConversationSummary[]; onclose: () => void } = $props();
 
@@ -34,6 +36,46 @@
   });
   const activeSpaceId = $derived(getActiveSpaceId());
   const askKeys = $derived(shortcutKeys("agents.ask"));
+
+  // External MCP clients connected to lilo-mcp now: this list is per client name, honestly - a client
+  // naming itself the same twice collapses into one row here, as the bridge already collapses it.
+  const mcpClients = $derived(getAgentClients());
+  const mcpNames = $derived(new Map(getAgentClientsSnapshot().allowed.map((agent) => [agent.name, agent])));
+  const mcpClientIcons = $derived(new Map(getAgentClientsSnapshot().clients.map((client) => [client.id, client.icon])));
+  const spaceListFormat = $derived(new Intl.ListFormat(getFormatLocale(), { type: "conjunction" }));
+
+  function mcpDisplayName(name: string): string {
+    return mcpNames.get(name)?.displayName || name;
+  }
+
+  function mcpIcon(name: string): string | null {
+    const clientId = mcpNames.get(name)?.client;
+    return (clientId && mcpClientIcons.get(clientId)) || null;
+  }
+
+  function mcpSpaceNames(client: BridgeAgentClient): string[] {
+    return client.spaceIds.map((id) => getSpaceById(id)?.name).filter((name): name is string => !!name);
+  }
+
+  function mcpState(client: BridgeAgentClient): string {
+    if (client.waitingForUser) return t("agents.status.waiting");
+    if (client.busy) return t("agents.row.working");
+    return t("agents.status.connected");
+  }
+
+  // The acting tab is the most relevant target; with none, its Agents space. Lilo exposes no stop
+  // or pause for an external client here: there is no safe native action to call yet (see AGENTS.md).
+  function revealMcpClient(client: BridgeAgentClient): void {
+    const tabId = client.actingTabIds[0];
+    if (tabId) {
+      terminalActions.reveal(tabId);
+    } else {
+      const spaceId = client.spaceIds[0];
+      if (!spaceId) return;
+      spaceActions.switchTo(spaceId);
+    }
+    onclose();
+  }
 
   const WIDTH = 320;
   const MARGIN = 8;
@@ -158,9 +200,43 @@
           </div>
         {/each}
       </div>
-    {:else}
-      <p class="empty">{t("agents.badge.empty")}</p>
     {/each}
+    {#if mcpClients.length > 0}
+      <div class="section" role="group" aria-label={t("agents.badge.mcp")}>
+        <div class="section-label" aria-hidden="true">{t("agents.badge.mcp")}</div>
+        {#each mcpClients as client, index (client.name)}
+          {@const spaceNames = mcpSpaceNames(client)}
+          {@const icon = mcpIcon(client.name)}
+          {@const canReveal = client.actingTabIds.length > 0 || client.spaceIds.length > 0}
+          {@const label = [mcpDisplayName(client.name), mcpState(client), spaceNames.length ? spaceListFormat.format(spaceNames) : ""].filter(Boolean).join(", ")}
+          <div class="item" class:waiting={client.waitingForUser} style:--stagger={Math.min(sections.reduce((n, section) => n + section.items.length, 0) + index, 8)}>
+            {#snippet mcpRow()}
+              <span class="icon">
+                {#if icon}<img class="mcp-logo" src={icon} alt="" />{:else}<span class="mcp-tile" aria-hidden="true">{mcpDisplayName(client.name).charAt(0).toUpperCase()}</span>{/if}
+                {#if client.waitingForUser}<span class="dot" aria-hidden="true"></span>{/if}
+              </span>
+              <span class="text">
+                <span class="name">{mcpDisplayName(client.name)}</span>
+                <span class="detail" class:finished={client.waitingForUser}>{mcpState(client)}</span>
+              </span>
+              {#if spaceNames.length}<span class="space" aria-hidden="true">{spaceListFormat.format(spaceNames)}</span>{/if}
+            {/snippet}
+            {#if canReveal}
+              <button class="float-row" aria-label={label} onclick={() => revealMcpClient(client)}>
+                {@render mcpRow()}
+              </button>
+            {:else}
+              <div class="float-row static" aria-label={label}>
+                {@render mcpRow()}
+              </div>
+            {/if}
+          </div>
+        {/each}
+      </div>
+    {/if}
+    {#if sections.length === 0 && mcpClients.length === 0}
+      <p class="empty">{t("agents.badge.empty")}</p>
+    {/if}
   </div>
 </div>
 
@@ -270,6 +346,37 @@
     flex: none;
     display: grid;
     margin-top: 1px;
+  }
+
+  .mcp-logo {
+    width: 16px;
+    height: 16px;
+    border-radius: var(--radius-xs);
+  }
+
+  .mcp-tile {
+    flex: none;
+    width: 16px;
+    height: 16px;
+    box-sizing: border-box;
+    border-radius: var(--radius-xs);
+    display: grid;
+    place-items: center;
+    background: var(--terminal-tile-bg);
+    box-shadow: inset 0 0 0 1px var(--terminal-tile-border);
+    color: var(--terminal-tile-text);
+    font-size: var(--font-size-3xs);
+    font-weight: var(--font-weight-bold);
+    line-height: 1;
+  }
+
+  /* A client with nothing to reveal yet (connected, no space or acting tab): information only. */
+  .float-row.static {
+    cursor: default;
+  }
+
+  .float-row.static:hover {
+    background: transparent;
   }
 
   .dot {

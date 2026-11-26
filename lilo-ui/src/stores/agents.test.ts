@@ -12,11 +12,11 @@ function receive(msg: Record<string, unknown>): void {
 
 function activity(
 	moods: Record<string, string>,
-	...clients: { name: string; busy?: boolean; actingTabIds?: string[]; spaceIds?: string[] }[]
+	...clients: { name: string; busy?: boolean; actingTabIds?: string[]; spaceIds?: string[]; waitingForUser?: boolean }[]
 ): void {
 	receive({
 		event: "agentActivity",
-		clients: clients.map((client) => ({ busy: false, actingTabIds: [], spaceIds: ["agents"], ...client })),
+		clients: clients.map((client) => ({ busy: false, actingTabIds: [], spaceIds: ["agents"], waitingForUser: false, ...client })),
 		agentsSpaceIds: ["agents", "agents-pro"],
 		hiddenAgentsSpaceIds: [],
 		moods,
@@ -88,4 +88,14 @@ test("each Agents space has the mood of the agents working in it", async () => {
 	);
 	assert.equal(store.getAgentMood("agents-pro"), "loading");
 	assert.equal(store.getAgentMood("agents"), undefined);
+});
+
+test("a client waiting on the user carries that flag through to the clients list, unlike a busy or idle one", async () => {
+	stubBridgeWindow();
+	const store = await loadAgentsStore();
+
+	activity({}, { name: "claude-ai", waitingForUser: true }, { name: "cursor-vscode", busy: true });
+	const [claude, cursor] = store.getAgentClients();
+	assert.equal(claude.waitingForUser, true);
+	assert.equal(cursor.waitingForUser, false);
 });
