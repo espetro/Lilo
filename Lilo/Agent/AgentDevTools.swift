@@ -4,6 +4,32 @@ import WebKit
 /// Devtools beyond Claude in Chrome's set, mostly through the tab's own Web Inspector.
 @MainActor
 enum AgentDevTools {
+    /// The names `definitions` holds, in the one umbrella tool `tools/list` advertises instead: still callable
+    /// directly, through `run` and `browser_batch`, and from a saved flow, and whose full schema `devtools`'s
+    /// `help` returns. Replacing seven large schemas with one compact one is most of the size this saves.
+    static let umbrellaNames = ["devtools_command", "devtools_events", "network_mock", "network_response", "cookies", "emulate", "performance"]
+
+    static let umbrella: [[String: Any]] = [
+        AgentTools.tool("devtools", """
+            One compact entry point to Lilo's seven developer tools: pass tool and that tool's own arguments \
+            flat beside it, like devtools({tool: "network_mock", tabId, action: "add", ...}); or help: true \
+            to get that tool's full schema and documentation instead of calling it.
+            devtools_command: send a Web Inspector protocol command to a tab, or list every command it supports.
+            devtools_events: read a tab's buffered Web Inspector protocol events.
+            network_mock: intercept a tab's requests to mock, fail, rewrite or delay them.
+            network_response: a tab's requests in full, one, several, or saved as a HAR file.
+            cookies: read and change a tab's profile's cookies.
+            emulate: make a tab look like another environment (user agent, color scheme, cache, text redaction...).
+            performance: measure a tab's load and memory, a timeline profile, or a heap snapshot.
+            """, [
+                "tool": ["type": "string",
+                         "enum": ["devtools_command", "devtools_events", "network_mock", "network_response", "cookies", "emulate", "performance"],
+                         "description": "Which of the seven tools to run."],
+                "help": AgentTools.prop("boolean", "Return that tool's full schema and documentation instead of calling it."),
+                "tabId": AgentTools.prop("number", "The tab, for every one of the seven tools.")
+            ], required: ["tool"])
+    ]
+
     static let definitions: [[String: Any]] = [
         AgentTools.tool("devtools_command", """
             Send a command of WebKit's Web Inspector protocol to a tab (not the Chrome DevTools Protocol: \

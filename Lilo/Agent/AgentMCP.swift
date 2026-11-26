@@ -84,8 +84,22 @@ enum AgentMCP {
         case "tools/call":
             // Queued behind a freeze, a request whose client cancelled it or left does nothing.
             guard !Task.isCancelled else { return nil }
-            let name = params["name"] as? String ?? ""
-            let arguments = params["arguments"] as? [String: Any] ?? [:]
+            let rawName = params["name"] as? String ?? ""
+            let rawArguments = params["arguments"] as? [String: Any] ?? [:]
+            // A static lookup, answered without ever starting the deadline, overlap or action-log machinery below.
+            if rawName == "devtools", rawArguments["help"] as? Bool == true {
+                let inner = rawArguments["tool"] as? String ?? ""
+                guard let definition = AgentDevTools.definitions.first(where: { $0["name"] as? String == inner }) else {
+                    return result(id: id, ["content": [AgentContent.text(
+                        "Unknown tool: \(inner). One of \(AgentDevTools.umbrellaNames.joined(separator: ", "))."
+                    ).json], "isError": true])
+                }
+                return result(id: id, ["content": [AgentContent.text(AgentTools.json(definition)).json]])
+            }
+            // Every tool identity below (the deadline, the overlap warning, the action log, flow recording
+            // and the cursor's mood) is the real tool a `devtools` call named, flat arguments and all - exactly
+            // as a direct call to it would be.
+            let (name, arguments) = AgentTools.identity(rawName, rawArguments)
             QuitSource.noteAgentTool(name)
             session.activeCalls += 1
             let startedAt = Date()

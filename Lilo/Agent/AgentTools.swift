@@ -4,8 +4,10 @@ import WebKit
 /// The tools an agent sees, named and shaped like Claude in Chrome's so agents need nothing new.
 @MainActor
 enum AgentTools {
-    static let definitions: [[String: Any]] = tabAndPageDefinitions + AgentInteractionTools.definitions + AgentDevTools.definitions + AgentFlows.definitions + AgentBrowserConfig.definitions + AgentConnectStatus.definitions
-    static let toolNames = Set(definitions.compactMap { $0["name"] as? String })
+    static let definitions: [[String: Any]] = tabAndPageDefinitions + AgentInteractionTools.definitions + AgentDevTools.umbrella + AgentFlows.definitions + AgentBrowserConfig.definitions + AgentConnectStatus.definitions
+    /// Every name a direct call, `run`, `browser_batch` or a saved flow may still use: the advertised tools,
+    /// plus the seven `devtools` stands for in `tools/list`.
+    static let toolNames = Set(definitions.compactMap { $0["name"] as? String }).union(AgentDevTools.umbrellaNames)
 
     private static let tabAndPageDefinitions: [[String: Any]] = [
         tool("tabs_context_mcp", """
@@ -298,6 +300,18 @@ enum AgentTools {
             if let body = arguments["body"], !(body is NSNull) { options["body"] = body as? String ?? json(body) }
             if !["GET", "HEAD", "OPTIONS"].contains(method) { AgentCallSent.current?.write = true }
             return [.text(json(try await page(engine, "request", options) ?? [:]))]
+        case "devtools":
+            if arguments["help"] as? Bool == true {
+                let inner = arguments["tool"] as? String ?? ""
+                guard let definition = AgentDevTools.definitions.first(where: { $0["name"] as? String == inner }) else {
+                    throw AgentToolError("Unknown tool: \(inner). One of \(AgentDevTools.umbrellaNames.joined(separator: ", ")).")
+                }
+                return [.text(json(definition))]
+            }
+            guard let (inner, innerArguments) = devtoolsIdentity(name, arguments) else {
+                throw AgentToolError("tool is required: one of \(AgentDevTools.umbrellaNames.joined(separator: ", ")).")
+            }
+            return try await call(inner, arguments: innerArguments, session: session, control: control)
         default:
             if let content = try await AgentInteractionTools.call(name, arguments: arguments, session: session, control: control) { return content }
             if let content = try await AgentDevTools.call(name, arguments: arguments, session: session, control: control) { return content }
@@ -650,6 +664,22 @@ enum AgentTools {
         // A NaN or a date raises past `try?`; the array wrapper lets the check accept fragments.
         guard JSONSerialization.isValidJSONObject([object]) else { return "{}" }
         return (try? JSONSerialization.data(withJSONObject: object, options: [.sortedKeys, .fragmentsAllowed])).flatMap { String(bytes: $0, encoding: .utf8) } ?? "{}"
+    }
+
+    /// The tool and flat arguments a `devtools` umbrella call stands for ("tool" and "help" stripped out),
+    /// nil when it names none of the seven or none at all.
+    static func devtoolsIdentity(_ name: String, _ arguments: [String: Any]) -> (name: String, arguments: [String: Any])? {
+        guard name == "devtools", let inner = arguments["tool"] as? String, AgentDevTools.umbrellaNames.contains(inner) else { return nil }
+        var stripped = arguments
+        stripped.removeValue(forKey: "tool")
+        stripped.removeValue(forKey: "help")
+        return (inner, stripped)
+    }
+
+    /// The tool identity and flat arguments behind a possible `devtools` call, for deadlines, overlap warnings,
+    /// action logs, flow recording, consent and the cursor's mood to key off - unchanged for every other tool.
+    static func identity(_ name: String, _ arguments: [String: Any]) -> (name: String, arguments: [String: Any]) {
+        devtoolsIdentity(name, arguments) ?? (name, arguments)
     }
 
     static func tool(_ name: String, _ description: String, _ properties: [String: Any], required: [String] = []) -> [String: Any] {

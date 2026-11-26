@@ -68,7 +68,7 @@ test("every setting is listed once, in both locales", async () => {
 test("every tool is read with its parameters", () => {
   const declared = SOURCES.tools.reduce((count, file) => count + read(file).match(/^\s*(?:AgentTools\.)?tool\("/gmu).length, 0);
   assert.equal(Object.keys(byName).length, declared);
-  assert.equal(declared, 35);
+  assert.equal(declared, 36);
   assert.deepEqual(byName.navigate.required, ["url", "tabId"]);
   assert.deepEqual(byName.read_page.properties.filter.enum, ["interactive", "all"]);
   assert.deepEqual(byName.browser_batch.properties.actions.items.required, ["name", "input"]);
@@ -139,7 +139,7 @@ test("a tool list the reader would only partly read fails", () => {
     assert.throws(() => parseTools(changed, file), /AgentDevTools\.swift:\d+: a tool list must end at its closing \]/u);
   }
   const [main, mainSource] = [SOURCES.tools[0], read(SOURCES.tools[0])];
-  const composed = "tabAndPageDefinitions + AgentInteractionTools.definitions + AgentDevTools.definitions";
+  const composed = "tabAndPageDefinitions + AgentInteractionTools.definitions + AgentDevTools.umbrella";
   assert.ok(mainSource.includes(composed));
   const declaration = `static let definitions: [[String: Any]] = ${composed}`;
   assert.ok(mainSource.includes(declaration));
@@ -156,10 +156,10 @@ test("a tool list the reader would only partly read fails", () => {
   const sources = Object.fromEntries(SOURCES.tools.map((name) => [name, read(name)]));
   assert.doesNotThrow(() => checkToolCount(tools, sources));
   const more = { ...sources, "Lilo/Agent/AgentMoreTools.swift": 'enum AgentMoreTools {\n    static let definitions: [ToolDefinition] = [\n        AgentTools.tool("new_tool", "x", [:]),\n    ]\n}\n' };
-  assert.throws(() => checkToolCount(tools, more), /Lilo\/Agent: 36 tool\(…\) definitions are in the code but the generator read 35 .+SOURCES\.tools/u);
+  assert.throws(() => checkToolCount(tools, more), /Lilo\/Agent: 37 tool\(…\) definitions are in the code but the generator read 36 .+SOURCES\.tools/u);
   // Mid-line and one-line lists count too; a tool named in a description's text does not.
   const inline = { ...sources, "Lilo/Agent/AgentMoreTools.swift": 'let more = [Self.tool("a", "Calls tool(\\"b\\", x).", [:]), tool("c", """\n    Calls tool("d").\n    """, [:])]\n' };
-  assert.throws(() => checkToolCount(tools, inline), /Lilo\/Agent: 37 tool\(…\) definitions are in the code but the generator read 35/u);
+  assert.throws(() => checkToolCount(tools, inline), /Lilo\/Agent: 38 tool\(…\) definitions are in the code but the generator read 36/u);
   const twice = source.replace("static let definitions: [[String: Any]] = [", 'static let definitions: [[String: Any]] = [\n        AgentTools.tool("navigate", "dup", [:]),');
   assert.throws(() => mcpPartial([tools[0], tools[1], parseTools(twice, file)], summaries), /two tools are named "navigate"/u);
 });
