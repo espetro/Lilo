@@ -82,6 +82,8 @@ final class ACPAgentCatalogTests: XCTestCase {
         XCTAssertEqual(launch.environment["MODE"], "a=b")
         XCTAssertEqual(launch.environment["EMPTY"], "")
         XCTAssertNotNil(launch.environment["PATH"])
+        // A custom agent's own lines win over the shell's where both have the key; the shell environment
+        // itself is exercised by `testShellEnvironmentParsesTheEntriesBetweenTheMarkers`.
     }
 
     /// The whole way in: the stored setting, the launch, a real process and the ACP handshake over its stdio.
@@ -141,6 +143,23 @@ final class ACPAgentCatalogTests: XCTestCase {
         XCTAssertThrowsError(try ACPAgentCatalog.environment("=value", agent: "Mine"))
         XCTAssertThrowsError(try ACPAgentCatalog.environment("1ST=value", agent: "Mine"))
         XCTAssertThrowsError(try ACPAgentCatalog.environment("A B=value", agent: "Mine"))
+    }
+
+    func testShellEnvironmentParsesTheEntriesBetweenTheMarkers() {
+        let parsed = ACPAgentCatalog.parseShellEnvironment(
+            "noise before\u{1b}[0m__LILO_ENV__MODE=a=b\u{0}EMPTY=\u{0}NOEQUALS\u{0}__LILO_ENV__noise after",
+            marker: "__LILO_ENV__"
+        )
+        XCTAssertEqual(parsed["MODE"], "a=b")
+        XCTAssertEqual(parsed["EMPTY"], "")
+        XCTAssertNil(parsed["NOEQUALS"])
+        XCTAssertEqual(parsed.count, 2)
+    }
+
+    func testShellEnvironmentWithoutBothMarkersParsesToNothing() {
+        XCTAssertEqual(ACPAgentCatalog.parseShellEnvironment("", marker: "__LILO_ENV__"), [:])
+        XCTAssertEqual(ACPAgentCatalog.parseShellEnvironment("__LILO_ENV__only one", marker: "__LILO_ENV__"), [:])
+        XCTAssertEqual(ACPAgentCatalog.parseShellEnvironment("junk", marker: "__LILO_ENV__"), [:])
     }
 
     func testAgentFieldsSurviveTheSessionStore() throws {

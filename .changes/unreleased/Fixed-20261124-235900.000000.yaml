@@ -1,0 +1,3 @@
+kind: Fixed
+body: 'Conversation agents started by Lilo get the variables your shell profile exports, so an agent that reads an API key from the environment works the same launched from Lilo as from a terminal'
+time: 2026-11-24T23:59:00.000000+00:00
