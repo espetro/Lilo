@@ -715,7 +715,7 @@
     if (profile && !profile.capped && target.ScriptProfilerAgent) {
       profile.targets.push(target)
       profile.processes.push(target)
-      startInstruments(target).catch(() => {})
+      profile.starting.push(startInstruments(target).catch(() => {}))
     }
   })
 
@@ -1158,7 +1158,7 @@
       if (profile) throw new Error('A profile is already running: call performance stop')
       const target = WI.mainTarget
       // `targets` drops the ones gone; `processes` keeps them, so each message's index stays its process.
-      profile = { startedAt: Date.now(), messages: [], targets: [target], processes: [target], screenshots }
+      profile = { startedAt: Date.now(), messages: [], targets: [target], processes: [target], screenshots, starting: [] }
       lastProfile = null
       try {
         await startInstruments(target)
@@ -1171,10 +1171,13 @@
     async stopProfile(options) {
       if (!profile) throw new Error('Call performance start first')
       const running = profile
+      // A cross-site navigation starts the instruments of the page's new process asynchronously: stopping
+      // before that start lands can wait on the process it left and lose the new one's samples.
+      await Promise.all(running.starting)
       await stopInstruments()
       // The sampling profiler sends its samples once tracking completes, long after a long profile. Only the
       // last process counts: one left by a cross-site navigation has already sent its own.
-      const last = running.messages.findLast(m => m.method === 'ScriptProfiler.trackingStart')?.process
+      const last = running.processes.length - 1
       const deadline = Date.now() + 10000
       while (!running.messages.some(m => m.method === 'ScriptProfiler.trackingComplete' && m.process === last) && Date.now() < deadline) {
         await new Promise(resolve => setTimeout(resolve, 50))
