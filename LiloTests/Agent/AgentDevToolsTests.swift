@@ -1138,12 +1138,13 @@ final class AgentDevToolsUmbrellaTests: AgentToolTestCase {
     }
 
     func testUmbrellaFlatArgumentsReachCookiesAndEmulate() async throws {
-        let tab = try await newAgentTab()
+        // Cookies reach only the hosts the agent's tabs show: a real host, not the host-less data: page.
+        let (tab, _) = try await served("<p>index</p>")
 
         let set = await client.callTool("devtools", [
-            "tool": "cookies", "tabId": tab, "action": "set", "cookie": ["name": "a", "value": "1", "domain": "example.org"]
+            "tool": "cookies", "tabId": tab, "action": "set", "cookie": ["name": "a", "value": "1", "domain": "127.0.0.1"]
         ])
-        let got = await client.callTool("devtools", ["tool": "cookies", "tabId": tab, "action": "get", "domain": "example.org"])
+        let got = await client.callTool("devtools", ["tool": "cookies", "tabId": tab, "action": "get", "domain": "127.0.0.1"])
         let emulated = await client.callTool("devtools", ["tool": "emulate", "tabId": tab, "media": "print"])
 
         XCTAssertFalse(set.isError, set.text)
@@ -1189,12 +1190,13 @@ final class AgentDevToolsUmbrellaTests: AgentToolTestCase {
     }
 
     func testBrowserBatchUnwrapsTheUmbrella() async throws {
-        let tab = try await newAgentTab()
+        // Cookies reach only the hosts the agent's tabs show: a real host, not the host-less data: page.
+        let (tab, _) = try await served("<p>index</p>")
 
         let reply = await client.callTool("browser_batch", ["actions": [
             ["name": "devtools", "input": ["tool": "cookies", "tabId": tab, "action": "set",
-                                           "cookie": ["name": "b", "value": "2", "domain": "example.org"]]],
-            ["name": "devtools", "input": ["tool": "cookies", "tabId": tab, "action": "get", "domain": "example.org"]]
+                                           "cookie": ["name": "b", "value": "2", "domain": "127.0.0.1"]]],
+            ["name": "devtools", "input": ["tool": "cookies", "tabId": tab, "action": "get", "domain": "127.0.0.1"]]
         ]])
 
         XCTAssertFalse(reply.isError, reply.text)
