@@ -310,7 +310,7 @@ function checkSchema(schema, where, file) {
   }
 }
 
-const COMPOSED = "tabAndPageDefinitions + AgentInteractionTools.definitions + AgentDevTools.definitions + AgentFlows.definitions + AgentBrowserConfig.definitions + AgentConnectStatus.definitions";
+const COMPOSED = "tabAndPageDefinitions + AgentInteractionTools.definitions + AgentDevTools.umbrella + AgentFlows.definitions + AgentBrowserConfig.definitions + AgentConnectStatus.definitions";
 
 /** The tools a file defines in its `static let …: [[String: Any]] = [ … ]` lists. */
 export function parseTools(source, file) {

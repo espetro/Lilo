@@ -328,8 +328,10 @@ final class AgentCaptureTests: AgentToolTestCase {
     }
 
     func testEveryEmulationFieldTakesNullToResetIt() async throws {
-        let tools = (await client.request("tools/list"))?["tools"] as? [[String: Any]] ?? []
-        let schema = tools.first { $0["name"] as? String == "emulate" }?["inputSchema"] as? [String: Any]
+        let tab = try await newAgentTab()
+        let help = await client.callTool("devtools", ["tool": "emulate", "help": true, "tabId": tab])
+        let definition = try XCTUnwrap(try JSONSerialization.jsonObject(with: Data(help.text.utf8)) as? [String: Any])
+        let schema = definition["inputSchema"] as? [String: Any]
         let fields = try XCTUnwrap(schema?["properties"] as? [String: [String: Any]]).filter { !["tabId", "reset"].contains($0.key) }
 
         // A client checks arguments against the schema: a type without null refuses the reset before Lilo sees it.
@@ -348,7 +350,7 @@ final class AgentCaptureTests: AgentToolTestCase {
             "upload_image", "gif_creator", "browser_batch",
             "list_profiles", "switch_profile", "reset_profile", "fetch", "run",
             "flow_start", "flow_save", "flow_run", "browser_config", "connect_status",
-            "devtools_command", "devtools_events", "network_mock", "network_response", "cookies", "emulate", "performance"
+            "devtools"
         ]
         // tools/list adds the Debug-only window_capture in a Debug build.
         #if DEBUG

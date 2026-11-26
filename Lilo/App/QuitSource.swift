@@ -23,8 +23,7 @@ enum QuitSource {
             // By character, not key code: the Q key sits elsewhere on AZERTY.
             isQuitKey: NSApp.currentEvent.map { $0.type == .keyDown && $0.charactersIgnoringModifiers?.lowercased() == "q" } ?? false
         )
-        let tool = describe(tool: lastAgentTool?.name, secondsAgo: lastAgentTool.map { Date().timeIntervalSince($0.at) },
-                            known: Set(AgentTools.definitions.compactMap { $0["name"] as? String }))
+        let tool = describe(tool: lastAgentTool?.name, secondsAgo: lastAgentTool.map { Date().timeIntervalSince($0.at) }, known: AgentTools.toolNames)
         logger.notice("Quit requested by \(source, privacy: .public); \(tool, privacy: .public)")
     }
 
