@@ -120,7 +120,7 @@ final class AgentDevToolsTests: AgentToolTestCase {
         let refused = await client.callTool("cookies", ["tabId": tab, "action": "set",
                                                          "cookie": ["name": "other", "value": "1", "domain": "example.org"]])
         let got = await client.callTool("cookies", ["tabId": tab, "action": "get", "domain": "example.org"])
-        let stored = await engine(forTab: tab).wkWebView.configuration.websiteDataStore.httpCookieStore.allCookies()
+        let stored = try await engine(forTab: tab).wkWebView.configuration.websiteDataStore.httpCookieStore.allCookies()
 
         XCTAssertTrue(refused.isError, refused.text)
         XCTAssertTrue(refused.text.contains("example.org"), refused.text)
