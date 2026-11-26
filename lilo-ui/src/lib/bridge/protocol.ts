@@ -1473,7 +1473,8 @@ export interface BridgeAgentRun {
 	ended: string | null;
 	/** How it finished: "disconnected", "revoked", "stopped" or "adopted"; null while open. */
 	reason: string | null;
-	state: "running" | "ended";
+	/** `open` would hide whether the session is live now: an end-less run of a past launch is interrupted. */
+	state: "running" | "ended" | "interrupted";
 	tools: number;
 	errors: number;
 	tabs: number;

@@ -662,13 +662,15 @@ final class SettingsBridgeHandler: BridgeHandler {
     private func publishAgentRuns() async {
         guard let control = context?.agentControl else { return }
         let directory = control.actionLog.directory
+        let live = Set(control.sessions.map(\.id.uuidString))
         let runs = await Task.detached { AgentRunLedger.recent(in: directory) }.value
         bridgeRouter?.send(event: "agentRuns", data: ["runs": runs.map { run in
-            [
+            let state = run.ended != nil ? "ended" : live.contains(run.id) ? "running" : "interrupted"
+            return [
                 "id": run.id, "client": run.client, "clientKey": run.clientKey,
                 "started": run.started, "connected": run.connected ?? NSNull(),
                 "ended": run.ended ?? NSNull(), "reason": run.reason ?? NSNull(),
-                "state": run.ended == nil ? "running" : "ended",
+                "state": state,
                 "tools": run.tools, "errors": run.errors, "tabs": run.tabs,
                 "folders": run.folders, "space": run.space ?? NSNull(),
                 "profile": run.profile ?? NSNull(), "isolated": run.isolated,
