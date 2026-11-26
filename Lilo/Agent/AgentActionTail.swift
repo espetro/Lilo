@@ -50,7 +50,7 @@ enum AgentActionTail {
 
     /// The whole lines in the last `maxBytes` of a file, oldest first. A line the cut or a write in flight split
     /// is dropped when it fails to parse.
-    private static func tail(_ file: URL, maxBytes: Int) -> [Data] {
+    static func tail(_ file: URL, maxBytes: Int) -> [Data] {
         guard let handle = try? FileHandle(forReadingFrom: file), let size = try? handle.seekToEnd() else { return [] }
         defer { try? handle.close() }
         let start = size > UInt64(maxBytes) ? size - UInt64(maxBytes) : 0
