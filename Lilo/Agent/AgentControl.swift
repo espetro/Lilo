@@ -150,8 +150,9 @@ final class AgentControl {
     /// Stopped for good: no reconnection takes the sessions back.
     func stopAll() {
         for session in sessions {
+            // End before close: closing calls onClose, which ends the session as "disconnected".
+            end(session, reason: "stopped")
             session.connection.close()
-            end(session)
         }
     }
 
@@ -272,8 +273,10 @@ final class AgentControl {
         setClientPermission(AgentClientConfig.Client(clientName: name)?.rawValue ?? name, AgentClientPermission())
         forgetProfileGrants(of: name)
         for session in sessions where session.clientName == name {
+            // End before close: closing calls onClose, which ends the session as "disconnected" and
+            // would make the "revoked" line a no-op.
+            end(session, reason: "revoked")
             session.connection.close()
-            end(session)
         }
     }
 
@@ -639,9 +642,12 @@ final class AgentControl {
     }
 
     /// The session's tabs go back to normal first, then close: an engine held elsewhere keeps no agent state.
-    private func end(_ closing: AgentSession) {
+    /// `reason` is how the run ledger says the run finished: "disconnected" (the socket closed or the
+    /// reconnect grace ran out), "revoked", "stopped" or "adopted" (a reconnect took its tabs over).
+    private func end(_ closing: AgentSession, reason: String = "disconnected") {
         guard sessions.contains(where: { $0 === closing }) else { return }
         sessions.removeAll { $0 === closing }
+        recordRunEnd(closing, reason: reason)
         refreshControlledTabs()
         for request in closing.requests.values { request.cancel() }
         if closing.isAuthorized { markSeen(closing.clientName) }
@@ -672,6 +678,8 @@ final class AgentControl {
     }
 
     private func handOver(_ dropped: AgentSession, to session: AgentSession) {
+        // The dropped session's run ends here, before its folders and space become the heir's.
+        recordRunEnd(dropped, reason: "adopted")
         session.folders = dropped.folders
         session.isolatedSpaceId = dropped.isolatedSpaceId
         session.title = dropped.title
@@ -798,6 +806,11 @@ final class AgentSession {
     var flowName: String?
     /// Screenshots it took, by id: `upload_image` looks nowhere else.
     var screenshots: [(id: String, png: Data)] = []
+    /// Tool calls this run made and how many failed, for the run ledger's coarse counts.
+    var toolCalls = 0
+    var toolErrors = 0
+    /// The run ledger wrote this session's `start`; its `end` line is still owed.
+    var runOpen = false
 
     init(connection: AgentConnection) {
         self.connection = connection

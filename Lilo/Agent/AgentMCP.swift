@@ -166,6 +166,8 @@ enum AgentMCP {
             defer { timer?.cancel() }
             let record = { (ok: Bool, code: String?) in
                 guard control.context?.settingsStore?.get(AgentActionLog.settingKey) != "false" else { return }
+                session.toolCalls += 1
+                if !ok { session.toolErrors += 1 }
                 let plugin = AgentTools.toolNames.contains(name) ? nil : control.pluginHost?.contributedTool(named: name)?.record.id
                 guard plugin != nil || AgentTools.toolNames.contains(name) else { return }
                 control.actionLog.record(
@@ -221,6 +223,7 @@ enum AgentMCP {
 
     private static func welcome(_ session: AgentSession, control: AgentControl) {
         session.isAuthorized = true
+        control.recordRunStart(session)
         control.resumeDroppedSession(into: session)
         control.refreshControlledTabs()
         control.publishActivity()

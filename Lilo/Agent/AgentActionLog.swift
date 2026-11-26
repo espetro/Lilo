@@ -36,6 +36,9 @@ final class AgentActionLog {
         return "client-" + String(String(client).prefix(40))
     }
 
+    /// The file the run ledger appends to: a `start` and an `end` line per authorized session.
+    nonisolated static let runsFile = "runs"
+
     /// The arguments as logged: ids, actions and numbers as given, a URL as its host, every other string as its length.
     static func redact(_ arguments: [String: Any]) -> [String: Any] {
         var kept: [String: Any] = [:]
@@ -83,6 +86,14 @@ final class AgentActionLog {
         guard var data = try? JSONSerialization.data(withJSONObject: line, options: [.sortedKeys, .withoutEscapingSlashes]) else { return }
         data.append(0x0A)
         writer.append(data, to: Self.name(for: session))
+    }
+
+    /// Appends one run-ledger line, off the main thread like `record`. The caller builds the entry:
+    /// names, ids and counts only, never content — see `AgentRunLedger`.
+    func recordRun(_ entry: [String: Any]) {
+        guard var data = try? JSONSerialization.data(withJSONObject: entry, options: [.sortedKeys, .withoutEscapingSlashes]) else { return }
+        data.append(0x0A)
+        writer.append(data, to: Self.runsFile)
     }
 
     /// Waits for the lines queued so far, for a test and a quit.
