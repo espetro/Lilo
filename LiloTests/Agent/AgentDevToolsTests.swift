@@ -143,6 +143,16 @@ final class AgentDevToolsTests: AgentToolTestCase {
         XCTAssertFalse(exact.isError, exact.text)
     }
 
+    /// "com" would plant a cookie every .com site of the profile sends, even when a .com tab makes it look reachable.
+    func testCookiesSetRefusesATopLevelDomain() async throws {
+        let (tab, _) = try await served("<p>index</p>")
+
+        let reply = await client.callTool("cookies", ["tabId": tab, "action": "set",
+                                                      "cookie": ["name": "tld", "value": "1", "domain": "com"]])
+
+        XCTAssertTrue(reply.isError, reply.text)
+    }
+
     func testCookiesClearNeedsADomain() async throws {
         let tab = try await newAgentTab()
 

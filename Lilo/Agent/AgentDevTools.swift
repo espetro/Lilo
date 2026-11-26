@@ -443,6 +443,8 @@ enum AgentDevTools {
             default: break
             }
             guard let cookie = HTTPCookie(properties: properties) else { throw AgentToolError("Invalid cookie") }
+            // "com" would plant a cookie every .com site of the profile sends.
+            guard bare(cookieDomain).contains(".") || bare(cookieDomain) == "localhost" else { throw AgentToolError("\(cookieDomain) is not a site's domain") }
             guard reachable(cookie) else { throw AgentToolError("\(cookieDomain) is not a site your tabs show") }
             await store.setCookie(cookie)
             return "Set cookie \(name) for \(cookieDomain)"
