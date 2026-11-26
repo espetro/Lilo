@@ -3041,7 +3041,9 @@
 			"running": "Działa",
 			"done": "Gotowe",
 			"finished": "Zakończone",
-			"empty": "Żadna rozmowa nie czeka na Ciebie"
+			"empty": "Żadna rozmowa nie czeka na Ciebie",
+			"mcp": "Klienci MCP",
+			"mcpIdle": "Połączono"
 		},
 		"status": {
 			"working": "Pracuje",

@@ -3013,7 +3013,9 @@
 			"running": "Çalışıyor",
 			"done": "Bitti",
 			"finished": "Tamamlandı",
-			"empty": "Sizi bekleyen sohbet yok"
+			"empty": "Sizi bekleyen sohbet yok",
+			"mcp": "MCP istemcileri",
+			"mcpIdle": "Bağlandı"
 		},
 		"status": {
 			"working": "Çalışıyor",

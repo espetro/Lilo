@@ -3013,7 +3013,9 @@
 			"running": "In esecuzione",
 			"done": "Fatto",
 			"finished": "Terminato",
-			"empty": "Nessuna conversazione ti aspetta"
+			"empty": "Nessuna conversazione ti aspetta",
+			"mcp": "Client MCP",
+			"mcpIdle": "Connesso"
 		},
 		"status": {
 			"working": "Al lavoro",

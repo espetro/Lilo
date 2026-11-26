@@ -3013,7 +3013,9 @@
 			"running": "Actief",
 			"done": "Klaar",
 			"finished": "Afgerond",
-			"empty": "Geen gesprek wacht op je"
+			"empty": "Geen gesprek wacht op je",
+			"mcp": "MCP-clients",
+			"mcpIdle": "Verbonden"
 		},
 		"status": {
 			"working": "Bezig",

@@ -3013,7 +3013,9 @@
 			"running": "运行中",
 			"done": "完成",
 			"finished": "已结束",
-			"empty": "没有需要你处理的对话"
+			"empty": "没有需要你处理的对话",
+			"mcp": "MCP 客户端",
+			"mcpIdle": "已连接"
 		},
 		"status": {
 			"working": "工作中",

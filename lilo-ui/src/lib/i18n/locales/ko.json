@@ -3013,7 +3013,9 @@
 			"running": "실행 중",
 			"done": "완료",
 			"finished": "종료됨",
-			"empty": "확인이 필요한 대화가 없습니다"
+			"empty": "확인이 필요한 대화가 없습니다",
+			"mcp": "MCP 클라이언트",
+			"mcpIdle": "연결됨"
 		},
 		"status": {
 			"working": "작업 중",

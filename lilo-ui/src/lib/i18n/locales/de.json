@@ -3013,7 +3013,9 @@
 			"running": "Läuft",
 			"done": "Fertig",
 			"finished": "Abgeschlossen",
-			"empty": "Keine Unterhaltung wartet auf dich"
+			"empty": "Keine Unterhaltung wartet auf dich",
+			"mcp": "MCP-Clients",
+			"mcpIdle": "Verbunden"
 		},
 		"status": {
 			"working": "Arbeitet",

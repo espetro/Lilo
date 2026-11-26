@@ -3013,7 +3013,9 @@
 			"running": "En cours",
 			"done": "Terminé",
 			"finished": "Fini",
-			"empty": "Aucune conversation ne vous attend"
+			"empty": "Aucune conversation ne vous attend",
+			"mcp": "Clients MCP",
+			"mcpIdle": "Connecté"
 		},
 		"status": {
 			"working": "En cours",

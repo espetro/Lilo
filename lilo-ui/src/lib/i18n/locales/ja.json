@@ -3013,7 +3013,9 @@
 			"running": "実行中",
 			"done": "完了",
 			"finished": "終了",
-			"empty": "対応待ちの会話はありません"
+			"empty": "対応待ちの会話はありません",
+			"mcp": "MCP クライアント",
+			"mcpIdle": "接続済み"
 		},
 		"status": {
 			"working": "作業中",
