@@ -1,0 +1,4 @@
+kind: Fixed
+body: 'An agent can no longer write a cookie for a site its tabs do not show, so it
+  cannot plant a session in a profile another agent or you are signed into'
+time: 2026-11-26T10:15:00.000000+00:00

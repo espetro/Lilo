@@ -109,8 +109,8 @@ enum AgentDevTools {
                 "tabId": AgentTools.prop("number", "The tab.")
             ], required: ["tabId"]),
         AgentTools.tool("cookies", """
-            Read and change the cookies of a tab's profile, HttpOnly ones included. get, delete and clear reach \
-            only the cookies sent to the sites your tabs show. Actions: get (filter by url or domain), set, \
+            Read and change the cookies of a tab's profile, HttpOnly ones included. get, set, delete and clear \
+            reach only the cookies sent to the sites your tabs show. Actions: get (filter by url or domain), set, \
             delete (name and domain), clear (every cookie of a domain; a domain is required).
             """, [
                 "action": ["type": "string", "enum": ["get", "set", "delete", "clear"]],
@@ -431,7 +431,7 @@ enum AgentDevTools {
         return url
     }
 
-    /// `hosts`: the sites the agent's tabs show; get, delete and clear reach only the cookies sent to them.
+    /// `hosts`: the sites the agent's tabs show; every action reaches only the cookies sent to them.
     private static func cookies(_ arguments: [String: Any], store: WKHTTPCookieStore, hosts: Set<String>) async throws -> String {
         // A cookie's domain covers its subdomains; a leading dot changes nothing.
         let bare = { (domain: String) in domain.hasPrefix(".") ? String(domain.dropFirst()) : domain }
@@ -469,6 +469,9 @@ enum AgentDevTools {
             default: break
             }
             guard let cookie = HTTPCookie(properties: properties) else { throw AgentToolError("Invalid cookie") }
+            // "com" would plant a cookie every .com site of the profile sends.
+            guard bare(cookieDomain).contains(".") || bare(cookieDomain) == "localhost" else { throw AgentToolError("\(cookieDomain) is not a site's domain") }
+            guard reachable(cookie) else { throw AgentToolError("\(cookieDomain) is not a site your tabs show") }
             await store.setCookie(cookie)
             return "Set cookie \(name) for \(cookieDomain)"
         case "delete", "clear":
