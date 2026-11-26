@@ -191,7 +191,8 @@ final class AgentControl {
                 actingTabIds.formUnion(acting)
                 return [
                     "name": name, "busy": mine.contains { $0.activeCalls > 0 }, "actingTabIds": acting.map(\.uuidString).sorted(),
-                    "spaceIds": Set(mine.compactMap { working[$0.id] }).map(\.uuidString).sorted()
+                    "spaceIds": Set(mine.compactMap { working[$0.id] }).map(\.uuidString).sorted(),
+                    "waitingForUser": mine.contains { $0.waitingForUser }
                 ] as [String: Any]
             }
             // The latest call running on a tab sets its cursor's mood; one that just ended leaves it until the dot goes out.

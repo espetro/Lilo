@@ -1605,6 +1605,8 @@ export interface BridgeAgentClient {
 	actingTabIds: string[];
 	/** The Agents spaces it works in. */
 	spaceIds: string[];
+	/** It asked the user something and a call waits on the answer. */
+	waitingForUser: boolean;
 }
 
 export type BridgeMediaAction = "play" | "pause" | "nexttrack" | "previoustrack";

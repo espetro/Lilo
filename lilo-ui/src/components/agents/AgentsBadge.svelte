@@ -10,6 +10,7 @@
   import { t } from "../../lib/i18n/state.svelte";
   import { prefersReducedMotion } from "../../lib/motion/reducedMotion";
   import { tooltip } from "../../lib/tooltip";
+  import { getAgentClients } from "../../stores/agents.svelte";
   import { getConversationSummaries, getWaitingCount, openAskBar } from "../../stores/conversations.svelte";
 
   $effect(() => {
@@ -17,13 +18,16 @@
   });
 
   const summaries = $derived(getConversationSummaries());
+  const mcpClients = $derived(getAgentClients());
   const waiting = $derived(getWaitingCount());
   const working = $derived(summaries.some((summary) => summary.state === "busy" || summary.state === "starting"));
   const label = $derived(waiting > 0 ? t("agents.badge.waiting", { count: waiting }) : t("agents.badge.title"));
 
   // The popover's own filter: with nothing it would list, the button starts a conversation instead.
+  // A connected external MCP client always counts, even with none of its own work to show yet.
   const listed = $derived(
-    summaries.some((s) => s.permission || s.state === "busy" || s.state === "starting" || s.state === "failed" || s.unread || s.title),
+    mcpClients.length > 0 ||
+      summaries.some((s) => s.permission || s.state === "busy" || s.state === "starting" || s.state === "failed" || s.unread || s.title),
   );
 
   // In the sidebar's New Tab row it takes the New Terminal button's look.
