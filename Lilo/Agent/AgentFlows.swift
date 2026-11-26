@@ -217,8 +217,13 @@ enum AgentFlows {
 
     // MARK: - Store
 
-    static func directory(control: AgentControl) -> URL {
-        URL(fileURLWithPath: control.context?.appSupportDirectory ?? BuildIdentity.appSupportDirectory).appending(path: "Agents/Flows")
+    /// Each client's own folder: a flow holds what its agent typed, and replays under the caller's approvals.
+    /// Keyed by what approvals bind to, not the connection, so a flow outlives it. A client whose identity
+    /// is unknown shares with no other connection.
+    static func directory(session: AgentSession, control: AgentControl) -> URL {
+        let owner = hash([session.clientName, session.identity.isEmpty ? session.id.uuidString : session.identity])
+        return URL(fileURLWithPath: control.context?.appSupportDirectory ?? BuildIdentity.appSupportDirectory)
+            .appending(path: "Agents/Flows/\(owner)")
     }
 
     static func sanitized(_ name: String) -> String? {
@@ -227,8 +232,8 @@ enum AgentFlows {
         return result.isEmpty ? nil : result
     }
 
-    private static func file(_ name: String, control: AgentControl) -> URL? {
-        sanitized(name).map { directory(control: control).appending(path: $0 + ".jsonl") }
+    private static func file(_ name: String, session: AgentSession, control: AgentControl) -> URL? {
+        sanitized(name).map { directory(session: session, control: control).appending(path: $0 + ".jsonl") }
     }
 
     /// The canonical encoding of the steps the hash covers: one sorted-keys JSON object per line.
@@ -250,7 +255,7 @@ enum AgentFlows {
         guard let recording = session.flow else { throw AgentToolError("Nothing is recording: call flow_start first") }
         session.flow = nil
         guard let name = sanitized(arguments["name"] as? String ?? session.flowName ?? ""),
-              let file = file(name, control: control) else { throw AgentToolError("Give the flow a name of letters, digits and dashes") }
+              let file = file(name, session: session, control: control) else { throw AgentToolError("Give the flow a name of letters, digits and dashes") }
         var steps = recording.steps
         // Params declared at save turn those steps' literal value/text into {"param": name}.
         var paramNames = Set<String>()
@@ -280,7 +285,7 @@ enum AgentFlows {
         data.append(0x0A)
         for line in lines { data.append(contentsOf: line.utf8); data.append(0x0A) }
         let fm = FileManager.default
-        try fm.createDirectory(at: directory(control: control), withIntermediateDirectories: true, attributes: [.posixPermissions: 0o700])
+        try fm.createDirectory(at: file.deletingLastPathComponent(), withIntermediateDirectories: true, attributes: [.posixPermissions: 0o700])
         try data.write(to: file, options: .atomic)
         try fm.setAttributes([.posixPermissions: 0o600], ofItemAtPath: file.path)
         var reply = "Saved flow \"\(name)\" with \(steps.count) steps" + (site.map { " on \($0)" } ?? "")
@@ -336,7 +341,7 @@ enum AgentFlows {
     /// Runs the steps back through `AgentTools.call`, so a replayed click asks consent, logs and reports its
     /// delta exactly like a live one. Stops at the first step that fails and reports which and why.
     private static func run(_ arguments: [String: Any], session: AgentSession, control: AgentControl) async throws -> [AgentContent] {
-        guard let file = file(arguments["name"] as? String ?? "", control: control),
+        guard let file = file(arguments["name"] as? String ?? "", session: session, control: control),
               let data = FileManager.default.contents(atPath: file.path) else {
             throw AgentToolError("No flow named \"\(arguments["name"] as? String ?? "")\"")
         }
