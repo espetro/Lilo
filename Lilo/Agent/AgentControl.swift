@@ -150,8 +150,9 @@ final class AgentControl {
     /// Stopped for good: no reconnection takes the sessions back.
     func stopAll() {
         for session in sessions {
-            session.connection.close()
+            // End before close: closing calls onClose, which ends the session as "disconnected".
             end(session, reason: "stopped")
+            session.connection.close()
         }
     }
 
@@ -271,8 +272,10 @@ final class AgentControl {
         setClientPermission(AgentClientConfig.Client(clientName: name)?.rawValue ?? name, AgentClientPermission())
         forgetProfileGrants(of: name)
         for session in sessions where session.clientName == name {
-            session.connection.close()
+            // End before close: closing calls onClose, which ends the session as "disconnected" and
+            // would make the "revoked" line a no-op.
             end(session, reason: "revoked")
+            session.connection.close()
         }
     }
 
