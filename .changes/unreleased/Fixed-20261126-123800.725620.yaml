@@ -1,0 +1,3 @@
+kind: Fixed
+body: An agent performance profile now waits for the page's new process before stopping, so a cross-site navigation no longer loses the samples it just captured
+time: 2026-11-26T12:38:00.72562-08:00
