@@ -19,7 +19,9 @@ enum AgentScreenshot {
     /// WebKit makes no PDF page taller than 14400 points.
     static let pdfChunk: CGFloat = 14_000
 
-    static func take(_ arguments: [String: Any], engine: WKWebViewTab, tabId: UUID, control: AgentControl) async throws -> [AgentContent] {
+    static func take(
+        _ arguments: [String: Any], engine: WKWebViewTab, tabId: UUID, session: AgentSession, control: AgentControl
+    ) async throws -> [AgentContent] {
         let webView = engine.wkWebView
         let fullPage = arguments["fullPage"] as? Bool == true
         let fullResolution = arguments["fullResolution"] as? Bool == true
@@ -164,8 +166,8 @@ enum AgentScreenshot {
         }.value
         let id = "screenshot_\(control.nextScreenshotNumber)"
         control.nextScreenshotNumber += 1
-        control.screenshots.append((id, encoded.png))
-        if control.screenshots.count > 20 { control.screenshots.removeFirst() }
+        session.screenshots.append((id, encoded.png))
+        if session.screenshots.count > 20 { session.screenshots.removeFirst() }
         let summary = "Screenshot \(id), \(image.width)x\(image.height)" + note + AgentInteractionTools.zoomNote(engine)
         guard let base64 = encoded.base64 else { return [.text(summary + "\nSaved to \(path ?? "")")] }
         return [.image(base64), .text(summary)]

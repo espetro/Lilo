@@ -119,11 +119,13 @@ An agent can record a task once and replay it later with three tools:
 - `flow_start`: start recording. Every mutating call it makes from then on becomes a step - a click or a filled
   field as a stable locator (the role and name `read_page` gives the element, never a ref or a pixel),
   `navigate` and `wait_for` verbatim. Reads, scripts and coordinate clicks record nothing.
-- `flow_save` with a name: stop and write the flow as JSONL in `Agents/Flows/` of Lilo's support folder,
+- `flow_save` with a name: stop and write the flow as JSONL in the agent's own folder under `Agents/Flows/` of Lilo's support folder,
   readable only by you, with a hash that fails a file edited on disk.
 - `flow_run` with the name and a tab: replay each step through the same tool path a live call takes, so a
   replayed click asks for your approval exactly as the agent's own click would. A saved flow is a recording,
   not a standing authorization.
+
+Saved flows belong to the agent that saved them, known as its approval is: by its name and signing identity (its path when unsigned). Another agent cannot run or overwrite them, and two agents can each keep a flow of the same name. Connections of one agent share its flows. An agent whose identity Lilo cannot read keeps them for that connection only. Flows saved before this separation have no owner and no longer run: record them again.
 
 A value the user must supply each run is a parameter (`{"param": name}` in the file): the agent marks it with
 `flowParam` at record time or declares it at `flow_save`, and a password, card or one-time code field always

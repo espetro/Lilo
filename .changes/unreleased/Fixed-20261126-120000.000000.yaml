@@ -1,0 +1,3 @@
+kind: Fixed
+body: "An agent can no longer upload another agent's screenshot or run or overwrite its saved flows. Flows saved before this update no longer run: record them again"
+time: 2026-11-26T12:00:00.000000000Z
