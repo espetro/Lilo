@@ -966,6 +966,8 @@ export interface BridgeCommandPayloadMap {
 	getAgentActionLog: EmptyPayload;
 	/** Reveals the folder of the action log in Finder. */
 	openAgentActionLog: EmptyPayload;
+	/** Asks for the run ledger's recent runs: answered with `agentRuns`. */
+	getAgentRuns: EmptyPayload;
 	revokeAgentClient: { name: string };
 	setAgentClientPermission: { key: string } & BridgeAgentPermission;
 	getAppNames: { ids: string[] };
@@ -1303,6 +1305,7 @@ export interface BridgeEventPayloadMap {
 	agentClientsLoaded: BridgeAgentClientsSnapshot;
 	agentClientPreview: BridgeAgentClientPreview;
 	agentActionLog: BridgeAgentActionLog;
+	agentRuns: { runs: BridgeAgentRun[] };
 	appNames: { names: Record<string, string> };
 	updaterStatus: BridgeUpdaterStatus;
 	/** The downloaded update waiting for a relaunch; null once dismissed. */
@@ -1453,6 +1456,32 @@ export interface BridgeAgentActionLog {
 		/** `time` is ISO 8601; `host` the page's host when the call named a tab; `code` the failure's, when it failed. */
 		calls: { time: string; tool: string; host: string | null; ok: boolean; code: string | null }[];
 	}[];
+}
+
+/** One authorized agent session's merged start/end lines from the run ledger: who worked, where and for
+ * how long. Ids, names, a pseudonymous client key and counts only — never content, arguments or URLs. */
+export interface BridgeAgentRun {
+	/** The session's id: one per connection, stable for the run's life. */
+	id: string;
+	/** The handshake's client name, and a stable pseudonymous hash of its name and identity. */
+	client: string;
+	clientKey: string;
+	/** ISO 8601: when the run was let in, and when its session connected. */
+	started: string;
+	connected: string | null;
+	/** ISO 8601 of the end; null while the run is open or was cut short by a quit. */
+	ended: string | null;
+	/** How it finished: "disconnected", "revoked", "stopped" or "adopted"; null while open. */
+	reason: string | null;
+	state: "running" | "ended";
+	tools: number;
+	errors: number;
+	tabs: number;
+	folders: string[];
+	space: string | null;
+	profile: string | null;
+	isolated: boolean;
+	conversation: string | null;
 }
 
 export interface BridgeKeepAwakeState {
