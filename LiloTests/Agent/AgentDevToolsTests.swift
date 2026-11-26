@@ -114,6 +114,45 @@ final class AgentDevToolsTests: AgentToolTestCase {
         XCTAssertEqual(cleared.text, "Deleted 0 cookies")
     }
 
+    func testCookiesSetRefusesASiteTheAgentsTabsDoNotShow() async throws {
+        let (tab, _) = try await served("<p>index</p>")
+
+        let refused = await client.callTool("cookies", ["tabId": tab, "action": "set",
+                                                         "cookie": ["name": "other", "value": "1", "domain": "example.org"]])
+        let got = await client.callTool("cookies", ["tabId": tab, "action": "get", "domain": "example.org"])
+        let stored = try await engine(forTab: tab).wkWebView.configuration.websiteDataStore.httpCookieStore.allCookies()
+
+        XCTAssertTrue(refused.isError, refused.text)
+        XCTAssertTrue(refused.text.contains("example.org"), refused.text)
+        XCTAssertFalse(got.text.contains("other"), got.text)
+        XCTAssertFalse(stored.contains { $0.domain == "example.org" }, "the refused cookie never reached the store")
+    }
+
+    /// A cookie for the host a tab shows, or for a domain covering it, sets as before.
+    func testCookiesSetReachesTheHostAndItsParentOfTheAgentsTabs() async throws {
+        let server = try await TinyHTTPServer(index: "<p>index</p>")
+        let tab = try await newAgentTab()
+        _ = await client.callTool("navigate", ["tabId": tab, "url": "http://app.localhost:\(server.port)/"])
+
+        let parent = await client.callTool("cookies", ["tabId": tab, "action": "set",
+                                                       "cookie": ["name": "parent", "value": "1", "domain": "localhost"]])
+        let exact = await client.callTool("cookies", ["tabId": tab, "action": "set",
+                                                      "cookie": ["name": "exact", "value": "1", "domain": "app.localhost"]])
+
+        XCTAssertFalse(parent.isError, parent.text)
+        XCTAssertFalse(exact.isError, exact.text)
+    }
+
+    /// "com" would plant a cookie every .com site of the profile sends, even when a .com tab makes it look reachable.
+    func testCookiesSetRefusesATopLevelDomain() async throws {
+        let (tab, _) = try await served("<p>index</p>")
+
+        let reply = await client.callTool("cookies", ["tabId": tab, "action": "set",
+                                                      "cookie": ["name": "tld", "value": "1", "domain": "com"]])
+
+        XCTAssertTrue(reply.isError, reply.text)
+    }
+
     func testCookiesClearNeedsADomain() async throws {
         let tab = try await newAgentTab()
 
