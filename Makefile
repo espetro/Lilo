@@ -9,8 +9,10 @@ SHELL := /bin/bash
 
 UI_DIR := lilo-ui
 BRIDGE_DIR := Lilo/Extensions/bridge-src
+COMPANION_DIR := companion-extension
 UI_DEPS := $(UI_DIR)/node_modules/.installed
 BRIDGE_DEPS := $(BRIDGE_DIR)/node_modules/.package-lock.json
+COMPANION_DEPS := $(COMPANION_DIR)/node_modules/.package-lock.json
 SITE_DEPS := site/node_modules/.installed
 DOCS_DEPS := docs-site/node_modules/.installed
 CHANGIE_VERSION := 1.26.0
@@ -39,6 +41,8 @@ UI_SOURCES := pnpm-lock.yaml $(shell find $(UI_DIR)/src) $(addprefix $(UI_DIR)/,
 	$(UI_DIR)/releaseNotesPlugin.ts $(wildcard .changes/v*.md) scripts/embed_chrome_ui.py scripts/generate_native_strings.py
 UI_SOURCES += release-media/catalog.ts release-media/stage-native.mjs $(wildcard release-media/assets/*/*)
 BRIDGE_SOURCES := $(shell find $(BRIDGE_DIR)/src $(BRIDGE_DIR)/scripts) $(addprefix $(BRIDGE_DIR)/,esbuild.mjs package-lock.json tsconfig.json)
+COMPANION_SOURCES := $(shell find $(COMPANION_DIR)/src) $(addprefix $(COMPANION_DIR)/,esbuild.mjs package-lock.json manifest.json tsconfig.json)
+COMPANION_STAMP := build/.companion-ext-build.stamp
 UI_STAMP := build/.ui-build.stamp
 BRIDGE_STAMP := build/.ext-bridge-build.stamp
 CHROME_UI_ASSETS := Lilo/Generated/ChromeUIAssets.swift
@@ -143,7 +147,7 @@ swift-test swift-test-slow: export TEST_RUNNER_LILO_TEST_DEMOTE := $(filter 1,$(
 TEST_PARALLEL ?= YES
 TEST_WORKERS = $(shell cores=$$(sysctl -n hw.perflevel0.physicalcpu 2>/dev/null || sysctl -n hw.ncpu); echo $$((cores / $(TEST_SLOTS) / $(if $(filter 1,$(TEST_QUIET)),2,1) > 0 ? cores / $(TEST_SLOTS) / $(if $(filter 1,$(TEST_QUIET)),2,1) : 1)))
 
-.PHONY: help site-release-import validate validate-ui linux-checks swiftlint project-sync ui-build ui-watch ui-dev ui-lint ui-test e2e e2e-energy validate-scope check check-staged ui-check swiftlint-changed sync-check ui-capture swift-test ci-swift swift-test-slow blocker-coverage blocker-bench script-bench speedometer-bench page-bench preload-bench terminal-bench ext-bridge-build ext-bridge-test ext-smoke ext-nightly ext-e2e-passwords ext-e2e-passwords-trust top-extensions top-manifests chrome-surface test-disturbance chrome-contracts chrome-smoke public-suffix-list app install install-debug xcode-build xcode-build-release run-ui-dev release release-notarize release-archive dmg dmg-background bridge-gen vt-build vt-build-source vt-zip webkit-fork bootstrap bootstrap-test ui-preview check-commits startup-bench ext-bench energy-sample energy-compare energy-browsers perf-summary perf-compare perf-summary-test check-summary-test agent-app agent-app-stop agent-app-restart agent-call agent-eval agent-eval-test lockf-test slot-test scope-test retried-tests-test tier-test metrics metrics-on metrics-off metrics-test ci-metrics ci-metrics-test window-capture worktree-new worktree-gc worktree-gc-test logs logs-stream site-dev site-dev-stop site-preview site-native-preview site-generate site-check site-fix site-test site-e2e site-release-capture site-capture-server site-capture-deps site-lock site-audit site-add-svelte site-playground-deps site-demo-icons site-deploy site-deploy-check emoji-data password-manager-icons docs-dev docs-build docs-check docs-test docs-preview docs-deploy-check docs-deploy docs-translate docs-eval docs-lock hooks-install hooks-install-checks hooks-install-push-checks quick-deps hooks-test lint-commit-message lint-commits changie change release-status release-version release-discord release-test release-media-stage release-media-test changelog-context changelog-draft changelog-media docker-mcp docker-mcp-test
+.PHONY: help site-release-import validate validate-ui linux-checks swiftlint project-sync ui-build ui-watch ui-dev ui-lint ui-test e2e e2e-energy validate-scope check check-staged ui-check swiftlint-changed sync-check ui-capture swift-test ci-swift swift-test-slow blocker-coverage blocker-bench script-bench speedometer-bench page-bench preload-bench terminal-bench ext-bridge-build ext-bridge-test ext-smoke ext-nightly ext-e2e-passwords ext-e2e-passwords-trust top-extensions top-manifests chrome-surface test-disturbance chrome-contracts chrome-smoke public-suffix-list app install install-debug xcode-build xcode-build-release run-ui-dev release release-notarize release-archive dmg dmg-background bridge-gen vt-build vt-build-source vt-zip webkit-fork bootstrap bootstrap-test ui-preview check-commits startup-bench ext-bench energy-sample energy-compare energy-browsers perf-summary perf-compare perf-summary-test check-summary-test agent-app agent-app-stop agent-app-restart agent-call agent-eval agent-eval-test lockf-test slot-test scope-test retried-tests-test tier-test metrics metrics-on metrics-off metrics-test ci-metrics ci-metrics-test window-capture worktree-new worktree-gc worktree-gc-test logs logs-stream site-dev site-dev-stop site-preview site-native-preview site-generate site-check site-fix site-test site-e2e site-release-capture site-capture-server site-capture-deps site-lock site-audit site-add-svelte site-playground-deps site-demo-icons site-deploy site-deploy-check emoji-data password-manager-icons docs-dev docs-build docs-check docs-test docs-preview docs-deploy-check docs-deploy docs-translate docs-eval docs-lock hooks-install hooks-install-checks hooks-install-push-checks quick-deps hooks-test lint-commit-message lint-commits changie change release-status release-version release-discord release-test release-media-stage release-media-test changelog-context changelog-draft changelog-media docker-mcp docker-mcp-test companion-ext-build companion-ext-test companion-test
 
 ## List the targets
 help:
@@ -193,9 +197,9 @@ bootstrap-test:
 # The lint and the JS tests run beside the other steps. scripts/check_summary.py keeps every check's output in a log
 # and prints one line per check, then the logs of the failed ones only (JSON=1: one JSON object per check).
 ## Run UI, website and docs checks, Swift lint/tests, the app build, bridge and hook checks and release version checks
-validate: $(UI_DEPS) $(BRIDGE_DEPS) $(SITE_DEPS) $(DOCS_DEPS) $(SWIFTLINT) $(CHANGIE)
+validate: $(UI_DEPS) $(BRIDGE_DEPS) $(COMPANION_DEPS) $(SITE_DEPS) $(DOCS_DEPS) $(SWIFTLINT) $(CHANGIE)
 	@export LILO_CHECK_SCOPE=$${LILO_CHECK_SCOPE:-full}; logs=$$(mktemp -d); names=; pids=; \
-	for group in ui-lint ui-test "site-check site-test" "docs-check docs-test" "hooks-test bootstrap-test perf-summary-test retried-tests-test lockf-test slot-test scope-test tier-test metrics-test ci-metrics-test check-summary-test agent-eval-test ext-bridge-test swiftlint release-status"; do \
+	for group in ui-lint ui-test "site-check site-test" "docs-check docs-test" "hooks-test bootstrap-test perf-summary-test retried-tests-test lockf-test slot-test scope-test tier-test metrics-test ci-metrics-test check-summary-test agent-eval-test ext-bridge-test companion-ext-test swiftlint release-status"; do \
 		name=$${group%% *}; names="$$names $$name"; \
 		$(CHECK_SUMMARY) run $$name "$$logs" -- $(MAKE) -k --no-print-directory $$group & pids="$$pids $$!"; \
 	done; \
@@ -275,7 +279,7 @@ validate-ui: ui-lint ui-test ui-build
 
 # `validate` without the Xcode build and Swift tests: every other group, in order. Runs on macOS too.
 ## Run every check that needs no Xcode: UI, website, docs, bridge, hooks, release and Swift lint (what Linux can run)
-linux-checks: ui-lint ui-test site-check site-test docs-check docs-test hooks-test perf-summary-test retried-tests-test scope-test tier-test metrics-test ci-metrics-test check-summary-test lockf-test ext-bridge-test swiftlint release-status worktree-gc-test docker-mcp-test
+linux-checks: ui-lint ui-test site-check site-test docs-check docs-test hooks-test perf-summary-test retried-tests-test scope-test tier-test metrics-test ci-metrics-test check-summary-test lockf-test ext-bridge-test companion-ext-test swiftlint release-status worktree-gc-test docker-mcp-test
 
 ## Run Swift lint only
 swiftlint: $(SWIFTLINT)
@@ -555,6 +559,19 @@ ext-bridge-build: $(BRIDGE_DEPS)
 ext-bridge-test: $(BRIDGE_DEPS)
 	@npm --prefix $(BRIDGE_DIR) test
 
+$(COMPANION_DEPS): $(COMPANION_DIR)/package-lock.json
+	@npm --prefix $(COMPANION_DIR) ci
+
+## Build the Linux companion extension (tsc + esbuild into companion-extension/dist)
+companion-ext-build: $(COMPANION_DEPS) $(COMPANION_STAMP)
+
+$(COMPANION_STAMP): $(COMPANION_SOURCES)
+	@npm --prefix $(COMPANION_DIR) run build && mkdir -p $(dir $@) && touch $@
+
+## Run the Linux companion extension's schema and tool unit tests
+companion-ext-test: $(COMPANION_DEPS)
+	@npm --prefix $(COMPANION_DIR) test
+
 ## Install the most used Chrome Web Store extensions and the MV3 probe in parallel runs, and check they run and what a few do on a page (network; TOP=100 IDS=a,b SHARDS=6)
 ext-smoke: vt-build $(BRIDGE_STAMP) $(UI_STAMP) $(CHROME_UI_ASSETS) $(NATIVE_STRINGS)
 	@$(TEST_LOCK_ALL) node scripts/ext-smoke.mjs --top '$(or $(TOP),100)' --ids '$(IDS)' --shards '$(or $(SHARDS),6)'
@@ -725,6 +742,12 @@ docker-mcp:
 docker-mcp-test:
 	@$(DOCKER) build -t $(LILO_MCP_IMAGE) -f container/linux/Containerfile .
 	@python3 -I container/linux/mcp_container_test.py $(DOCKER) $(LILO_MCP_IMAGE)
+	@$(DOCKER) run -i --rm -e LILO_DRIVER=companion $(LILO_MCP_IMAGE) \
+	  python3 -I /app/container/linux/companion_test.py
+
+## Test the companion peer and driver directly (platform independent, no docker)
+companion-test:
+	@python3 -I container/linux/companion_test.py
 
 ## Build the UI bundle and create release artifacts
 release: vt-build $(UI_STAMP) $(BRIDGE_STAMP) $(if $(WEBKIT_FORK_URL),webkit-fork)
