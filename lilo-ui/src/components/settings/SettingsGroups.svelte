@@ -1,7 +1,7 @@
 <script lang="ts">
   import { t } from "../../lib/i18n/state.svelte";
   import type { SettingsSectionId } from "../../stores/panels.svelte";
-  import { getSetting } from "../../stores/settings.svelte";
+  import { getSetting, getUpdaterStatus } from "../../stores/settings.svelte";
   import { isAgentsSpace } from "../../stores/agents.svelte";
   import { getSpaces } from "../../stores/spaces.svelte";
   import SettingRow from "./SettingRow.svelte";
@@ -21,13 +21,21 @@
     defaultZoom: "minimumFontSize",
   };
 
+  // The update-channel rows exist only where a feed does (a release Lilo never compiles one in); the
+  // beta-only rows wait for the Beta pick, and the release row for a newer beta.
+  const CHANNEL_ROWS: ReadonlySet<SettingId> = new Set(["updateChannel", "betaUpdateCheck", "betaUpdateRelease", "betaFeedURL"]);
+  const BETA_ROWS: ReadonlySet<SettingId> = new Set(["betaUpdateCheck", "betaUpdateRelease", "betaFeedURL"]);
+
   // A setting under a switch shows only while that switch is on; the always-allowed sites while there are some,
-  // Lilo's system prompt while it is the one chosen.
+  // Lilo's system prompt while it is the one chosen, the beta release row while a newer beta waits.
   const groups = $derived(
     sectionGroups(
       section,
       (setting) =>
         (!setting.requires || isToggleOn(setting.requires, getSetting)) &&
+        (!CHANNEL_ROWS.has(setting.id) || !!getUpdaterStatus()?.betaFeed) &&
+        (!BETA_ROWS.has(setting.id) || getSetting("updateChannel", "beta") === "beta") &&
+        (setting.id !== "betaUpdateRelease" || !!getUpdaterStatus()?.betaAvailable) &&
         (setting.id !== "agentAlwaysAllowed" || parseBlockerSites(getSetting("agentAlwaysAllowedSites", "")).length > 0) &&
         (setting.id !== "agentSystemPromptText" || getSetting("agentSystemPrompt", "lilo") === "lilo"),
     ),

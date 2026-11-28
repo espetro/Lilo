@@ -26,9 +26,10 @@ final class AgentFlowTests: AgentToolTestCase {
 
     /// Records `body` between flow_start and flow_save("name"), returning the save reply.
     private func recordFlow(
-        _ name: String, tab: Int, params: [String: Any]? = nil,
+        _ name: String, tab: Int, params: [String: Any]? = nil, as client: AgentTestClient? = nil,
         body: () async throws -> Void
     ) async throws -> String {
+        let client: AgentTestClient = client ?? self.client
         var startArgs: [String: Any] = ["tabId": tab]
         startArgs["name"] = name
         let start = await client.callTool("flow_start", startArgs)
@@ -39,6 +40,32 @@ final class AgentFlowTests: AgentToolTestCase {
         let save = await client.callTool("flow_save", saveArgs)
         XCTAssertFalse(save.isError, save.text)
         return save.text
+    }
+
+    /// Records a flow opening a page titled `title` and typing `phone` into it, and returns the tab used.
+    private func recordCheckout(title: String, phone: String, as client: AgentTestClient) async throws -> Int {
+        let tab = try await newAgentTab(client)
+        let page = Self.page.replacingOccurrences(of: "Contact details</title>", with: "\(title)</title>")
+        let encoded = try XCTUnwrap(page.addingPercentEncoding(withAllowedCharacters: .alphanumerics))
+        _ = try await recordFlow("checkout", tab: tab, as: client) {
+            let opened = await client.callTool("navigate", ["tabId": tab, "url": "data:text/html;charset=utf-8,\(encoded)"])
+            XCTAssertFalse(opened.isError, opened.text)
+            let read = await client.callTool("read_page", ["tabId": tab, "filter": "interactive"])
+            let fill = await client.callTool("form_input", ["tabId": tab, "ref": try self.ref("Phone", in: read.text), "value": phone])
+            XCTAssertFalse(fill.isError, fill.text)
+        }
+        return tab
+    }
+
+    private func connect(_ name: String) async throws -> AgentTestClient {
+        let client = try AgentTestClient(path: socketURL)
+        _ = await client.initialize(name: name)
+        return client
+    }
+
+    private func flowFile(_ name: String) throws -> URL {
+        let session = try XCTUnwrap(control.sessions.first { $0.clientName == "Test Agent" })
+        return AgentFlows.directory(session: session, control: control).appending(path: name + ".jsonl")
     }
 
     /// flow_run's JSON reply.
@@ -133,7 +160,7 @@ final class AgentFlowTests: AgentToolTestCase {
             XCTAssertFalse(fill.isError, fill.text)
         }
         XCTAssertTrue(save.contains("parameters:"), save)
-        let file = AgentFlows.directory(control: control).appending(path: "sign-in.jsonl")
+        let file = try flowFile("sign-in")
         let contents = try String(contentsOf: file, encoding: .utf8)
         XCTAssertFalse(contents.contains("hunter2-example"), "the secret never reaches the file")
         XCTAssertTrue(contents.contains(#""param""#), contents)
@@ -157,7 +184,7 @@ final class AgentFlowTests: AgentToolTestCase {
             let type = await client.callTool("computer", ["tabId": tab, "action": "type", "text": "hunter2-example"])
             XCTAssertFalse(type.isError, type.text)
         }
-        let file = AgentFlows.directory(control: control).appending(path: "typed-sign-in.jsonl")
+        let file = try flowFile("typed-sign-in")
         let contents = try String(contentsOf: file, encoding: .utf8)
         XCTAssertFalse(contents.contains("hunter2-example"), "the secret never reaches the file")
         XCTAssertTrue(contents.contains(#""param":"secret""#), contents)
@@ -215,7 +242,7 @@ final class AgentFlowTests: AgentToolTestCase {
             let read = await client.callTool("read_page", ["tabId": tab, "filter": "interactive"])
             _ = await client.callTool("form_input", ["tabId": tab, "ref": try self.ref("Phone", in: read.text), "value": "1", "flowParam": "phone"])
         }
-        let file = AgentFlows.directory(control: control).appending(path: "set-phone.jsonl")
+        let file = try flowFile("set-phone")
         var contents = try String(contentsOf: file, encoding: .utf8)
         contents = contents.replacingOccurrences(of: "textbox", with: "button")
         try contents.write(to: file, atomically: true, encoding: .utf8)
@@ -224,5 +251,44 @@ final class AgentFlowTests: AgentToolTestCase {
 
         XCTAssertTrue(run.isError)
         XCTAssertTrue(run.text.contains("changed on disk"), run.text)
+    }
+
+    func testAnotherClientCannotRunASavedFlow() async throws {
+        _ = try await recordCheckout(title: "Agent A", phone: "555 010 0100", as: client)
+        let other = try await connect("Codex")
+        let tab = try await agentTab(showing: Self.page, other)
+
+        let run = await other.callTool("flow_run", ["name": "checkout", "tabId": tab])
+
+        XCTAssertTrue(run.isError, run.text)
+        XCTAssertTrue(run.text.contains("No flow named \"checkout\""), run.text)
+        let phone = try await js("document.getElementById('phone').value", tab: tab) as? String
+        XCTAssertEqual(phone, "")
+    }
+
+    func testClientsSharingAFlowNameEachReplayTheirOwn() async throws {
+        let other = try await connect("Codex")
+        let own = try await recordCheckout(title: "Agent A", phone: "555 010 0100", as: client)
+        let theirs = try await recordCheckout(title: "Agent B", phone: "555 010 0200", as: other)
+
+        for (agent, tab, title, phone) in [(client!, own, "Agent A", "555 010 0100"), (other, theirs, "Agent B", "555 010 0200")] {
+            _ = await agent.callTool("navigate", ["tabId": tab, "url": "about:blank"])
+            let run = await agent.callTool("flow_run", ["name": "checkout", "tabId": tab])
+            XCTAssertEqual(try runResult(run)["completed"] as? Int, 2, run.text)
+            let replayed = try await js("[document.title, document.getElementById('phone').value]", tab: tab) as? [String]
+            XCTAssertEqual(replayed, [title, phone])
+        }
+    }
+
+    func testASavedFlowOutlivesItsConnection() async throws {
+        _ = try await recordCheckout(title: "Agent A", phone: "555 010 0100", as: client)
+        client.close()
+        await pollUntil { self.control.sessions.isEmpty }
+        let again = try await connect("Test Agent")
+        let tab = try await newAgentTab(again)
+
+        let run = await again.callTool("flow_run", ["name": "checkout", "tabId": tab])
+
+        XCTAssertEqual(try runResult(run)["completed"] as? Int, 2, run.text)
     }
 }

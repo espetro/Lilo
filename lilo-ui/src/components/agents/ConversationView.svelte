@@ -18,13 +18,18 @@
 
 <script lang="ts">
   import { modeIcon, modelLogo, supersededModels } from "./modelLogos";
+  import { modelControl, agentNote, isPickable } from "../../lib/agentReadiness";
+  import { readinessLabels } from "../../lib/agentReadinessLabels";
+  import ModelIdField from "./ModelIdField.svelte";
   import "../../lib/i18n/agentsCatalog";
   import { onDestroy, untrack } from "svelte";
   import { cubicOut } from "svelte/easing";
   import { fade } from "svelte/transition";
+  import { tabActions } from "../../lib/bridge/actions";
   import { reportInteractiveZone } from "../../lib/actions/interactiveZone";
   import { conversationActions } from "./conversationActions";
   import { announce } from "../../lib/announce";
+  import { parseHiddenAgents } from "../../lib/agentCommands";
   import type { BridgeSplitPaneFrame } from "../../lib/bridge/protocol";
   import { getFormatLocale, t } from "../../lib/i18n/state.svelte";
   import { prefersReducedMotion } from "../../lib/motion/reducedMotion";
@@ -35,6 +40,7 @@
   import {
     addLocalPrompt,
     getAgent,
+    getAgents,
     getConversationState,
     getConversationSummary,
     getConversationVersion,
@@ -42,10 +48,15 @@
     hideConversation,
     showConversation,
   } from "../../stores/conversations.svelte";
+  import { getSetting } from "../../stores/settings.svelte";
   import { getSplitPanes } from "../../stores/splitPanes.svelte";
+  import {
+    dismissConversationSurfaceForTab,
+    promoteConversationSurfaceForTab,
+  } from "../../stores/conversationSurfaces.svelte";
   import { getTabsById, tabDisplayTitle } from "../../stores/tabs.svelte";
   import AgentTile from "./AgentTile.svelte";
-  import type { ImageRef, PermissionItem, QuestionItem, ThreadItem, ToolCallItem, UserMessageItem } from "./conversationModel";
+  import type { ImageRef, PermissionItem, QuestionItem, SignInLinkItem, ThreadItem, ToolCallItem, UserMessageItem } from "./conversationModel";
   import Icon from "../ui/Icon.svelte";
   import Lightbox from "./Lightbox.svelte";
   import MenuPicker from "./MenuPicker.svelte";
@@ -54,6 +65,7 @@
   import PromptField from "./PromptField.svelte";
   import QuestionForm from "./QuestionForm.svelte";
   import SignInCard from "./SignInCard.svelte";
+  import SignInLinkCard from "./SignInLinkCard.svelte";
   import ThreadRow, { type TurnSummary } from "./ThreadRow.svelte";
   import { formatDuration, itemSignature } from "./threadView";
   import WorkBlock, { describe } from "./WorkBlock.svelte";
@@ -63,9 +75,12 @@
     tabId: string;
     /** The pane's frame as shares of the content area. */
     frame: Pick<BridgeSplitPaneFrame, "x" | "y" | "width" | "height">;
+    /** Set when the conversation floats over its source tab instead of filling a pane or tab. */
+    presentation?: "surfaceMini" | "surfaceDialog";
   }
 
-  let { tabId, frame }: Props = $props();
+  let { tabId, frame, presentation }: Props = $props();
+  const isSurface = $derived(presentation !== undefined);
 
   type ItemRow = { kind: "item"; key: string; item: ThreadItem; sig: string; promptIndex: number; canRestore: boolean; turn: TurnSummary | null };
   type WorkRow = { kind: "work"; key: string; calls: ToolCallItem[]; sig: string; promptIndex: number; done: boolean };
@@ -133,6 +148,25 @@
   let readTop = 0;
   // The agent lists its `/` commands once its session opens: asked once per view.
   let commandsRequested = false;
+  // Another agent has other commands: asked again once the conversation changes hands.
+  $effect(() => {
+    void header.agentId;
+    untrack(() => (commandsRequested = false));
+  });
+  // A hidden agent leaves the picker, but the conversation's own stays listed.
+  const switchOptions = $derived.by(() => {
+    const hidden = parseHiddenAgents(getSetting("agentsHidden", "[]"));
+    return getAgents()
+      .filter((agent) => agent.id === header.agentId || !hidden.has(agent.id))
+      .map((agent) => ({
+        value: agent.id,
+        label: agent.name,
+        // What keeps an agent from starting, or asks something of the user, replaces its description.
+        detail: agentNote(agent, readinessLabels()) ?? (agent.description || undefined),
+        disabled: !isPickable(agent),
+        agentId: agent.id,
+      }));
+  });
   let text = $state(untrack(() => drafts[tabId]?.text ?? ""));
   let attachments = $state.raw<AttachmentDraft[]>(untrack(() => drafts[tabId]?.attachments ?? []));
   onDestroy(() => {
@@ -311,6 +345,15 @@
       commands: thread?.commands ?? [],
     };
   });
+  // Before the session has a model to pick, the models the agent was last seen with; for an agent with none, a field to type one.
+  const modelCtl = $derived.by(() => {
+    void version;
+    const options = conversation?.thread.configOptions ?? [];
+    return modelControl(getAgent(header.agentId), {
+      hasModels: options.some((config) => config.category === "model"),
+      opened: options.length > 0 || header.modes.length > 0,
+    });
+  });
   const usagePercent = $derived(header.usage ? Math.min(100, Math.round((header.usage.used / header.usage.size) * 100)) : 0);
   // Below half the context, compacting saves little and Claude refuses a short thread.
   const canCompact = $derived(!working && usagePercent >= 50 && header.commands.some((command) => command.name === "compact"));
@@ -350,6 +393,18 @@
   const pageTabId = $derived.by(() => {
     const tabs = getTabsById();
     return getSplitPanes().find((pane) => tabs.get(pane.tabId)?.kind === "web")?.tabId ?? null;
+  });
+
+  // In a split, the corners of the pane that are corners of the whole group go flat against the
+  // chrome, as the native panes' do; the pane shares are rounded to 0.001 by the host.
+  const inSplit = $derived(getSplitPanes().some((pane) => pane.tabId === tabId));
+  const EDGE = 0.001;
+  const flatCorners = $derived.by(() => {
+    const none = { tl: false, tr: false, bl: false, br: false };
+    if (!inSplit) return none;
+    const left = frame.x < EDGE, right = frame.x + frame.width > 1 - EDGE;
+    const top = frame.y < EDGE, bottom = frame.y + frame.height > 1 - EDGE;
+    return { tl: left && top, tr: right && top, bl: left && bottom, br: right && bottom };
   });
 
   $effect(() => {
@@ -473,7 +528,17 @@
     }
     return null;
   });
-  const asking = $derived(pending !== null || pendingQuestion !== null);
+  // A URL the agent asks the user to open (a browser sign-in): the link card waits over the composer.
+  const pendingSignInLink = $derived.by((): SignInLinkItem | null => {
+    void version;
+    const items = conversation?.thread.items ?? [];
+    for (let i = items.length - 1; i >= 0; i--) {
+      const item = items[i];
+      if (item.kind === "signInLink" && item.answer === null) return item;
+    }
+    return null;
+  });
+  const asking = $derived(pending !== null || pendingQuestion !== null || pendingSignInLink !== null);
   // VoiceOver hears what the eye sees change: a turn ending, a question waiting. An error is its own alert.
   let wasBusy = false;
   $effect(() => {
@@ -556,16 +621,39 @@
     conversationActions.answer(tabId, String(permission.requestId), option?.optionId);
     return true;
   }
+
+  /** Esc declines the waiting sign-in link: only its card's button confirms. */
+  function declineSignInLink(): boolean {
+    const link = pendingSignInLink;
+    if (!link) return false;
+    conversationActions.answerQuestion({ tabId, requestId: String(link.requestId), action: "cancel" });
+    return true;
+  }
+
+  function escapeConversation(): boolean {
+    return (
+      answerPending(false) ||
+      (questionForm?.answer("decline") ?? false) ||
+      declineSignInLink() ||
+      (isSurface ? dismissConversationSurfaceForTab(tabId) : stop())
+    );
+  }
 </script>
 
-<div class="conversation-root chrome-content-overlay-root">
+<div class="conversation-root chrome-content-overlay-root" class:surface={isSurface}>
   <!-- svelte-ignore a11y_no_noninteractive_element_interactions -->
   <section
     class="conversation"
+    class:surface-mini={presentation === "surfaceMini"}
+    class:surface-dialog={presentation === "surfaceDialog"}
     style:left="{frame.x * 100}%"
     style:top="{frame.y * 100}%"
     style:width="{frame.width * 100}%"
     style:height="{frame.height * 100}%"
+    style:border-top-left-radius={flatCorners.tl ? "0" : undefined}
+    style:border-top-right-radius={flatCorners.tr ? "0" : undefined}
+    style:border-bottom-left-radius={flatCorners.bl ? "0" : undefined}
+    style:border-bottom-right-radius={flatCorners.br ? "0" : undefined}
     aria-label={header.title}
     use:reportInteractiveZone={{ id: `conversation-${tabId}` }}
     onkeydown={(event) => {
@@ -573,6 +661,11 @@
     }}
   >
     <header class="header">
+      {#if presentation === "surfaceDialog"}
+        <button type="button" class="pane-control" aria-label={t("common.close")} use:tooltip={t("common.close")} onclick={() => dismissConversationSurfaceForTab(tabId)}>
+          <Icon name="close" size={12} />
+        </button>
+      {/if}
       <AgentTile agentId={header.agentId} />
       <h1 class="title">{header.title}</h1>
       {#if header.project}
@@ -644,6 +737,24 @@
           <span class="ring" class:high={usagePercent >= 80} style:--context-used="{usagePercent}%"></span>
           {usagePercent}%
         </span>
+      {/if}
+      {#if isSurface}
+        <button type="button" class="pane-control" aria-label={t("placement.enlarge")} use:tooltip={t("placement.enlarge")} onclick={() => promoteConversationSurfaceForTab(tabId)}>
+          <Icon name="arrowUpRight" size={12} />
+        </button>
+        {#if presentation === "surfaceMini"}
+          <button type="button" class="pane-control" aria-label={t("common.close")} use:tooltip={t("common.close")} onclick={() => dismissConversationSurfaceForTab(tabId)}>
+            <Icon name="close" size={12} />
+          </button>
+        {/if}
+      {:else if inSplit}
+        <!-- The native pane pill sits under this surface, so a conversation pane carries its own controls. -->
+        <button type="button" class="pane-control" aria-label={t("splitPane.maximize")} use:tooltip={t("splitPane.maximize")} onclick={() => tabActions.maximizeSplitPane(tabId)}>
+          <Icon name="maximize" size={12} />
+        </button>
+        <button type="button" class="pane-control" aria-label={t("splitPane.close")} use:tooltip={t("splitPane.close")} onclick={() => tabActions.unsplitTab(tabId)}>
+          <Icon name="close" size={12} />
+        </button>
       {/if}
     </header>
 
@@ -842,6 +953,10 @@
         {#key pendingQuestion.requestId}
           <QuestionForm bind:this={questionForm} {tabId} item={pendingQuestion} agentId={header.agentId} />
         {/key}
+      {:else if pendingSignInLink}
+        {#key pendingSignInLink.requestId}
+          <SignInLinkCard {tabId} item={pendingSignInLink} agentId={header.agentId} />
+        {/key}
       {/if}
       <div class="composer float-surface">
         <PromptField
@@ -860,7 +975,7 @@
           }}
           onsubmit={send}
           onemptyreturn={(always) => attachments.length === 0 && (answerPending(true, always) || (questionForm?.answer("accept") ?? false))}
-          onescape={() => answerPending(false) || (questionForm?.answer("decline") ?? false) || stop()}
+          onescape={escapeConversation}
           onemptykey={(key) => questionForm?.pick(key) ?? false}
           onemptyup={() => {
             const items = conversation?.thread.items ?? [];
@@ -881,6 +996,21 @@
             use:tooltip={t("agents.composer.addContext")}
             onclick={() => field?.startMention()}
           ><Icon name="at" size={14} /></button>
+          {#if switchOptions.length > 1}
+            <MenuPicker
+              value={header.agentId}
+              options={switchOptions}
+              ariaLabel={t("agents.ask.agent")}
+              searchPlaceholder={t("agents.ask.searchAgents")}
+              searchEmptyLabel={t("agents.ask.noMatches")}
+              disabledReason={working ? t("agents.conversation.switchBusy") : undefined}
+              note={t("agents.conversation.switchNote")}
+              onchange={(agentId) => conversationActions.switchAgent(tabId, agentId)}
+            >
+              <AgentTile agentId={header.agentId} />
+              <span class="picker-label">{header.agentName}</span>
+            </MenuPicker>
+          {/if}
           {#if header.modes.length > 1}
             <MenuPicker
               value={header.modeId}
@@ -923,6 +1053,32 @@
               <span class="picker-label">{config.options.find((option) => option.value === config.currentValue)?.name ?? config.name}</span>
             </MenuPicker>
           {/each}
+          {#if modelCtl?.kind === "list"}
+            {@const models = modelCtl}
+            {@const current = models.options.find((option) => option.id === models.current)}
+            <MenuPicker
+              value={models.current}
+              options={models.options.map((option) => ({
+                value: option.id,
+                label: option.name,
+                detail: option.description,
+                icon: "sparkle" as const,
+                logo: modelLogo(`${option.id} ${option.name}`),
+              }))}
+              ariaLabel={t("agents.readiness.model")}
+              onchange={(value) => conversationActions.setConfig(tabId, models.configId, value)}
+            >
+              {@const logo = modelLogo(`${models.current} ${current?.name ?? ""}`)}
+              {#if logo}
+                <svg class="model-logo" viewBox="0 0 24 24" aria-hidden="true" style:color={logo.color}><path d={logo.path} /></svg>
+              {:else}
+                <Icon name="sparkle" size={13} />
+              {/if}
+              <span class="picker-label">{current?.name ?? t("agents.readiness.model")}</span>
+            </MenuPicker>
+          {:else if modelCtl?.kind === "custom"}
+            <ModelIdField onsubmit={(id) => conversationActions.setConfig(tabId, "model", id)} />
+          {/if}
           {#if header.extraConfigs.length > 0}
             <MenuPicker
               value=""
@@ -987,6 +1143,17 @@
     overflow: hidden;
   }
 
+  /* Inside ConversationSurface the fixed content-area frame becomes the card's own box. */
+  .conversation-root.surface {
+    position: absolute;
+    inset: 0;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    border-radius: 0;
+  }
+
   .conversation {
     position: absolute;
     display: flex;
@@ -1003,6 +1170,21 @@
       --bg-primary: var(--conversation-bg);
       --float-surface: var(--conversation-surface);
     }
+  }
+
+  .conversation.surface-mini,
+  .conversation.surface-dialog {
+    border-radius: 0;
+  }
+
+  .conversation.surface-mini .header {
+    height: 40px;
+    padding-right: var(--space-12);
+    padding-left: var(--space-12);
+  }
+
+  .conversation.surface-mini .title {
+    font-size: var(--font-size-sm);
   }
 
   .header {
@@ -1049,6 +1231,29 @@
     font: inherit;
     font-variant-numeric: tabular-nums;
     cursor: pointer;
+  }
+
+  .pane-control {
+    flex: none;
+    display: grid;
+    place-items: center;
+    width: 22px;
+    height: 22px;
+    padding: 0;
+    border: 0;
+    border-radius: var(--radius-sm);
+    background: none;
+    color: var(--text-secondary);
+    cursor: pointer;
+  }
+
+  .pane-control:hover {
+    background: var(--bg-hover);
+    color: var(--text-primary);
+  }
+
+  .pane-control:focus-visible {
+    outline: var(--focus-outline);
   }
 
   .changes:hover {

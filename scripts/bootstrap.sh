@@ -1,7 +1,7 @@
 #!/bin/bash
 # make bootstrap: checks everything building Lilo needs, and only then installs anything.
 # Usage: bootstrap.sh [--with-sites] [--json] <deps-targets> <build-targets> [<site-targets>]
-#   deps-targets   make targets installing the npm dependencies of the interface and the bridge
+#   deps-targets   make targets installing the JavaScript dependencies of the interface and the bridge
 #   build-targets  make targets building the rest (libghostty-vt, bundles, SwiftLint, XcodeGen)
 #   site-targets   make targets installing the website, docs and Changie tools, run with --with-sites
 # Exit codes: 0 ready; 1 a make step failed; 2 a tool is missing and installs without an account
@@ -104,6 +104,33 @@ if [ -n "$node_version" ] && [ "$(printf '%s\n' "$wanted_node" "${node_version#v
 else
     check node missing "Node.js $wanted_node or later, as the packages require (found: ${node_version:-none})" \
         "install it with nvm (nvm install, which reads .nvmrc), fnm, mise, or from https://nodejs.org"
+fi
+
+# The version package.json pins is Corepack's to fetch; any other pnpm refuses to install.
+wanted_pnpm=$(sed -n 's/.*"packageManager": *"pnpm@\([0-9.]*\)".*/\1/p' package.json)
+pnpm_version=$(pnpm -v 2>/dev/null)
+if [ -z "$pnpm_version" ]; then
+    check pnpm missing "pnpm $wanted_pnpm, which the web projects install with" \
+        "corepack enable (it comes with Node.js 22), or mise install"
+elif [ "$pnpm_version" != "$wanted_pnpm" ]; then
+    check pnpm missing "pnpm $wanted_pnpm, which package.json pins (found: $pnpm_version)" \
+        "corepack enable, which fetches the pinned version"
+else
+    check pnpm ok "pnpm $pnpm_version"
+fi
+
+# npm installs the bridge and release-media; their package.json files pin the npm Node.js 22.23.4 ships.
+wanted_npm=$(sed -n 's/.*"packageManager": *"npm@\([0-9.]*\)".*/\1/p' \
+    Lilo/Extensions/bridge-src/package.json release-media/package.json | sort -u)
+npm_version=$(npm -v 2>/dev/null)
+if [ -z "$npm_version" ]; then
+    check npm missing "npm $wanted_npm, which the bridge and release-media install with" \
+        "corepack enable (it comes with Node.js 22), or install the Node.js .nvmrc pins"
+elif [ "$npm_version" != "$wanted_npm" ]; then
+    check npm missing "npm $wanted_npm, which the packages pin (found: $npm_version)" \
+        "corepack enable makes npm use the pinned version, or npm install -g npm@$wanted_npm"
+else
+    check npm ok "npm $npm_version"
 fi
 
 need_gb=${LILO_BOOTSTRAP_DISK_GB:-5}

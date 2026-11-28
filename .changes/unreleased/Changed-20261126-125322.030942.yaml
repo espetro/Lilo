@@ -1,0 +1,3 @@
+kind: Changed
+body: 'Compact the MCP tool list: the seven developer tools (devtools_command, devtools_events, network_mock, network_response, cookies, emulate, performance) now sit behind one devtools tool, with each still callable by its old name and its full documentation one devtools call with help: true away.'
+time: 2026-11-26T12:53:22.030942-08:00

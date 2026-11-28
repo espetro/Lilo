@@ -320,6 +320,10 @@ extension MainWindowController: WKWebViewTab.Delegate {
         if !isLoading { context.hiddenSpaceLifecycle.scheduleHiddenRefreeze() }
     }
 
+    func tab(_ tab: WKWebViewTab, didUpdateSleeping isSleeping: Bool) {
+        updateAndEmit(tab.id) { $0.isSleeping = isSleeping }
+    }
+
     func tabDidWake(_ tab: WKWebViewTab) {
         context.hiddenSpaceLifecycle.scheduleHiddenRefreeze()
     }
@@ -439,6 +443,14 @@ extension MainWindowController: WKWebViewTab.Delegate {
     func tab(_ tab: WKWebViewTab, openLinkInNewWindow url: URL) {
         guard let spaceId = tabManager.currentSpaceId else { return }
         context.openWindow(on: spaceId, opening: .urls([url]))
+    }
+    func tab(_ tab: WKWebViewTab, openLinkInSplitView url: URL) {
+        guard (tabManager.activeSplit?.layout.paneIds.count ?? 0) < SplitLayout.maxPanes else { return NSSound.beep() }
+        splitURL(url, at: nil, side: .edge(vertical: false, before: false))
+    }
+    func tab(_ tab: WKWebViewTab, openLinkInLittleWindow url: URL) {
+        openLittleWindow(url: url)
+        NSApp.activate(ignoringOtherApps: true)
     }
     var prefersSingleWindow: Bool { context.settingsStore?.singleWindow == true }
     func tabDidRequestClose(_ tab: WKWebViewTab) {

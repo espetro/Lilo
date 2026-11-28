@@ -13,9 +13,15 @@ final class ConversationHost {
         case idle, starting, busy, failed
     }
 
+    /// What waits for the conversation to take it, in the order it came: `drain` applies it at the next turn boundary.
+    enum PendingMessage {
+        case prompt(blocks: [[String: Any]], checkpoint: Int?)
+        case switchAgent(String)
+    }
+
     final class Conversation {
         let tabId: UUID
-        let agentId: String
+        var agentId: String
         var cwd: String
         var sessionId: String?
         var connection: ACPConnection?
@@ -27,8 +33,13 @@ final class ConversationHost {
         /// The agent's open `session/request_permission`s and `elicitation/create` questions, oldest first: its
         /// sub-agents can ask at once. Each is answered from the thread; the sidebar and the notification offer the oldest.
         var permissions: [(id: ACPConnection.Payload, requestId: String, params: [String: Any])] = []
-        /// Prompts waiting for the running turn, each with the checkpoint index `send` reserved for it.
-        var queued: [(blocks: [[String: Any]], checkpoint: Int)] = []
+        /// Prompts and agent switches waiting for the running turn. Kept in memory only: the thread's log on disk covers a crash.
+        var inbox: [PendingMessage] = []
+        /// What the agent switched to is told about the thread, sent with its next prompt.
+        var handoff: String?
+        /// The prompts the chrome was last told wait.
+        var queueReported = 0
+        var queuedPrompts: Int { inbox.reduce(0) { if case .prompt = $1 { $0 + 1 } else { $0 } } }
         /// The prompt a sign-in holds back, sent again once it succeeds.
         var awaitingSignIn: [[String: Any]]?
         /// A sign-in in a terminal was already offered for this prompt: a second refusal shows the error.
@@ -86,10 +97,13 @@ final class ConversationHost {
 
     static let protocolVersion = 2
     static let idleDelay: TimeInterval = 600
+    /// v1 sends the mode with the session, not as a config option with an id of its own.
+    private static let modeChoiceId = "lilo:mode"
     private static let logger = Logger(liloCategory: "conversations")
 
     weak var context: BrowserContext?
     let catalog: ACPAgentCatalog
+    let readiness: ACPAgentReadinessStore
     let projectFiles = ConversationProjectFiles()
     private(set) var conversations: [UUID: Conversation] = [:]
     /// The conversations each window's chrome shows, so updates go only where they are seen.
@@ -105,8 +119,7 @@ final class ConversationHost {
     /// until its first turn ends (Claude's adapter assumes 200k for a 1M model), which reads as a full context.
     /// Kept across launches, as every launch starts new agent processes.
     private var contextWindows = unsafe UserDefaults.lilo.dictionary(forKey: "agentContextWindows") as? [String: Int] ?? [:]
-    /// The options last picked for each agent, by config id, which a new conversation starts with. The mode
-    /// is left out: a mode that skips the user's approval must be picked for each conversation.
+    /// The options last picked for each agent, by config id, which a new conversation starts with.
     private var agentChoices = unsafe UserDefaults.lilo.dictionary(forKey: "agentConfigChoices") as? [String: [String: Any]] ?? [:]
 
     /// Each conversation's log and checkpoints, so a relaunch shows the thread without starting its agent.
@@ -114,8 +127,11 @@ final class ConversationHost {
     private let saveQueue = DispatchQueue(label: "lilo.conversations.save", qos: .utility)
 
     init(directory: URL) {
-        catalog = ACPAgentCatalog(directory: directory)
+        let catalog = ACPAgentCatalog(directory: directory)
+        self.catalog = catalog
+        readiness = ACPAgentReadinessStore(directory: directory) { agent in try await catalog.launch(agent) }
         threads = directory.appending(path: "Conversations")
+        readiness.onChange = { [weak self] id in self?.broadcastReadiness(id) }
         catalog.commandsSetting = { [weak self] in self?.context?.settingsStore?.get("agentCommands") }
     }
 
@@ -364,7 +380,11 @@ final class ConversationHost {
         if let starting = conversation.starting { return try await starting.value }
         let task = Task { try await start(conversation) }
         conversation.starting = task
-        defer { conversation.starting = nil }
+        // A switch that waited for the start goes as soon as it is over.
+        defer {
+            conversation.starting = nil
+            drain(conversation)
+        }
         try await task.value
     }
 
@@ -403,13 +423,13 @@ final class ConversationHost {
             var params: [String: Any] = [
                 "protocolVersion": 1,
                 "clientCapabilities": ["fs": ["readTextFile": false, "writeTextFile": false], "terminal": false, "auth": ["terminal": true],
-                                       "elicitation": ["form": [String: Any]()]],
+                                       "elicitation": ["form": [String: Any](), "url": [String: Any]()]],
                 "clientInfo": info
             ]
             if v2 {
                 params["protocolVersion"] = latest
                 params["info"] = info
-                params["capabilities"] = ["auth": ["terminal": [String: Any]()], "elicitation": ["form": [String: Any]()]]
+                params["capabilities"] = ["auth": ["terminal": [String: Any]()], "elicitation": ["form": [String: Any](), "url": [String: Any]()]]
             }
             return params
         }
@@ -535,19 +555,41 @@ final class ConversationHost {
             Self.configId(of: option).map { ($0, option["currentValue"]) }
         }, uniquingKeysWith: { first, _ in first })
         for (configId, value) in agentChoices[conversation.agentId] ?? [:] {
-            guard let now = current[configId], !((now as? NSObject)?.isEqual(value) ?? false) else { continue }
+            guard let now = current[configId] else {
+                forgetChoice(conversation, configId: configId)
+                continue
+            }
+            guard !((now as? NSObject)?.isEqual(value) ?? false) else { continue }
             var params: [String: Any] = ["sessionId": sessionId, "configId": configId, "value": value]
             if value is Bool { params["type"] = "boolean" } else if conversation.protocolVersion >= 2 { params["type"] = "id" }
             // A value the agent no longer offers is forgotten, and the session keeps its default.
             guard let result = try? await connection.request("session/set_config_option", params) else {
-                agentChoices[conversation.agentId]?[configId] = nil
-                unsafe UserDefaults.lilo.set(agentChoices, forKey: "agentConfigChoices")
+                forgetChoice(conversation, configId: configId)
                 continue
             }
             if let options = result["configOptions"] { state["configOptions"] = options }
         }
+        // v2 modes are config options, applied above; v1 sends them beside the session.
+        if let modeId = agentChoices[conversation.agentId]?[Self.modeChoiceId] as? String {
+            let available = (created["modes"] as? [String: Any])?["availableModes"] as? [[String: Any]] ?? []
+            if available.contains(where: { $0["id"] as? String == modeId }) {
+                do {
+                    _ = try await connection.request("session/set_mode", ["sessionId": sessionId, "modeId": modeId])
+                    state["modes"] = (state["modes"] as? [String: Any])?.merging(["currentModeId": modeId]) { _, new in new }
+                } catch {
+                    forgetChoice(conversation, configId: Self.modeChoiceId)
+                }
+            } else {
+                forgetChoice(conversation, configId: Self.modeChoiceId)
+            }
+        }
         applySessionState(conversation, state)
         persistSession(conversation)
+    }
+
+    private func forgetChoice(_ conversation: Conversation, configId: String) {
+        agentChoices[conversation.agentId]?[configId] = nil
+        unsafe UserDefaults.lilo.set(agentChoices, forKey: "agentConfigChoices")
     }
 
     /// The prompt waits on a sign-in in a terminal; `signInFinished` sends it again.
@@ -686,7 +728,7 @@ final class ConversationHost {
     /// No sign-in could start: the prompt it held is dropped, as nothing would ever send it.
     private func signInFailed(_ conversation: Conversation) {
         conversation.awaitingSignIn = nil
-        conversation.queued.removeAll()
+        dropPrompts(conversation)
         conversation.lastError = "The sign-in terminal could not open.".localized
         append(conversation, ["sessionUpdate": "lilo_error", "message": conversation.lastError ?? ""])
         setState(conversation, .failed)
@@ -694,6 +736,7 @@ final class ConversationHost {
 
     /// A terminal's command ended or its tab closed: a sign-in run there is done.
     func terminalFinished(_ terminalId: UUID) {
+        readiness.terminalFinished(terminalId)
         guard let tabId = signInTerminals.removeValue(forKey: terminalId), let conversation = conversations[tabId] else { return }
         signInFinished(conversation)
     }
@@ -731,7 +774,10 @@ final class ConversationHost {
 
     private func persistSession(_ conversation: Conversation) {
         guard let window = context?.windows.window(forTab: conversation.tabId) else { return }
-        _ = window.updateRuntimeTab(id: conversation.tabId) { $0.agentSessionId = conversation.sessionId }
+        _ = window.updateRuntimeTab(id: conversation.tabId) {
+            $0.agentId = conversation.agentId
+            $0.agentSessionId = conversation.sessionId
+        }
         window.profileContext?.sessionPersistence?.scheduleSave()
     }
 
@@ -774,18 +820,104 @@ final class ConversationHost {
             conversation.awaitingSignIn = blocks
             return
         }
-        let index = conversation.checkpoints.count - 1
-        if conversation.state == .busy, !heldForSignIn {
-            if interrupt {
-                conversation.queued.insert((blocks, index), at: 0)
-                cancel(tabId)
-            } else {
-                conversation.queued.append((blocks, index))
-                append(conversation, ["sessionUpdate": "lilo_queued", "count": conversation.queued.count])
-            }
-            return
+        let message = PendingMessage.prompt(blocks: blocks, checkpoint: conversation.checkpoints.count - 1)
+        let interrupting = interrupt && conversation.turnOpen
+        if interrupting { conversation.inbox.insert(message, at: 0) } else { conversation.inbox.append(message) }
+        drain(conversation, ready: heldForSignIn)
+        if interrupting {
+            cancel(tabId)
+        } else {
+            reportQueue(conversation)
         }
-        Task { await runTurn(conversation, blocks: blocks, checkpoint: index) }
+    }
+
+    /// Applies what waits in the inbox, oldest first, once the conversation can take it: a turn ended
+    /// (`ready` covers the state still reading busy then), a sign-in finished, or it went idle. A prompt
+    /// opens the next turn and leaves the rest waiting; an agent switch applies between turns.
+    private func drain(_ conversation: Conversation, ready: Bool = false) {
+        // A busy state with no turn is a sign-in or a start under way, unless the caller knows better.
+        while !conversation.inbox.isEmpty, !conversation.turnOpen, conversation.signIn == nil,
+              ready || conversation.state != .busy {
+            switch conversation.inbox.removeFirst() {
+            case .switchAgent(let agentId):
+                // Its agent is still starting: the switch goes once that is over, at the idle or failed state it ends in.
+                if conversation.starting != nil {
+                    conversation.inbox.insert(.switchAgent(agentId), at: 0)
+                    return
+                }
+                applySwitch(conversation, to: agentId)
+            case .prompt(let blocks, let checkpoint):
+                reportQueue(conversation)
+                startTurn(conversation, blocks: blocks, checkpoint: checkpoint)
+            }
+        }
+    }
+
+    /// Marks the turn open at once, so a message sent before the turn's task first runs waits for it.
+    private func startTurn(_ conversation: Conversation, blocks: [[String: Any]], checkpoint: Int?) {
+        conversation.turnOpen = true
+        setState(conversation, .busy)
+        Task { await runTurn(conversation, blocks: blocks, checkpoint: checkpoint) }
+    }
+
+    /// Tells the chrome how many prompts wait, once the number changes.
+    private func reportQueue(_ conversation: Conversation) {
+        guard conversation.queuedPrompts != conversation.queueReported else { return }
+        conversation.queueReported = conversation.queuedPrompts
+        append(conversation, ["sessionUpdate": "lilo_queued", "count": conversation.queuedPrompts])
+    }
+
+    private func dropPrompts(_ conversation: Conversation) {
+        conversation.inbox.removeAll { if case .prompt = $0 { true } else { false } }
+    }
+
+    /// Asks to hand the conversation to another agent, between turns: now when none runs. The thread, its
+    /// checkpoints and its project stay; the new agent starts a session on its next prompt, with a summary.
+    func switchAgent(_ tabId: UUID, to agentId: String) {
+        guard let conversation = conversations[tabId], catalog.agent(id: agentId) != nil else { return }
+        conversation.inbox.removeAll { if case .switchAgent = $0 { true } else { false } }
+        conversation.inbox.append(.switchAgent(agentId))
+        drain(conversation)
+    }
+
+    private func applySwitch(_ conversation: Conversation, to agentId: String) {
+        guard agentId != conversation.agentId else { return }
+        conversation.idleStop?.cancel()
+        let connection = conversation.connection
+        conversation.connection = nil
+        connection?.terminate()
+        stopSignIn(conversation)
+        clearBackground(conversation)
+        for permission in conversation.permissions {
+            append(conversation, ["sessionUpdate": "lilo_permission_resolved", "requestId": permission.requestId, "optionId": NSNull()])
+        }
+        conversation.permissions = []
+        // A prompt a sign-in held goes to the new agent, which may not need that sign-in.
+        if let held = conversation.awaitingSignIn {
+            conversation.awaitingSignIn = nil
+            conversation.inbox.insert(.prompt(blocks: held, checkpoint: nil), at: 0)
+        }
+        // A switch made twice before a prompt keeps the first summary: the log has not changed since.
+        if conversation.handoff == nil {
+            conversation.handoff = ConversationHandoff.summary(log: conversation.log.map(\.value), from: catalog.agent(id: conversation.agentId)?.name)
+        }
+        conversation.agentId = agentId
+        conversation.sessionId = nil
+        conversation.authMethods = []
+        conversation.signInOffered = false
+        conversation.flowsSkillSent = false
+        conversation.lastError = nil
+        var switched: [String: Any] = ["sessionUpdate": "lilo_agent", "agentId": agentId]
+        if let handoff = conversation.handoff { switched["handoff"] = handoff }
+        append(conversation, switched)
+        append(conversation, ["sessionUpdate": "lilo_session", "modes": [String: Any](), "configOptions": [Any]()])
+        if conversation.latest["available_commands_update"] != nil {
+            append(conversation, ["sessionUpdate": "available_commands_update", "availableCommands": [Any]()])
+        }
+        persistSession(conversation)
+        updateTab(conversation)
+        save(conversation)
+        if conversation.state == .failed { setState(conversation, .idle) }
     }
 
     /// `checkpoint` is the index `send` reserved for this prompt: its snapshot is taken as the turn starts, once
@@ -817,10 +949,13 @@ final class ConversationHost {
             guard let connection = conversation.connection, let sessionId = conversation.sessionId else { return }
             setState(conversation, .busy)
             // Only once started does Lilo know whether the agent takes images.
-            let content = conversation.acceptsImages ? blocks : blocks.filter { $0["type"] as? String != "image" }
+            var content = conversation.acceptsImages ? blocks : blocks.filter { $0["type"] as? String != "image" }
+            // The agent a conversation was switched to learns the thread from one block ahead of the user's prompt.
+            if let handoff = conversation.handoff { content.insert(["type": "text", "text": handoff], at: 0) }
             let result = try await withAuthentication(conversation, connection: connection) {
                 try await connection.request("session/prompt", ["sessionId": sessionId, "prompt": content])
             }
+            conversation.handoff = nil
             conversation.signInOffered = false
             // v2 answers once the prompt is taken in: its idle `state_update` ends the turn.
             if conversation.protocolVersion >= 2 { return }
@@ -828,7 +963,7 @@ final class ConversationHost {
         } catch is SignInPending {
             conversation.turnOpen = false
             conversation.awaitingSignIn = blocks
-            conversation.queued.removeAll()
+            dropPrompts(conversation)
         } catch where conversation.prompts != prompt {
             // The idle state that ended this turn came first, and the next prompt runs.
         } catch where conversation.cancelling {
@@ -855,12 +990,8 @@ final class ConversationHost {
         append(conversation, ["sessionUpdate": "lilo_turn_end", "stopReason": stopReason, "at": Date().timeIntervalSince1970 * 1000])
         save(conversation)
         refreshDiff(conversation)
-        if !conversation.queued.isEmpty {
-            let next = conversation.queued.removeFirst()
-            append(conversation, ["sessionUpdate": "lilo_queued", "count": conversation.queued.count])
-            Task { await runTurn(conversation, blocks: next.blocks, checkpoint: next.checkpoint) }
-            return
-        }
+        drain(conversation, ready: true)
+        if conversation.turnOpen { return }
         if !isShown(conversation.tabId) {
             conversation.unread = true
             postDoneNotification(conversation)
@@ -873,9 +1004,12 @@ final class ConversationHost {
         conversation.turnOpen = false
         conversation.lastError = message
         append(conversation, ["sessionUpdate": "lilo_error", "message": message])
+        dropPrompts(conversation)
+        reportQueue(conversation)
         setState(conversation, .failed)
-        conversation.queued.removeAll()
         save(conversation)
+        // The state may already read failed (the agent exited first), which `setState` does not drain on.
+        drain(conversation)
     }
 
     /// A v2 `state_update` of the conversation's own session: the agent's turns, those it starts on its own
@@ -964,7 +1098,7 @@ final class ConversationHost {
         guard let sessionId = conversation.sessionId else { return }
         // Newest first, so settling them never offers the next one in a notification.
         for permission in conversation.permissions.reversed() {
-            let unanswered: [String: Any] = Self.isQuestion(permission.params) ? ["action": "cancel"] : ["outcome": ["outcome": "cancelled"]]
+            let unanswered: [String: Any] = Self.isElicitation(permission.params) ? ["action": "cancel"] : ["outcome": ["outcome": "cancelled"]]
             conversation.connection?.respond(id: permission.id.value["id"] as Any, result: unanswered)
             resolve(conversation, requestId: permission.requestId, optionId: nil)
         }
@@ -981,7 +1115,7 @@ final class ConversationHost {
         let work = DispatchWorkItem { [weak self, weak conversation] in
             // Stopping the agent would stop the commands it runs in the background.
             guard let self, let conversation, conversation.state == .idle, conversation.permissions.isEmpty,
-                  conversation.queued.isEmpty, conversation.background == 0 else { return }
+                  conversation.inbox.isEmpty, conversation.background == 0 else { return }
             Self.logger.info("stopping idle agent \(conversation.agentId, privacy: .public)")
             let connection = conversation.connection
             conversation.connection = nil
@@ -1001,6 +1135,9 @@ final class ConversationHost {
                 guard let connection = conversation.connection, let sessionId = conversation.sessionId else { return }
                 _ = try await connection.request("session/set_mode", ["sessionId": sessionId, "modeId": modeId])
                 append(conversation, ["sessionUpdate": "current_mode_update", "currentModeId": modeId])
+                let configId = Self.modeConfigId(in: conversation) ?? Self.modeChoiceId
+                agentChoices[conversation.agentId, default: [:]][configId] = modeId
+                unsafe UserDefaults.lilo.set(agentChoices, forKey: "agentConfigChoices")
                 scheduleIdleStop(conversation)
             } catch {
                 failedOutsideTurn(conversation, error)
@@ -1019,11 +1156,8 @@ final class ConversationHost {
                 let result = try await connection.request("session/set_config_option", params)
                 if let options = result["configOptions"] as? [Any] {
                     append(conversation, ["sessionUpdate": "config_option_update", "configOptions": options])
-                    let category = options.lazy.compactMap { $0 as? [String: Any] }.first { Self.configId(of: $0) == configId }?["category"] as? String
-                    if category != "mode" {
-                        agentChoices[conversation.agentId, default: [:]][configId] = value
-                        unsafe UserDefaults.lilo.set(agentChoices, forKey: "agentConfigChoices")
-                    }
+                    agentChoices[conversation.agentId, default: [:]][configId] = value
+                    unsafe UserDefaults.lilo.set(agentChoices, forKey: "agentConfigChoices")
                 }
                 scheduleIdleStop(conversation)
             } catch {
@@ -1035,6 +1169,17 @@ final class ConversationHost {
     /// v2 names an option `configId`.
     private static func configId(of option: [String: Any]) -> String? {
         option["configId"] as? String ?? option["id"] as? String
+    }
+
+    /// The option a v2 agent uses for its mode, if it offers one.
+    private static func modeConfigId(in conversation: Conversation) -> String? {
+        for entry in conversation.log.reversed() {
+            guard let options = entry.value["configOptions"] as? [[String: Any]] else { continue }
+            for option in options where option["category"] as? String == "mode" {
+                if let id = configId(of: option) { return id }
+            }
+        }
+        return nil
     }
 
     // MARK: - What the agent sends
@@ -1110,14 +1255,22 @@ final class ConversationHost {
                 params["toolCall"] = call
             }
             conversation.permissions.append((ACPConnection.Payload(value: ["id": id]), requestId, params))
-            append(conversation, Self.isQuestion(params) ? [
-                "sessionUpdate": "lilo_question", "requestId": requestId,
-                "message": params["message"] ?? "", "requestedSchema": params["requestedSchema"] ?? [:],
-                "toolCallId": params["toolCallId"] ?? NSNull()
-            ] : [
-                "sessionUpdate": "lilo_permission", "requestId": requestId,
-                "toolCall": params["toolCall"] ?? [:], "options": params["options"] ?? []
-            ])
+            if Self.isUrlElicitation(params) {
+                // A URL mode elicitation: the agent asks the user to open a page (a browser sign-in).
+                append(conversation, [
+                    "sessionUpdate": "lilo_sign_in_link", "requestId": requestId,
+                    "url": params["url"] ?? "", "message": params["message"] ?? ""
+                ])
+            } else {
+                append(conversation, Self.isQuestion(params) ? [
+                    "sessionUpdate": "lilo_question", "requestId": requestId,
+                    "message": params["message"] ?? "", "requestedSchema": params["requestedSchema"] ?? [:],
+                    "toolCallId": params["toolCallId"] ?? NSNull()
+                ] : [
+                    "sessionUpdate": "lilo_permission", "requestId": requestId,
+                    "toolCall": params["toolCall"] ?? [:], "options": params["options"] ?? []
+                ])
+            }
             updateTab(conversation)
             if conversation.permissions.count == 1, !isShown(conversation.tabId) { postPermissionNotification(conversation) }
         }
@@ -1134,15 +1287,22 @@ final class ConversationHost {
     /// Answers a question with `accept` and the form's values, `decline` or `cancel`.
     func answerQuestion(_ tabId: UUID, requestId: String, action: String, content: [String: Any]?) {
         guard let conversation = conversations[tabId],
-              let question = conversation.permissions.first(where: { $0.requestId == requestId }), Self.isQuestion(question.params) else { return }
+              let question = conversation.permissions.first(where: { $0.requestId == requestId }), Self.isElicitation(question.params) else { return }
         var result: [String: Any] = ["action": action]
-        if action == "accept" { result["content"] = content ?? [:] }
+        // A URL elicitation carries no content: the user consents to open the page, the interaction happens out of band.
+        if action == "accept", Self.isQuestion(question.params) { result["content"] = content ?? [:] }
         conversation.connection?.respond(id: question.id.value["id"] as Any, result: result)
         resolve(conversation, requestId: requestId, optionId: nil, answer: result)
     }
 
     /// An `elicitation/create` form, as opposed to a permission request.
     private static func isQuestion(_ params: [String: Any]) -> Bool { params["requestedSchema"] != nil }
+
+    /// An `elicitation/create` URL mode: the agent asks the user to open a page (a browser sign-in) out of band.
+    private static func isUrlElicitation(_ params: [String: Any]) -> Bool { params["mode"] as? String == "url" }
+
+    /// An elicitation the user answers in the conversation, with no options to offer: a form or a URL.
+    private static func isElicitation(_ params: [String: Any]) -> Bool { isQuestion(params) || isUrlElicitation(params) }
 
     /// The option of the oldest open permission request that has this kind (`allow_once`, `reject_once`...).
     func option(of tabId: UUID, kind: String) -> (requestId: String, optionId: String)? {
@@ -1210,6 +1370,7 @@ final class ConversationHost {
         conversation.state = state
         updateTab(conversation)
         if state == .busy { keepAwake(conversation) }
+        if state == .idle || state == .failed { drain(conversation) }
     }
 
     /// The agent's question about a page opened or closed: its row turns amber or back.
@@ -1309,7 +1470,7 @@ final class ConversationHost {
                     "requestId": permission.requestId,
                     "title": (permission.params["toolCall"] as? [String: Any])?["title"] as? String ?? permission.params["message"] as? String ?? "",
                     "options": permission.params["options"] ?? [],
-                    "question": Self.isQuestion(permission.params),
+                    "question": Self.isElicitation(permission.params),
                     "count": conversation.permissions.count
                 ]
             }
@@ -1330,7 +1491,7 @@ final class ConversationHost {
         content.sound = .default
         content.threadIdentifier = conversation.tabId.uuidString
         // A question is answered in its form: the notification only opens the conversation.
-        if !Self.isQuestion(permission.params) { content.categoryIdentifier = UNNotificationCategory.conversationPermission }
+        if !Self.isElicitation(permission.params) { content.categoryIdentifier = UNNotificationCategory.conversationPermission }
         content.userInfo = ["conversationTabId": conversation.tabId.uuidString]
         UNUserNotificationCenter.requestAuthorizationAndAdd(
             UNNotificationRequest(identifier: Self.notificationId(conversation.tabId), content: content, trigger: nil)

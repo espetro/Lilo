@@ -7,6 +7,11 @@
 The report prints `ok  NAME 1.2s` or `FAIL NAME 1.2s` per check, then the full log of the failed checks only,
 then a line counting the bytes printed above it (what an agent pays to read the report). With --json it prints
 one object per check instead: check, ok, dur_s, bytes (the log's size) and, when it failed, log_tail (its last 20 lines).
+
+When `make metrics-on` is active, `run` also writes one record per check (phase "check") to the metrics file
+beside the recipe records, which `metrics.py summary` ignores. Optional fields come from the environment:
+LILO_CHECK_TIER, LILO_CHECK_TRIGGER and LILO_CHECK_SCOPE; `rerun_of` is the `ts` of this check's previous failed
+record in the same worktree and branch, when the one before this run failed. See docs/build-baseline.md.
 """
 import json
 import os
@@ -14,7 +19,13 @@ import subprocess
 import sys
 import time
 
+import metrics
+
 TAIL_LINES = 20
+
+# How far back in the metrics file to look for the previous run of a check: a read of this size costs well under a millisecond.
+LOOKBACK_BYTES = 256 * 1024
+OPTIONAL = {"tier": "LILO_CHECK_TIER", "trigger": "LILO_CHECK_TRIGGER", "scope": "LILO_CHECK_SCOPE"}
 
 
 def paths(logdir, name):
@@ -28,9 +39,40 @@ def write_atomically(path, text):
     os.replace(temporary, path)
 
 
+def previous_failure(record):
+    """The ts of the last record of this check in this worktree and branch, when that run failed."""
+    try:
+        with open(metrics.metrics_file(), "rb") as file:
+            file.seek(0, os.SEEK_END)
+            file.seek(max(file.tell() - LOOKBACK_BYTES, 0))
+            lines = file.read().decode("utf-8", "replace").splitlines()
+    except OSError:
+        return None
+    for line in reversed(lines):
+        try:
+            last = json.loads(line)
+        except ValueError:
+            continue
+        if (last.get("phase"), last.get("target"), last.get("worktree"), last.get("branch")) == \
+                ("check", record["target"], record["worktree"], record["branch"]):
+            return last["ts"] if last.get("exit") != 0 else None
+    return None
+
+
 def run(name, logdir, command):
     """Run COMMAND quietly. Returns its exit status."""
     log, result = paths(logdir, name)
+    # LILO_METRICS_DIRTY is what metrics.py hands the recipes it wraps: it is set when, and only when, metrics are on.
+    recording = "LILO_METRICS_DIRTY" in os.environ
+    record = None
+    if recording:
+        begin = time.perf_counter()
+        record = metrics.start_record(name, "check")
+        record.update({field: os.environ[variable] for field, variable in OPTIONAL.items() if os.environ.get(variable)})
+        rerun = previous_failure(record)
+        if rerun:
+            record["rerun_of"] = rerun
+        overhead = time.perf_counter() - begin
     started = time.perf_counter()
     with open(log, "wb") as output:
         try:
@@ -41,6 +83,11 @@ def run(name, logdir, command):
     duration = round(time.perf_counter() - started, 1)
     code = 128 - code if code < 0 else code
     write_atomically(result, json.dumps({"check": name, "ok": code == 0, "dur_s": duration, "bytes": os.path.getsize(log)}))
+    if recording:
+        try:
+            metrics.append(metrics.finish_record(record, started, code, overhead))
+        except OSError:
+            pass  # a full disk must not fail the gate
     return code
 
 

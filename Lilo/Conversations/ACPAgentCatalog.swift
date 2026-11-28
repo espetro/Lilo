@@ -47,6 +47,8 @@ final class ACPAgentCatalog {
     private var loadedAt: Date?
     private var loading: Task<Void, Never>?
     private var shellPath: String?
+    /// The login shell's exported variables, loaded once; see `shellEnvironment()`.
+    private var shellEnvironmentCache: [String: String]?
     /// The stored JSON of the user's commands, read at each use so a change in Settings needs no restart.
     var commandsSetting: () -> String? = { nil }
     /// npm agent folders started or being installed since launch: a running conversation may still use them.
@@ -178,11 +180,18 @@ final class ACPAgentCatalog {
         return unsafe sysctlbyname("hw.optional.arm64", &value, &size, nil, 0) == 0 && value == 1
     }
 
-    /// The command that starts `agent`, with the user's shell PATH: Lilo started from the Finder has none of
-    /// what `.zshrc` adds, where node and the agents usually are.
+    /// The command that starts `agent`, with the user's shell environment: Lilo started from the Finder has
+    /// none of what `.zshrc` adds, where node and the API keys agents read live.
     func launch(_ agent: Agent) async throws -> (executable: URL, arguments: [String], environment: [String: String]) {
         var environment = ProcessInfo.processInfo.environment
-        let path = await userPath()
+        let shell = await shellEnvironment()
+        environment.merge(shell) { _, new in new }
+        let path: String
+        if let shellPath = shell["PATH"] {
+            path = shellPath
+        } else {
+            path = await userPath()
+        }
         environment["PATH"] = path
         switch agent.distribution {
         case .npx(let package, let args):
@@ -228,6 +237,8 @@ final class ACPAgentCatalog {
         } + Self.commandAgents(commandsSetting())
     }
 
+    /// The login shell's PATH: where version managers and Homebrew put node, uv and the agents. Kept as its
+    /// own variable because `find` needs the folders even when the whole environment fails to load.
     private func userPath() async -> String {
         if let shellPath { return shellPath }
         let marker = "__LILO_PATH__"
@@ -238,6 +249,37 @@ final class ACPAgentCatalog {
         let path = found.isEmpty ? fallback : found + ":" + fallback
         shellPath = path
         return path
+    }
+
+    /// The login shell's exported variables, keys a conversation's agent reads (`API_KEY`-shaped ones above
+    /// all) that Lilo started from the Finder never sees. One shell run, cached; a custom agent's own
+    /// `environment` lines win over it. Empty when the shell fails or hangs: the inherited environment and
+    /// the PATH above still stand.
+    private func shellEnvironment() async -> [String: String] {
+        if let shellEnvironmentCache { return shellEnvironmentCache }
+        let marker = "__LILO_ENV__"
+        let output = await AgentClientConfig.run(
+            "/bin/zsh",
+            ["-ilc", "printf '\(marker)'; /usr/bin/env -0; printf '\(marker)'"],
+            timeout: 10
+        ).output ?? ""
+        let result = Self.parseShellEnvironment(output, marker: marker)
+        shellEnvironmentCache = result
+        return result
+    }
+
+    /// The `NAME=value` entries between the markers; `env -0` separates them with NUL bytes. Entries
+    /// without an `=` are skipped, as is anything outside the markers (a chatty profile's output).
+    nonisolated static func parseShellEnvironment(_ output: String, marker: String) -> [String: String] {
+        let parts = output.components(separatedBy: marker)
+        guard parts.count >= 3 else { return [:] }
+        var result: [String: String] = [:]
+        for entry in Data(parts[1].utf8).split(separator: 0) {
+            guard let text = String(data: Data(entry), encoding: .utf8),
+                  let equals = text.firstIndex(of: "="), equals != text.startIndex else { continue }
+            result[String(text[..<equals])] = String(text[text.index(after: equals)...])
+        }
+        return result
     }
 
     private static func find(_ name: String, in path: String) -> String? {

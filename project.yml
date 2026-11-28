@@ -12,6 +12,8 @@ packages:
   Sparkle:
     url: https://github.com/sparkle-project/Sparkle
     from: 2.10.0
+  LiloPluginKit:
+    path: Packages/LiloPluginKit
 
 targets:
   Lilo:
@@ -44,15 +46,17 @@ targets:
           # Named apart in Privacy & Security and the Dock, where it would sit beside the installed Lilo.
           LILO_APP_NAME: Lilo Debug
           # Each build ships only the launch daemon its PowerHelperIdentity registers.
-          EXCLUDED_SOURCE_FILE_NAMES: fr.arouillard.lilo.power.plist
+          EXCLUDED_SOURCE_FILE_NAMES: fr.arouillard.lilo.power.plist fr.arouillard.lilo.beta.power.plist
         Release:
           CODE_SIGN_ENTITLEMENTS: Lilo/Lilo.entitlements
-          EXCLUDED_SOURCE_FILE_NAMES: fr.arouillard.lilo.debug.power.plist
+          EXCLUDED_SOURCE_FILE_NAMES: fr.arouillard.lilo.debug.power.plist fr.arouillard.lilo.beta.power.plist
     dependencies:
       - package: GRDB
         product: GRDB
       - package: Sparkle
         product: Sparkle
+      - package: LiloPluginKit
+        product: PluginCore
       - framework: Vendor/GhosttyVt.xcframework
         embed: false
       - target: LiloPowerHelper
@@ -60,6 +64,10 @@ targets:
         copy:
           destination: executables
       - target: LiloMCP
+        embed: true
+        copy:
+          destination: executables
+      - target: LiloCompanionHost
         embed: true
         copy:
           destination: executables
@@ -73,6 +81,11 @@ targets:
           - ContentBlocker/BlockerResources
           - Generated
           - Resources
+          # The lilo-companion tool target's own files: its entry point and the process loop the
+          # app never runs. The protocol and the registration stay in the app, which writes the
+          # manifest the browser reads.
+          - Companion/main.swift
+          - Companion/CompanionHostMain.swift
       # Copied whole into the content blocker's built-in extension: kept as one folder.
       - path: Lilo/ContentBlocker/BlockerResources
         type: folder
@@ -89,6 +102,12 @@ targets:
           copyFiles:
             destination: wrapper
             subpath: Contents/Library/LaunchDaemons
+      # Fork-only: the rolling beta's daemon, shipped only when LILO_BETA=1 (scripts/build-app.sh).
+      - path: LiloPowerHelper/fr.arouillard.lilo.beta.power.plist
+        buildPhase:
+          copyFiles:
+            destination: wrapper
+            subpath: Contents/Library/LaunchDaemons
       - path: Lilo/Lilo.Debug.entitlements
         buildPhase: none
       - path: Lilo/Lilo.entitlements
@@ -97,6 +116,7 @@ targets:
         buildPhase: resources
         includes:
           - "AppIcon.icon"
+          - "AppIconBeta.icon"
           - "Lilo.sdef"
           - "fr.lproj"
           - "es.lproj"
@@ -115,11 +135,20 @@ targets:
       - path: Lilo/Resources/AppIcons
         type: folder
         buildPhase: resources
+      # The companion host's manifest template, which CompanionHostRegistration fills with the
+      # running app's host path and the pinned extension id.
+      - path: Lilo/Resources/companion-host
+        type: folder
+        buildPhase: resources
       - path: Lilo/Resources/shell-integration
         type: folder
         buildPhase: resources
       # Images of the chrome UI, which ChromeUISchemeHandler serves from the bundle and Vite's dev server from public/.
       - path: lilo-ui/public/password-managers
+        type: folder
+        buildPhase: resources
+      # First-party plugins (manifest + sidecar + catalog), scanned by PluginHost from the bundle's Resources/Plugins.
+      - path: Plugins
         type: folder
         buildPhase: resources
       # The installed release's films and stills, which ChromeUISchemeHandler serves with byte ranges.
@@ -162,6 +191,26 @@ targets:
       - path: LiloMCP/main.swift
       - path: Lilo/App/BuildIdentity.swift
 
+  # What the companion extension's browser launches as its native-messaging host: serves the
+  # protocol.ts schema over stdio. Ships in the app bundle; the app registers it with the user's
+  # Chromium browsers from the manifest template in Contents/Resources/companion-host.
+  LiloCompanionHost:
+    type: tool
+    platform: macOS
+    configFiles: *configFiles
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: fr.arouillard.lilo.companion
+        PRODUCT_NAME: lilo-companion
+        GENERATE_INFOPLIST_FILE: YES
+        CREATE_INFOPLIST_SECTION_IN_BINARY: YES
+        SKIP_INSTALL: YES
+    sources:
+      - path: Lilo/Companion/main.swift
+      - path: Lilo/Companion/CompanionHost.swift
+      - path: Lilo/Companion/CompanionHostMain.swift
+      - path: Lilo/App/Logging.swift
+
   LiloTests:
     type: bundle.unit-test
     platform: macOS
@@ -169,6 +218,8 @@ targets:
       - path: LiloTests
     dependencies:
       - target: Lilo
+      - package: LiloPluginKit
+        product: TestingSupport
     settings:
       base:
         # Not on the shared xcconfig's Swift 6: the tests are not yet clean under strict concurrency.

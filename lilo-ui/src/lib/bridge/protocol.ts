@@ -32,7 +32,7 @@ export interface ImportProfileInfo {
 export interface ImportSourceInfo {
 	id: string;
 	name: string;
-	family: "chromium" | "safari" | "firefox";
+	family: "chromium" | "safari" | "firefox" | "lilo";
 	/** The installed browser's own icon; empty when macOS cannot resolve the app. */
 	iconDataURL: string;
 	needsFullDiskAccess: boolean;
@@ -149,6 +149,20 @@ export interface BridgeConversationOpened {
 
 export type BridgeConversationState = "idle" | "starting" | "busy" | "failed";
 
+export type BridgeConversationPlacement = "mini" | "dialog" | "split" | "tab";
+
+export interface BridgeConversationSurfaceRequested {
+	tabId: string;
+	sourceTabId: string;
+	placement: "mini" | "dialog";
+	surfaceRequestId: string;
+}
+
+export interface BridgeConversationSurfaceFailed {
+	surfaceRequestId: string;
+	message: string;
+}
+
 export interface BridgePermissionOption {
 	optionId: string;
 	name: string;
@@ -172,6 +186,38 @@ export interface BridgeConversationSummary {
 	lastActivity?: number;
 }
 
+/** A model or a mode an agent's session offers. */
+export interface BridgeAgentChoice {
+	id: string;
+	name: string;
+	description?: string;
+}
+
+export interface BridgeAgentAuthMethod {
+	id: string;
+	name: string;
+	/** `agent`: the agent signs in itself; `terminal`: Lilo runs a command in a terminal. */
+	type: string;
+	description?: string;
+}
+
+/**
+ * What the last probe of an agent found. `unverified`: the probe itself failed, the agent may work.
+ * `unavailable`: it cannot start. A record is never required to start an agent.
+ */
+export interface BridgeAgentReadiness {
+	state: "ready" | "needsSignIn" | "unavailable" | "unverified";
+	reason?: string;
+	models?: BridgeAgentChoice[];
+	/** The session option that sets the model: where a model chosen before the first prompt goes. */
+	modelConfigId?: string;
+	currentModel?: string;
+	modes?: BridgeAgentChoice[];
+	authMethods?: BridgeAgentAuthMethod[];
+	/** Epoch milliseconds. */
+	probedAt: number;
+}
+
 export interface BridgeAgentInfo {
 	id: string;
 	name: string;
@@ -182,6 +228,9 @@ export interface BridgeAgentInfo {
 	featured?: boolean;
 	/** One of the user's own commands from Settings rather than a registry entry. */
 	command?: boolean;
+	readiness?: BridgeAgentReadiness;
+	/** A probe is running. */
+	checking?: boolean;
 }
 
 export interface BridgeFolderLock {
@@ -199,6 +248,8 @@ export interface BridgeTabFolderSnapshot {
 	splitLayout?: BridgeSplitLayout;
 	isLocked?: boolean;
 	lock?: BridgeFolderLock | null;
+	/** A conversation's own tab, which a split can hold outside this folder of its pages. */
+	conversationTabId?: string;
 }
 
 // BridgeTabSnapshot is generated from bridge-schema/tab.json, edit the schema, run `make bridge-gen`.
@@ -729,6 +780,8 @@ export interface BridgeCommandPayloadMap {
 	splitTab: { tabId: string; side: SplitDropSide; targetTabId?: string };
 	/** Takes a split pane's tab out of the split, back into the list; the tab stays open. */
 	unsplitTab: { tabId: string };
+	/** Leaves a split pane's tab as the split's only pane; the others return to the list. */
+	maximizeSplitPane: { tabId: string };
 	splitURL: { url: string; side: SplitDropSide; targetTabId?: string };
 	openDroppedLinks: { urls: string[] } & BridgeLinkDropTarget;
 	peekURL: { url: string };
@@ -836,6 +889,12 @@ export interface BridgeCommandPayloadMap {
 	answerTerminal: { tabId: string; text: string };
 	restoreClosedTerminal: { index: number };
 	getKeepAwakeState: EmptyPayload;
+	getPlugins: EmptyPayload;
+	setPluginEnabled: { id: string; enabled: boolean };
+	setPluginSetting: { id: string; name: string; value: BridgePluginSettingValue };
+	revokePluginCapability: { id: string; capability: string };
+	showPluginInFinder: { id: string };
+	stopPlugin: { id: string };
 	joinMeeting: { id: string };
 	dismissMeeting: { id: string };
 	getAgentActivity: EmptyPayload;
@@ -859,12 +918,21 @@ export interface BridgeCommandPayloadMap {
 		text: string;
 		attachments: BridgeConversationAttachment[];
 		background: boolean;
+		/** A model of the agent's record, set once its session opens; absent keeps the agent's default. */
+		model?: string;
+		/** Where the conversation appears; absent keeps the activated tab. `background` wins over it. */
+		placement?: BridgeConversationPlacement;
+		/** The non-agent tab the surface binds to or the split opens beside. */
+		sourceTabId?: string;
+		/** Pairs a delayed native start with the pending surface; `conversationSurfaceFailed` answers it. */
+		surfaceRequestId?: string;
 	};
 	sendConversationPrompt: { tabId: string; text: string; attachments: BridgeConversationAttachment[]; interrupt: boolean };
 	cancelConversation: { tabId: string };
 	/** `optionId` absent cancels the request. */
 	answerConversation: { tabId: string; requestId: string; optionId?: string };
-	answerConversationQuestion: { tabId: string; requestId: string; action: "accept" | "decline"; content?: Record<string, string | number | boolean | string[]> };
+	/** `action` answers a form or a URL elicitation; a URL's accept is consent to open the page. */
+	answerConversationQuestion: { tabId: string; requestId: string; action: "accept" | "decline" | "cancel"; content?: Record<string, string | number | boolean | string[]> };
 	setConversationMode: { tabId: string; modeId: string };
 	setConversationConfig: { tabId: string; configId: string; value: string | boolean };
 	/** The chrome shows (or stops showing) a conversation: Lilo replays it, then streams its updates. */
@@ -872,11 +940,17 @@ export interface BridgeCommandPayloadMap {
 	restoreConversation: { tabId: string; checkpoint: number };
 	undoConversationFile: { tabId: string; path: string; checkpoint: number };
 	loadAgentCatalog: { refresh: boolean };
+	/** Probes an agent unless its record is recent (`force` always); answered with `agentReadiness`. */
+	probeAgent: { agentId: string; force?: boolean };
+	/** Signs in with one of the methods the agent's record lists, then probes it again. */
+	signInAgent: { agentId: string; methodId: string };
 	loadConversations: EmptyPayload;
 	chooseConversationProject: EmptyPayload;
 	openConversationChanges: { tabId: string };
 	openConversationFile: { tabId: string; path: string; reveal: boolean };
 	authenticateConversation: { tabId: string; methodId: string };
+	/** Hands the conversation to another agent once its running turn ends; the thread stays, and the new agent gets a summary of it. */
+	switchConversationAgent: { tabId: string; agentId: string };
 	/** Starts the agent of a conversation whose `/` commands are not known yet: its session lists them. */
 	loadConversationCommands: { tabId: string };
 	/** Types into the agent's sign-in Lilo runs on a hidden terminal: a menu's key, or a line ending with Return. */
@@ -892,6 +966,8 @@ export interface BridgeCommandPayloadMap {
 	getAgentActionLog: EmptyPayload;
 	/** Reveals the folder of the action log in Finder. */
 	openAgentActionLog: EmptyPayload;
+	/** Asks for the run ledger's recent runs: answered with `agentRuns`. */
+	getAgentRuns: EmptyPayload;
 	revokeAgentClient: { name: string };
 	setAgentClientPermission: { key: string } & BridgeAgentPermission;
 	getAppNames: { ids: string[] };
@@ -904,6 +980,8 @@ export interface BridgeCommandPayloadMap {
 	dismissWhatsNew: EmptyPayload;
 	unlockDeveloperTools: EmptyPayload;
 	setAutomaticUpdates: { enabled: boolean };
+	/** An empty URL clears the override: the feed compiled into the build applies again. */
+	setBetaFeedURL: { url: string };
 	getShortcuts: EmptyPayload;
 	/** Records the next key press for this action; null stops recording. */
 	recordShortcut: { id: string | null };
@@ -1111,11 +1189,17 @@ export interface BridgeEventPayloadMap {
 	tabGlanceEnded: EmptyPayload;
 	/** A conversation the chrome asked to show: its whole log, then `conversationUpdate` as it grows. */
 	conversationOpened: BridgeConversationOpened;
+	/** A mini or dialog surface's conversation exists; `surfaceRequestId` pairs it with the pending shell. */
+	conversationSurfaceRequested: BridgeConversationSurfaceRequested;
+	/** The matching `startConversation` failed before a conversation tab existed. */
+	conversationSurfaceFailed: BridgeConversationSurfaceFailed;
 	/** Updates of one conversation since the last delivery, oldest first. */
 	conversationUpdate: { tabId: string; updates: BridgeConversationUpdate[] };
 	/** Every conversation of every Space, for the Agents badge and popover. */
 	conversationsChanged: { conversations: BridgeConversationSummary[] };
 	agentCatalog: { agents: BridgeAgentInfo[]; projects: string[]; home: string };
+	/** An agent's probe started or ended, or its record changed. */
+	agentReadiness: { agentId: string; checking: boolean; readiness?: BridgeAgentReadiness };
 	conversationProjectChosen: { path: string };
 	/** Paths relative to `cwd`, best match first. */
 	conversationFiles: { cwd: string; query: string; files: string[] };
@@ -1201,6 +1285,8 @@ export interface BridgeEventPayloadMap {
 		closedTerminals?: BridgeClosedTerminal[];
 	};
 	keepAwakeChanged: BridgeKeepAwakeState;
+	/** Every plugin the host knows, rejected ones included, after any change. */
+	pluginsChanged: { plugins: BridgePluginRow[] };
 	/** The calendar event whose card shows, null when none does. */
 	meetingChanged: { meeting: BridgeMeeting | null };
 	agentActivity: {
@@ -1219,6 +1305,7 @@ export interface BridgeEventPayloadMap {
 	agentClientsLoaded: BridgeAgentClientsSnapshot;
 	agentClientPreview: BridgeAgentClientPreview;
 	agentActionLog: BridgeAgentActionLog;
+	agentRuns: { runs: BridgeAgentRun[] };
 	appNames: { names: Record<string, string> };
 	updaterStatus: BridgeUpdaterStatus;
 	/** The downloaded update waiting for a relaunch; null once dismissed. */
@@ -1371,8 +1458,67 @@ export interface BridgeAgentActionLog {
 	}[];
 }
 
+/** One authorized agent session's merged start/end lines from the run ledger: who worked, where and for
+ * how long. Ids, names, a pseudonymous client key and counts only — never content, arguments or URLs. */
+export interface BridgeAgentRun {
+	/** The session's id: one per connection, stable for the run's life. */
+	id: string;
+	/** The handshake's client name, and a stable pseudonymous hash of its name and identity. */
+	client: string;
+	clientKey: string;
+	/** ISO 8601: when the run was let in, and when its session connected. */
+	started: string;
+	connected: string | null;
+	/** ISO 8601 of the end; null while the run is open or was cut short by a quit. */
+	ended: string | null;
+	/** How it finished: "disconnected", "revoked", "stopped" or "adopted"; null while open. */
+	reason: string | null;
+	/** `open` would hide whether the session is live now: an end-less run of a past launch is interrupted. */
+	state: "running" | "ended" | "interrupted";
+	tools: number;
+	errors: number;
+	tabs: number;
+	folders: string[];
+	space: string | null;
+	profile: string | null;
+	isolated: boolean;
+	conversation: string | null;
+}
+
 export interface BridgeKeepAwakeState {
 	helperStatus: "unsigned" | "notRegistered" | "requiresApproval" | "enabled" | "notFound";
+}
+
+export type BridgePluginSettingValue = string | number | boolean;
+
+/** A setting a plugin's manifest contributes; the panel renders it, the plugin never draws UI. */
+export interface BridgePluginSettingSpec {
+	name: string;
+	type: "text" | "password" | "dropdown" | "toggle" | "number";
+	title: string;
+	/** The choices of a `dropdown`. */
+	options?: string[];
+	default?: BridgePluginSettingValue;
+	required?: boolean;
+}
+
+/** One plugin folder: `capabilities` are what its manifest asks for, `grantedCapabilities` what the user allowed. */
+export interface BridgePluginRow {
+	id: string;
+	title: string;
+	version: string;
+	icon?: string;
+	enabled: boolean;
+	running: boolean;
+	/** Set when the manifest failed validation: the plugin is listed, never started. */
+	rejectionReason?: string;
+	capabilities: string[];
+	grantedCapabilities: string[];
+	settings: BridgePluginSettingSpec[];
+	/** The values the user set; a missing name takes the spec's `default`. */
+	settingValues: Record<string, BridgePluginSettingValue>;
+	/** The plugin's own support folder. */
+	supportDir: string;
 }
 
 export interface BridgeRunningApp {
@@ -1423,6 +1569,15 @@ export interface BridgeUpdaterStatus {
 	available: boolean;
 	automatic: boolean;
 	lastCheck: number | null;
+	/** True when an unsigned build watches a plain release feed (the fork beta); the beta fields then apply. */
+	betaFeed: boolean;
+	/** The release feed the beta check reads; null when none applies. */
+	betaFeedURL: string | null;
+	/** The feed URL the Settings field stored, null while the build's own feed applies. */
+	betaFeedURLOverride: string | null;
+	/** The newer beta release found: tag and release page; null while this build is the newest or none checked yet. */
+	betaAvailable: { tag: string; url: string } | null;
+	betaLastCheck: number | null;
 }
 
 /** One menu's actions, keys already spelled with their symbols; `custom` when the user changed them. */
@@ -1456,8 +1611,8 @@ export interface BridgeShortcutConflict {
 
 /** A click ("click") or form submission ("enter") an agent is about to make on a control labelled `label`. */
 export interface BridgeAgentAction {
-	/** For "upload", `label` is the file's path; for "fetch", the request's method and URL. */
-	kind: "click" | "enter" | "fetch" | "upload";
+	/** For "upload", `label` is the file's path; for "fetch", the request's method and URL; for "tool", a plugin's tool name. */
+	kind: "click" | "enter" | "fetch" | "upload" | "tool";
 	label: string;
 	site: string;
 	tab: string;
@@ -1480,6 +1635,8 @@ export interface BridgeAgentClient {
 	actingTabIds: string[];
 	/** The Agents spaces it works in. */
 	spaceIds: string[];
+	/** It asked the user something and a call waits on the answer. */
+	waitingForUser: boolean;
 }
 
 export type BridgeMediaAction = "play" | "pause" | "nexttrack" | "previoustrack";

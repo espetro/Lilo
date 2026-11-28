@@ -499,6 +499,11 @@ export const createDemoSettings = ({
       emit("updaterStatus", {
         automatic: false,
         available: false,
+        betaAvailable: null,
+        betaFeed: false,
+        betaFeedURL: null,
+        betaFeedURLOverride: null,
+        betaLastCheck: null,
         lastCheck: null,
         version,
         webKitFork: false,

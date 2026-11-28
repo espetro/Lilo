@@ -1,0 +1,3 @@
+kind: Fixed
+body: The Agents popover reuses the translated Connected label for idle MCP clients instead of carrying its own copy
+time: 2026-11-26T13:11:33.405122-08:00

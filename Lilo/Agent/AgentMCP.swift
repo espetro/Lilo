@@ -34,8 +34,8 @@ enum AgentMCP {
                 if session.isUnanswered { ask(session, control: control) }
                 let text = if session.isRefused {
                     "The user did not allow \(session.clientName) to control Lilo: ask them to allow it, then reconnect the lilo MCP server"
-                } else if control.context?.windows.windows.isEmpty ?? true {
-                    "Lilo has no window to ask the user to allow \(session.clientName) in: ask them to open one, then call the tool again"
+                } else if (control.context?.windows.windows.isEmpty ?? true) || Headless.isOn {
+                    "Lilo asked you in a notification to allow \(session.clientName): answer it, then call the tool again"
                 } else {
                     "Lilo is waiting for the user to allow \(session.clientName): ask them to answer the prompt under Lilo's address bar, then call the tool again"
                 }
@@ -75,12 +75,31 @@ enum AgentMCP {
         case "ping":
             return result(id: id, [:])
         case "tools/list":
-            return result(id: id, ["tools": AgentTools.definitions])
+            let pluginTools = await AgentPluginTools.definitions(control: control)
+            var tools = AgentTools.definitions + pluginTools
+            #if DEBUG
+            tools.append(AgentWindowCapture.definition)
+            #endif
+            return result(id: id, ["tools": tools])
         case "tools/call":
             // Queued behind a freeze, a request whose client cancelled it or left does nothing.
             guard !Task.isCancelled else { return nil }
-            let name = params["name"] as? String ?? ""
-            let arguments = params["arguments"] as? [String: Any] ?? [:]
+            let rawName = params["name"] as? String ?? ""
+            let rawArguments = params["arguments"] as? [String: Any] ?? [:]
+            // A static lookup, answered without ever starting the deadline, overlap or action-log machinery below.
+            if rawName == "devtools", rawArguments["help"] as? Bool == true {
+                let inner = rawArguments["tool"] as? String ?? ""
+                guard let definition = AgentDevTools.definitions.first(where: { $0["name"] as? String == inner }) else {
+                    return result(id: id, ["content": [AgentContent.text(
+                        "Unknown tool: \(inner). One of \(AgentDevTools.umbrellaNames.joined(separator: ", "))."
+                    ).json], "isError": true])
+                }
+                return result(id: id, ["content": [AgentContent.text(AgentTools.json(definition)).json]])
+            }
+            // Every tool identity below (the deadline, the overlap warning, the action log, flow recording
+            // and the cursor's mood) is the real tool a `devtools` call named, flat arguments and all - exactly
+            // as a direct call to it would be.
+            let (name, arguments) = AgentTools.identity(rawName, rawArguments)
             QuitSource.noteAgentTool(name)
             session.activeCalls += 1
             let startedAt = Date()
@@ -146,10 +165,14 @@ enum AgentMCP {
             var timer: Task<Void, Never>?
             defer { timer?.cancel() }
             let record = { (ok: Bool, code: String?) in
-                guard control.context?.settingsStore?.get(AgentActionLog.settingKey) != "false", AgentTools.toolNames.contains(name) else { return }
+                guard control.context?.settingsStore?.get(AgentActionLog.settingKey) != "false" else { return }
+                session.toolCalls += 1
+                if !ok { session.toolErrors += 1 }
+                let plugin = AgentTools.toolNames.contains(name) ? nil : control.pluginHost?.contributedTool(named: name)?.record.id
+                guard plugin != nil || AgentTools.toolNames.contains(name) else { return }
                 control.actionLog.record(
                     tool: name, arguments: arguments, session: session, host: control.actionHost(arguments, session: session),
-                    ok: ok, code: code, possibleCommit: sent.write, startedAt: startedAt
+                    ok: ok, code: code, possibleCommit: sent.write, startedAt: startedAt, plugin: plugin
                 )
             }
             do {
@@ -200,6 +223,7 @@ enum AgentMCP {
 
     private static func welcome(_ session: AgentSession, control: AgentControl) {
         session.isAuthorized = true
+        control.recordRunStart(session)
         control.resumeDroppedSession(into: session)
         control.refreshControlledTabs()
         control.publishActivity()
@@ -243,33 +267,6 @@ enum AgentMCP {
         error["data"] = data
         return ["jsonrpc": "2.0", "id": id, "error": error]
     }
-}
-
-enum AgentContent {
-    case text(String)
-    /// A PNG, base64 encoded off the main thread.
-    case image(String)
-
-    var json: [String: Any] {
-        switch self {
-        case .text(let text): ["type": "text", "text": text]
-        case .image(let base64): ["type": "image", "data": base64, "mimeType": "image/png"]
-        }
-    }
-}
-
-struct AgentToolError: LocalizedError {
-    let message: String
-    /// Stable and machine-readable, sent as `_meta["lilo/errorCode"]`: "needs_user" when only the user can unblock the call.
-    let code: String?
-    /// The consent answer behind a `needs_user` refusal, sent as `_meta["lilo/consent"]`.
-    let consent: ConsentAnswer?
-    init(_ message: String, code: String? = nil, consent: ConsentAnswer? = nil) {
-        self.message = message
-        self.code = code
-        self.consent = consent
-    }
-    var errorDescription: String? { message }
 }
 
 /// Marks a tool call that sent something that can change the site (a click, Enter, a write request), so its failure

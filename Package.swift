@@ -8,7 +8,8 @@ let package = Package(
     ],
     dependencies: [
         .package(url: "https://github.com/groue/GRDB.swift.git", from: "7.10.0"),
-        .package(url: "https://github.com/sparkle-project/Sparkle", from: "2.10.0")
+        .package(url: "https://github.com/sparkle-project/Sparkle", from: "2.10.0"),
+        .package(path: "Packages/LiloPluginKit")
     ],
     targets: [
         .executableTarget(
@@ -16,6 +17,7 @@ let package = Package(
             dependencies: [
                 .product(name: "GRDB", package: "GRDB.swift"),
                 .product(name: "Sparkle", package: "Sparkle"),
+                .product(name: "PluginCore", package: "LiloPluginKit"),
                 "GhosttyVt"
             ],
             path: "Lilo",
@@ -24,6 +26,8 @@ let package = Package(
                 "Extensions/bridge-src",
                 "Lilo.entitlements",
                 "Lilo.Debug.entitlements",
+                // Top-level code of the lilo-companion tool target, built through Xcode only.
+                "Companion/main.swift",
                 // Compiled by Xcode into default.metallib; SwiftPM builds have no terminal renderer.
                 "Terminal/TerminalShaders.metal"
             ],
@@ -54,7 +58,11 @@ let package = Package(
         .binaryTarget(name: "GhosttyVt", path: "Vendor/GhosttyVt.xcframework"),
         .testTarget(
             name: "LiloTests",
-            dependencies: ["Lilo", "GhosttyVt"],
+            dependencies: [
+                "Lilo",
+                "GhosttyVt",
+                .product(name: "TestingSupport", package: "LiloPluginKit")
+            ],
             path: "LiloTests"
         )
     ]

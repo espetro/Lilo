@@ -98,7 +98,7 @@ python3 -I bench/mcp/fixtures.py serve   # print one URL per task, to open the p
 
 - Each run gets its own path on the server (`/<run>/<task>/`), so cookies or storage a page left in
   Lilo's agents profile and reports from an earlier run never count for the next one.
-- Only the `gate-checkout-icon`, `gate-login` and `flow-gate-pay` tasks (marked `asks`) trigger Lilo's question before consequential actions. A Debug build answers it by itself: `LILO_AGENT_CLICKS=allow` (the default of `make agent-app`, `CLICKS=allow`) says yes to every question, so the other tasks never wait, and `deny` says no at once, which the click reports as the `needs_user` of a user who declined, without the 45 s wait. `make agent-eval` runs the `asks` tasks against an app started with `CLICKS=deny` and the rest against one started with `allow`, restarting the app it started between the two (`make agent-app-restart CLICKS=deny`; quit a Debug app started by hand first) and stopping it at the end. Only a Debug build reads the variable.
+- Only the `gate-checkout-icon`, `gate-login` and `flow-gate-pay` tasks (marked `asks`) trigger Lilo's question before consequential actions. A Debug build answers it by itself: `LILO_AGENT_CLICKS=allow` (the default of `make agent-app`, `CLICKS=allow`) says yes to every question, so the other tasks never wait, `deny` says no at once, which the click reports as the `needs_user` of a user who declined, and `expire` lets the question lapse at once, reported as unanswered; both without the 45 s wait. `make agent-eval` runs the `asks` tasks against an app started with `CLICKS=deny` and the rest against one started with `allow`, restarting the app it started between the two (`make agent-app-restart CLICKS=deny`; quit a Debug app started by hand first) and stopping it at the end. Only a Debug build reads the variable.
 - `make agent-eval-test` (part of `make validate`) checks the server and that every task's grading
   passes a correct run and fails an empty or doubled one, without a browser or a model.
 - Results go to `results/fixtures-<tool>.jsonl` with the same timing, token and tool call fields as
@@ -149,6 +149,36 @@ would reach Release builds; `.prohibited` (what the test host uses) cannot show 
 commander window; `launchctl asuser` only re-enters the same user's session, and a second login session needs a
 second account with fast user switching; a virtual display hides the window but not the focus, which is per
 session, not per display.
+
+## MCP layer probe
+
+`probe.py` measures the MCP layer itself, not agent quality: where the time and bytes go before any
+task runs. It is a synthetic control-plane baseline, not a task-quality benchmark: its numbers say what
+a turn pays in handshake and schema tax and how fast cheap calls are, nothing about whether an agent
+succeeds at a task.
+
+```sh
+python3 -I bench/mcp/probe.py                      # one bridge process, 5 rounds of the call set
+python3 -I bench/mcp/probe.py --concurrency 1,4,8  # the same from 1, 4 and 8 bridge processes at once
+python3 -I bench/mcp/probe.py --reps 10 --timeout 30
+```
+
+- It talks newline-delimited JSON-RPC 2.0 over stdio to a `lilo-mcp` bridge (`--bridge`, default
+  `$LILO_MCP` or `/Applications/Lilo.app/Contents/MacOS/lilo-mcp`, the same convention as `run.py`).
+  No `claude` login, API key or BU Bench dataset needed, but Lilo must be running with AI agents
+  allowed; the first run answers Lilo's usual consent prompt for the `lilo-probe` client once.
+- Per run it records: `initialize` and `tools/list` wall time; the `tools/list` payload bytes and
+  estimated tokens (chars/4) with each tool's description length, the schema tax every turn pays; and,
+  for `tabs_context_mcp`, `tabs_create_mcp`, `navigate`, `read_page`, a `computer` screenshot and
+  `tabs_close_mcp` on a `data:` URL, p50/p90/max wall time and mean result bytes over `--reps` rounds.
+  `--concurrency` repeats the call set from that many independent bridge processes at once to show
+  whether the shared app degrades.
+- Safe against a live Lilo: it creates only its own agent tabs, always on a `data:` URL, and closes
+  each one; it never touches the user's tabs, profile or real sites.
+- Every call honors `--timeout` (default 90 s, the bridge's own limit). If Lilo is not running, the
+  bridge cannot connect, or the user has not allowed the agent, it fails fast with the reason instead
+  of hanging.
+- Rows append to `results/probe-<timestamp>.jsonl` (git-ignored like the other results).
 
 ## Not comparable with the published leaderboard
 

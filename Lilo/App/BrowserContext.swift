@@ -115,6 +115,26 @@ final class BrowserContext {
         meetings = controller
         return controller
     }
+    private(set) var plugins: PluginHost?
+    /// One per app, like the meetings: a second host would run each enabled plugin twice, and the
+    /// panel's Stop would not reach a sidecar the agent surface spawned. Its `pluginsChanged`
+    /// reaches every window, whichever one's panel asked for the rows.
+    func pluginHost(settingsStore: SettingsStore) -> PluginHost {
+        if let plugins { return plugins }
+        let host = PluginHost(
+            settingsStore: settingsStore,
+            tabs: PluginTabsAdapter(windows: windows, browserState: browserState)
+        )
+        host.onChanged = { [weak self, weak host] in
+            guard let self else { return }
+            Task { @MainActor in
+                guard let rows = await host?.pluginRows() else { return }
+                for window in windows.windows { window.bridgeRouter.send(event: "pluginsChanged", data: ["plugins": rows]) }
+            }
+        }
+        plugins = host
+        return host
+    }
     lazy var agentControl = AgentControl(context: self)
     lazy var conversations: ConversationHost = {
         let host = ConversationHost(directory: URL(fileURLWithPath: BuildIdentity.appSupportDirectory).appending(path: "Agents"))

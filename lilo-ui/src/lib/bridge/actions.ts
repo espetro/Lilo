@@ -131,6 +131,7 @@ export const tabActions = {
 	splitTab: (tabId: string, side: SplitDropSide, targetTabId?: string): void =>
 		emit("splitTab", { tabId, side, targetTabId }),
 	unsplitTab: (tabId: string): void => emit("unsplitTab", { tabId }),
+	maximizeSplitPane: (tabId: string): void => emit("maximizeSplitPane", { tabId }),
 	splitURL: (url: string, side: SplitDropSide, targetTabId?: string): void =>
 		emit("splitURL", { url, side, targetTabId }),
 	openDroppedLinks: (urls: string[], target: BridgeLinkDropTarget): void =>
@@ -258,6 +259,7 @@ export const settingsActions = {
 	dismissUpdate: emitEmpty("dismissUpdate"),
 	unlockDeveloperTools: emitEmpty("unlockDeveloperTools"),
 	setAutomaticUpdates: (enabled: boolean): void => emit("setAutomaticUpdates", { enabled }),
+	setBetaFeedURL: (url: string): void => emit("setBetaFeedURL", { url }),
 	loadShortcuts: emitEmpty("getShortcuts"),
 	recordShortcut: (id: string | null): void => emit("recordShortcut", { id }),
 	setShortcut: (id: string, combo: string): void => emit("setShortcut", { id, combo }),

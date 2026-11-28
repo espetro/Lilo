@@ -13,6 +13,8 @@
     agentId?: string;
     /** Shown checked, for a menu whose `value` does not name its choice (several settings in one menu). */
     checked?: boolean;
+    /** Listed with its `detail` as the reason, and out of the keyboard's and the pointer's reach. */
+    disabled?: boolean;
   }
 </script>
 
@@ -38,10 +40,14 @@
     searchPlaceholder?: string;
     /** Shown when the filter leaves no option. */
     searchEmptyLabel?: string;
+    /** The menu cannot open now: this is why, as the button's tooltip. */
+    disabledReason?: string;
+    /** One line under the options. */
+    note?: string;
     children: Snippet;
   }
 
-  let { value, options, ariaLabel, onchange, searchPlaceholder, searchEmptyLabel, children }: Props = $props();
+  let { value, options, ariaLabel, onchange, searchPlaceholder, searchEmptyLabel, disabledReason, note, children }: Props = $props();
 
   const MARGIN = 8;
   // A filter field only helps a list that can get long, per docs/DESIGN.md.
@@ -62,6 +68,7 @@
   });
 
   function toggle(): void {
+    if (disabledReason) return;
     if (!open && buttonEl) {
       const rect = buttonEl.getBoundingClientRect();
       const up = rect.top > window.innerHeight / 2;
@@ -84,10 +91,11 @@
       filterField()?.focus();
       return;
     }
-    (menuEl.querySelector<HTMLElement>("[aria-checked='true']") ?? menuEl.querySelector<HTMLElement>("[role='menuitemradio']"))?.focus();
+    (menuEl.querySelector<HTMLElement>("[aria-checked='true']:not(:disabled)") ?? menuEl.querySelector<HTMLElement>("[role='menuitemradio']:not(:disabled)"))?.focus();
   });
 
   function choose(option: MenuOption): void {
+    if (option.disabled) return;
     open = false;
     buttonEl?.focus();
     if (option.value !== value) onchange(option.value);
@@ -104,10 +112,10 @@
       buttonEl?.focus();
       return;
     }
-    const rows = Array.from(menuEl?.querySelectorAll<HTMLElement>("[role='menuitemradio']") ?? []);
+    const rows = Array.from(menuEl?.querySelectorAll<HTMLElement>("[role='menuitemradio']:not(:disabled)") ?? []);
     const active = document.activeElement as HTMLElement;
     if (searchable && active?.tagName === "INPUT") {
-      const first = filtered[0];
+      const first = filtered.find((option) => !option.disabled);
       if (event.key === "ArrowDown" || event.key === "ArrowUp") {
         event.preventDefault();
         (event.key === "ArrowDown" ? rows[0] : rows[rows.length - 1])?.focus();
@@ -159,8 +167,11 @@
   type="button"
   class="menu-picker"
   class:open
+  class:disabled={!!disabledReason}
   bind:this={buttonEl}
   aria-label={ariaLabel}
+  aria-disabled={!!disabledReason}
+  use:tooltip={{ text: disabledReason ?? "", disabled: !disabledReason }}
   aria-haspopup="menu"
   aria-expanded={open}
   aria-controls={open ? menuId : undefined}
@@ -209,6 +220,7 @@
           class:detailed={!!option.detail}
           role="menuitemradio"
           aria-checked={checked}
+          disabled={option.disabled}
           use:tooltip={{ text: option.label, subtitle: option.detail, placement: "right", disabled: !option.detail }}
           onclick={() => choose(option)}
         >
@@ -223,6 +235,7 @@
         {#if query && searchEmptyLabel}<p class="empty">{searchEmptyLabel}</p>{/if}
       {/each}
     </div>
+    {#if note}<p class="note">{note}</p>{/if}
   </div>
 {/if}
 
@@ -245,7 +258,12 @@
     transition: background var(--transition-fast), color var(--transition-fast);
   }
 
-  .menu-picker:hover,
+  .menu-picker.disabled {
+    opacity: 0.5;
+    cursor: default;
+  }
+
+  .menu-picker:hover:not(.disabled),
   .menu-picker.open {
     background: var(--bg-hover);
     color: var(--text-primary);
@@ -315,10 +333,15 @@
     height: 40px;
   }
 
-  .item:hover,
+  .item:not(:disabled):hover,
   .item:focus-visible {
     background: var(--float-hover);
     outline: none;
+  }
+
+  .item:disabled {
+    opacity: var(--disabled-opacity);
+    cursor: default;
   }
 
   .glyph {
@@ -364,6 +387,15 @@
     padding: var(--space-8);
     color: var(--float-text-muted);
     font-size: var(--font-size-sm);
+  }
+
+  .note {
+    flex: none;
+    margin: 0;
+    padding: var(--space-6) var(--space-8) var(--space-2);
+    border-top: 1px solid var(--float-separator);
+    color: var(--float-text-muted);
+    font-size: var(--font-size-xs);
   }
 
   .check {

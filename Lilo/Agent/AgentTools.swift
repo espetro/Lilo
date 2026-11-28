@@ -4,8 +4,10 @@ import WebKit
 /// The tools an agent sees, named and shaped like Claude in Chrome's so agents need nothing new.
 @MainActor
 enum AgentTools {
-    static let definitions: [[String: Any]] = tabAndPageDefinitions + AgentInteractionTools.definitions + AgentDevTools.definitions + AgentFlows.definitions + AgentBrowserConfig.definitions
-    static let toolNames = Set(definitions.compactMap { $0["name"] as? String })
+    static let definitions: [[String: Any]] = tabAndPageDefinitions + AgentInteractionTools.definitions + AgentDevTools.umbrella + AgentFlows.definitions + AgentBrowserConfig.definitions + AgentConnectStatus.definitions
+    /// Every name a direct call, `run`, `browser_batch` or a saved flow may still use: the advertised tools,
+    /// plus the seven `devtools` stands for in `tools/list`.
+    static let toolNames = Set(definitions.compactMap { $0["name"] as? String }).union(AgentDevTools.umbrellaNames)
 
     private static let tabAndPageDefinitions: [[String: Any]] = [
         tool("tabs_context_mcp", """
@@ -298,11 +300,28 @@ enum AgentTools {
             if let body = arguments["body"], !(body is NSNull) { options["body"] = body as? String ?? json(body) }
             if !["GET", "HEAD", "OPTIONS"].contains(method) { AgentCallSent.current?.write = true }
             return [.text(json(try await page(engine, "request", options) ?? [:]))]
+        case "devtools":
+            if arguments["help"] as? Bool == true {
+                let inner = arguments["tool"] as? String ?? ""
+                guard let definition = AgentDevTools.definitions.first(where: { $0["name"] as? String == inner }) else {
+                    throw AgentToolError("Unknown tool: \(inner). One of \(AgentDevTools.umbrellaNames.joined(separator: ", ")).")
+                }
+                return [.text(json(definition))]
+            }
+            guard let (inner, innerArguments) = devtoolsIdentity(name, arguments) else {
+                throw AgentToolError("tool is required: one of \(AgentDevTools.umbrellaNames.joined(separator: ", ")).")
+            }
+            return try await call(inner, arguments: innerArguments, session: session, control: control)
         default:
             if let content = try await AgentInteractionTools.call(name, arguments: arguments, session: session, control: control) { return content }
             if let content = try await AgentDevTools.call(name, arguments: arguments, session: session, control: control) { return content }
             if let content = try await AgentFlows.call(name, arguments: arguments, session: session, control: control) { return content }
             if let content = try await AgentBrowserConfig.call(name, arguments: arguments, session: session, control: control) { return content }
+            if let content = try await AgentConnectStatus.call(name, arguments: arguments, session: session, control: control) { return content }
+            if let content = try await AgentPluginTools.call(name, arguments: arguments, session: session, control: control) { return content }
+            #if DEBUG
+            if let content = try await AgentWindowCapture.call(name, arguments: arguments, control: control) { return content }
+            #endif
             throw AgentToolError("Unknown tool: \(name)")
         }
     }
@@ -339,31 +358,27 @@ enum AgentTools {
         }
     }
 
+    /// The page logic over a tab (`AgentPageCore`): the tab adapts itself to `AgentPageHost` and the
+    /// snapshot, delta and settling logic stays framework-free, shared with future drivers.
     /// The page's interactive structure in the main frame and each subframe, kept for the delta an
     /// action reports. Best effort: a page mid-navigation simply has none.
     static func snapshot(_ engine: WKWebViewTab) async {
-        _ = try? await page(engine, "snapshot", [:])
-        for (_, frame) in await subframes(of: engine) { _ = try? await page(engine, "snapshot", [:], in: frame) }
+        nonisolated(unsafe) let host: AgentPageHost = unsafe engine.agentPageHost
+        unsafe await AgentPageCore.snapshot(host)
     }
 
     /// What the page's structure changed since `snapshot`, as compact +/- /~ lines, one block per frame
     /// that changed; nil when nothing did anywhere.
     static func delta(_ engine: WKWebViewTab) async -> String? {
-        var parts: [String] = []
-        if let text = try? await page(engine, "delta", [:]) as? String, !text.isEmpty { parts.append(text) }
-        for (_, frame) in await subframes(of: engine) {
-            if let text = try? await page(engine, "delta", [:], in: frame) as? String, !text.isEmpty { parts.append(text) }
-        }
-        return parts.isEmpty ? nil : parts.joined(separator: "\n\n")
+        nonisolated(unsafe) let host: AgentPageHost = unsafe engine.agentPageHost
+        return unsafe await AgentPageCore.delta(host)
     }
 
     /// The report an action's reply ends with: the tab's new URL when it navigated, then the structure
     /// delta, or that nothing changed.
     static func deltaReport(_ engine: WKWebViewTab, urlBefore: URL?) async -> String {
-        var parts: [String] = []
-        if engine.currentURL != urlBefore, let url = engine.currentURL { parts.append("The page is now at \(url.absoluteString)") }
-        if let delta = await delta(engine) { parts.append(delta) }
-        return parts.isEmpty ? "No page changes" : parts.joined(separator: "\n")
+        nonisolated(unsafe) let host: AgentPageHost = unsafe engine.agentPageHost
+        return unsafe await AgentPageCore.deltaReport(host, urlBefore: urlBefore)
     }
 
     /// The tab's live subframes, once each, by the ref prefix their script took. A frame that went
@@ -566,7 +581,7 @@ enum AgentTools {
     }
 
     /// Resolves true once the DOM held still for `quietMs`, false at `maxMs` or before the document completes.
-    private static let domQuietScript = """
+    static let domQuietScript = """
         return await new Promise(resolve => {
           let quiet
           const done = settled => { observer.disconnect(); clearTimeout(quiet); clearTimeout(cap); resolve(settled) }
@@ -579,13 +594,19 @@ enum AgentTools {
         """
 
     /// How long the DOM, then the network, must hold still for a page to count as settled.
-    static var settleQuiet = (dom: Duration.milliseconds(200), network: Duration.milliseconds(500))
+    static var settleQuiet: (dom: Duration, network: Duration) {
+        get { unsafe AgentSettle.quiet }
+        set { unsafe AgentSettle.quiet = newValue }
+    }
 
     /// Waits for the page to settle: no navigation running, no request in flight and the DOM still for a
     /// moment, so script redirects and pages that render after their load come out whole. Up to 30 s for the
     /// loads and 5 s past the last one to settle: past that the agent gets the page as it is, and false.
+    /// The load itself stays here, as a capture in flight defers settling past the DOM's quiet: the loop
+    /// is `AgentPageCore.waitForLoad` with that one extra condition.
     @discardableResult
     static func waitForLoad(_ engine: WKWebViewTab, capture: AgentCapture?) async -> Bool {
+        let settleQuiet = Self.settleQuiet
         let start = ContinuousClock.now
         let deadline = start + .seconds(30)
         // A load can take a moment to start after the request.
@@ -643,6 +664,22 @@ enum AgentTools {
         // A NaN or a date raises past `try?`; the array wrapper lets the check accept fragments.
         guard JSONSerialization.isValidJSONObject([object]) else { return "{}" }
         return (try? JSONSerialization.data(withJSONObject: object, options: [.sortedKeys, .fragmentsAllowed])).flatMap { String(bytes: $0, encoding: .utf8) } ?? "{}"
+    }
+
+    /// The tool and flat arguments a `devtools` umbrella call stands for ("tool" and "help" stripped out),
+    /// nil when it names none of the seven or none at all.
+    static func devtoolsIdentity(_ name: String, _ arguments: [String: Any]) -> (name: String, arguments: [String: Any])? {
+        guard name == "devtools", let inner = arguments["tool"] as? String, AgentDevTools.umbrellaNames.contains(inner) else { return nil }
+        var stripped = arguments
+        stripped.removeValue(forKey: "tool")
+        stripped.removeValue(forKey: "help")
+        return (inner, stripped)
+    }
+
+    /// The tool identity and flat arguments behind a possible `devtools` call, for deadlines, overlap warnings,
+    /// action logs, flow recording, consent and the cursor's mood to key off - unchanged for every other tool.
+    static func identity(_ name: String, _ arguments: [String: Any]) -> (name: String, arguments: [String: Any]) {
+        devtoolsIdentity(name, arguments) ?? (name, arguments)
     }
 
     static func tool(_ name: String, _ description: String, _ properties: [String: Any], required: [String] = []) -> [String: Any] {

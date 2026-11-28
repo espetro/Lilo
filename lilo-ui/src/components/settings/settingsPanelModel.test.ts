@@ -25,7 +25,7 @@ test("formats the downloads label", () => {
 test("sections follow the navigation order with advanced last", () => {
   assert.deepEqual(
     SETTINGS_SECTIONS.map((section) => section.id),
-    ["general", "appearance", "tabs", "media", "privacy", "extensions", "terminal", "agents", "advanced"],
+    ["general", "appearance", "tabs", "media", "privacy", "extensions", "terminal", "agents", "plugins", "advanced"],
   );
 });
 
@@ -41,12 +41,26 @@ test("groups a section's settings in display order", () => {
     { groupKey: "settings.groups.search", settings: ["searchEngine", "searchSuggestions", "preloadTopHit", "searchEngines"] },
     { groupKey: "settings.groups.downloads", settings: ["downloadsFolder", "askDownloadLocation"] },
     { groupKey: "settings.groups.lilo", settings: ["appUpdates", "autoUpdate", "shortcuts", "holdToQuit"] },
+    {
+      groupKey: "settings.groups.updateChannel",
+      settings: ["updateChannel", "betaUpdateCheck", "betaUpdateRelease", "betaFeedURL"],
+    },
   ]);
   assert.deepEqual(sectionGroups("media"), [
     { groupKey: "settings.groups.playback", settings: ["autoPictureInPicture", "autoplay"] },
     { groupKey: "settings.groups.calls", settings: ["dockCallsInSidebar", "autoDevices", "deviceSetup"] },
   ]);
   assert.deepEqual(sectionGroups("terminal"), []);
+});
+
+test("the update channel sits in General; the chrome hides the release row until a newer beta exists", () => {
+  const channel = sectionGroups("general").find((group) => group.groupKey === "settings.groups.updateChannel");
+  assert.deepEqual(channel?.settings, ["updateChannel", "betaUpdateCheck", "betaUpdateRelease", "betaFeedURL"]);
+  assert.ok(!sectionGroups("advanced").some((group) => group.groupKey === "settings.groups.updateChannel"));
+  const hidden = sectionGroups("general", (setting) => setting.id !== "betaUpdateRelease").find(
+    (group) => group.groupKey === "settings.groups.updateChannel",
+  );
+  assert.deepEqual(hidden?.settings, ["updateChannel", "betaUpdateCheck", "betaFeedURL"]);
 });
 
 test("settings under a switch that is off drop out of their group", () => {
@@ -62,7 +76,17 @@ test("settings under a switch that is off drop out of their group", () => {
   values.agentsEnabled = "true";
   const shown = sectionGroups("agents", (setting) => !setting.requires || isToggleOn(setting.requires, get));
   assert.deepEqual(shown.map((group) => group.groupKey).slice(2), ["settings.groups.agentClients", "settings.groups.agentActivity"]);
-  assert.deepEqual(shown[0].settings, ["agentsEnabled", "agentsNotifyDone", "agentSystemPrompt", "agentSystemPromptText", "agentList"]);
+  assert.deepEqual(shown[0].settings, ["agentsEnabled", "agentConversationPlacement", "agentsNotifyDone", "agentSystemPrompt", "agentSystemPromptText", "agentList"]);
+});
+
+test("the background agent host is an agent access switch, off until turned on", () => {
+  const access = sectionGroups("agents").find((group) => group.groupKey === "settings.groups.agentAccess");
+  assert.ok(access?.settings.includes("agentBackgroundHost"));
+  const values: Record<string, string> = {};
+  const get = (key: string, fallback: string) => values[key] ?? fallback;
+  assert.equal(isToggleOn("agentBackgroundHost", get), false);
+  values.agentBackgroundHost = "true";
+  assert.equal(isToggleOn("agentBackgroundHost", get), true);
 });
 
 test("cross-site tracking prevention is a protection switch, on until turned off", () => {

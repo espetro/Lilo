@@ -164,6 +164,32 @@ final class AgentScreenshotTests: AgentToolTestCase {
         for (x, y) in [(102, 102), (106, 110), (120, 125)] { try assertColor(image, x: x, y: y, is: (1, 0, 0), "under the cursor at \(x),\(y)") }
     }
 
+    func testAnotherSessionCannotUploadAScreenshot() async throws {
+        let page = #"<!doctype html><body><input type="file" id="file">"#
+        let own = try await agentTab(showing: page)
+        let other = try AgentTestClient(path: socketURL)
+        _ = await other.initialize(name: "Codex")
+        let theirs = try await agentTab(showing: page, other)
+        let shot = await client.callTool("computer", ["tabId": own, "action": "screenshot"])
+        let id = try XCTUnwrap(shot.text.range(of: #"screenshot_\d+"#, options: .regularExpression).map { String(shot.text[$0]) }, shot.text)
+        let upload = { (client: AgentTestClient, tab: Int) async throws -> (text: String, isError: Bool, files: Int?) in
+            let found = await client.callTool("find", ["tabId": tab, "query": "file"]).text
+            let ref = try XCTUnwrap(found.range(of: #"ref_\d+"#, options: .regularExpression).map { String(found[$0]) }, found)
+            let reply = await client.callTool("upload_image", ["tabId": tab, "ref": ref, "imageId": id])
+            let files = try await self.js("document.getElementById('file').files.length", tab: tab) as? Int
+            return (reply.text, reply.isError, files)
+        }
+
+        let stolen = try await upload(other, theirs)
+        let kept = try await upload(client, own)
+
+        XCTAssertTrue(stolen.isError, stolen.text)
+        XCTAssertTrue(stolen.text.contains("No screenshot \(id)"), stolen.text)
+        XCTAssertEqual(stolen.files, 0)
+        XCTAssertFalse(kept.isError, kept.text)
+        XCTAssertEqual(kept.files, 1)
+    }
+
     // MARK: - Helpers
 
     private static let circle = #"url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 10 10"><circle cx="5" cy="5" r="5"/></svg>')"#

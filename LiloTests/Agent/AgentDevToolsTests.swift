@@ -114,6 +114,45 @@ final class AgentDevToolsTests: AgentToolTestCase {
         XCTAssertEqual(cleared.text, "Deleted 0 cookies")
     }
 
+    func testCookiesSetRefusesASiteTheAgentsTabsDoNotShow() async throws {
+        let (tab, _) = try await served("<p>index</p>")
+
+        let refused = await client.callTool("cookies", ["tabId": tab, "action": "set",
+                                                         "cookie": ["name": "other", "value": "1", "domain": "example.org"]])
+        let got = await client.callTool("cookies", ["tabId": tab, "action": "get", "domain": "example.org"])
+        let stored = try await engine(forTab: tab).wkWebView.configuration.websiteDataStore.httpCookieStore.allCookies()
+
+        XCTAssertTrue(refused.isError, refused.text)
+        XCTAssertTrue(refused.text.contains("example.org"), refused.text)
+        XCTAssertFalse(got.text.contains("other"), got.text)
+        XCTAssertFalse(stored.contains { $0.domain == "example.org" }, "the refused cookie never reached the store")
+    }
+
+    /// A cookie for the host a tab shows, or for a domain covering it, sets as before.
+    func testCookiesSetReachesTheHostAndItsParentOfTheAgentsTabs() async throws {
+        let server = try await TinyHTTPServer(index: "<p>index</p>")
+        let tab = try await newAgentTab()
+        _ = await client.callTool("navigate", ["tabId": tab, "url": "http://app.localhost:\(server.port)/"])
+
+        let parent = await client.callTool("cookies", ["tabId": tab, "action": "set",
+                                                       "cookie": ["name": "parent", "value": "1", "domain": "localhost"]])
+        let exact = await client.callTool("cookies", ["tabId": tab, "action": "set",
+                                                      "cookie": ["name": "exact", "value": "1", "domain": "app.localhost"]])
+
+        XCTAssertFalse(parent.isError, parent.text)
+        XCTAssertFalse(exact.isError, exact.text)
+    }
+
+    /// "com" would plant a cookie every .com site of the profile sends, even when a .com tab makes it look reachable.
+    func testCookiesSetRefusesATopLevelDomain() async throws {
+        let (tab, _) = try await served("<p>index</p>")
+
+        let reply = await client.callTool("cookies", ["tabId": tab, "action": "set",
+                                                      "cookie": ["name": "tld", "value": "1", "domain": "com"]])
+
+        XCTAssertTrue(reply.isError, reply.text)
+    }
+
     func testCookiesClearNeedsADomain() async throws {
         let tab = try await newAgentTab()
 
@@ -1109,6 +1148,113 @@ final class AgentNetworkToolsTests: AgentToolTestCase {
         XCTAssertTrue(added.text.hasPrefix("[needs_user]"), added.text)
         XCTAssertNotEqual(result as? String, "secret")
         _ = server
+    }
+}
+
+/// The `devtools` umbrella: a compact `tools/list` entry standing in for the seven tools above, still
+/// reachable directly, through `run` and `browser_batch`, with their full schema on `help: true`.
+@MainActor
+final class AgentDevToolsUmbrellaTests: AgentToolTestCase {
+    func testToolsListAdvertisesTheUmbrellaNotTheSevenNames() async throws {
+        let tools = (await client.request("tools/list"))?["tools"] as? [[String: Any]] ?? []
+        let names = Set(tools.compactMap { $0["name"] as? String })
+
+        XCTAssertTrue(names.contains("devtools"))
+        for name in AgentDevTools.umbrellaNames { XCTAssertFalse(names.contains(name), name) }
+    }
+
+    func testUmbrellaCallReachesTheSameImplementationAsADirectCall() async throws {
+        let (tab, server) = try await served("<p>index</p>")
+        let direct = await mock(tab, ["urlPattern": "/api/user", "response": ["body": "mocked"]])
+        let viaUmbrella = await client.callTool("devtools", ["tool": "network_mock", "tabId": tab, "action": "list"])
+        let directList = await client.callTool("network_mock", ["tabId": tab, "action": "list"])
+
+        XCTAssertFalse(direct.isError, direct.text)
+        XCTAssertEqual(viaUmbrella.text, directList.text, "the umbrella and the direct name read the same rules")
+        let result = try await page("const r = await fetch('/api/user'); return await r.text()", tab: tab)
+        XCTAssertEqual(result as? String, "mocked")
+        _ = server
+    }
+
+    func testUmbrellaFlatArgumentsReachCookiesAndEmulate() async throws {
+        // Cookies reach only the hosts the agent's tabs show: a real host, not the host-less data: page.
+        let (tab, _) = try await served("<p>index</p>")
+
+        let set = await client.callTool("devtools", [
+            "tool": "cookies", "tabId": tab, "action": "set", "cookie": ["name": "a", "value": "1", "domain": "127.0.0.1"]
+        ])
+        let got = await client.callTool("devtools", ["tool": "cookies", "tabId": tab, "action": "get", "domain": "127.0.0.1"])
+        let emulated = await client.callTool("devtools", ["tool": "emulate", "tabId": tab, "media": "print"])
+
+        XCTAssertFalse(set.isError, set.text)
+        XCTAssertTrue(got.text.contains(#""name":"a""#), got.text)
+        XCTAssertFalse(emulated.isError, emulated.text)
+    }
+
+    func testHelpReturnsEachInnerToolsFullDefinition() async throws {
+        let tab = try await newAgentTab()
+        for name in AgentDevTools.umbrellaNames {
+            let reply = await client.callTool("devtools", ["tool": name, "help": true, "tabId": tab])
+            XCTAssertFalse(reply.isError, "\(name): \(reply.text)")
+            let definition = try XCTUnwrap(try JSONSerialization.jsonObject(with: Data(reply.text.utf8)) as? [String: Any], name)
+            XCTAssertEqual(definition["name"] as? String, name)
+            XCTAssertTrue((definition["description"] as? String)?.isEmpty == false, name)
+            XCTAssertNotNil(definition["inputSchema"] as? [String: Any], name)
+        }
+    }
+
+    func testHelpOnAnUnknownNameFails() async throws {
+        let reply = await client.callTool("devtools", ["tool": "no_such_tool", "help": true])
+        XCTAssertTrue(reply.isError, reply.text)
+        XCTAssertTrue(reply.text.contains("Unknown tool"), reply.text)
+    }
+
+    func testMissingToolFails() async throws {
+        let tab = try await newAgentTab()
+        let reply = await client.callTool("devtools", ["tabId": tab])
+        XCTAssertTrue(reply.isError, reply.text)
+    }
+
+    func testRunUnwrapsTheUmbrella() async throws {
+        let tab = try await newAgentTab()
+
+        let reply = await client.callTool("run", [
+            "code": "await tool('devtools', { tool: 'emulate', tabId: \(tab), media: 'print' }); return 'ok'"
+        ])
+
+        XCTAssertFalse(reply.isError, reply.text)
+        XCTAssertTrue(reply.text.contains("ok"), reply.text)
+        let printsAsPrint = try await js("matchMedia('print').matches", tab: tab) as? Bool
+        XCTAssertEqual(printsAsPrint, true)
+    }
+
+    func testBrowserBatchUnwrapsTheUmbrella() async throws {
+        // Cookies reach only the hosts the agent's tabs show: a real host, not the host-less data: page.
+        let (tab, _) = try await served("<p>index</p>")
+
+        let reply = await client.callTool("browser_batch", ["actions": [
+            ["name": "devtools", "input": ["tool": "cookies", "tabId": tab, "action": "set",
+                                           "cookie": ["name": "b", "value": "2", "domain": "127.0.0.1"]]],
+            ["name": "devtools", "input": ["tool": "cookies", "tabId": tab, "action": "get", "domain": "127.0.0.1"]]
+        ]])
+
+        XCTAssertFalse(reply.isError, reply.text)
+        XCTAssertTrue(reply.text.contains(#""name":"b""#), reply.text)
+    }
+
+    /// `tools/list`'s serialized bytes, as `bench/mcp/probe.py` measures them: a size guard against regrowing
+    /// the schema tax the umbrella tool was added to cut.
+    func testToolsListSizeStaysUnderTheUmbrellaTarget() async throws {
+        let tools = (await client.request("tools/list"))?["tools"] as? [[String: Any]] ?? []
+        let bytes = try JSONSerialization.data(withJSONObject: ["tools": tools]).count
+        // tools/list adds the Debug-only window_capture in a Debug build.
+        var maxTools = 29
+        #if DEBUG
+        maxTools += 1
+        #endif
+
+        XCTAssertLessThanOrEqual(tools.count, maxTools, "advertised tools")
+        XCTAssertLessThanOrEqual(bytes, 26_000, "tools/list payload bytes")
     }
 }
 

@@ -1,0 +1,3 @@
+kind: Added
+body: 'The agent tool surface runs headless in a container: make docker-mcp builds a WebKitGTK image that speaks MCP on stdio with the same tools and page logic as the app, for agents on Linux boxes'
+time: 2026-11-25T01:45:00.000000000Z

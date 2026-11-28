@@ -44,6 +44,15 @@ def one(events, name):
     return (found[0], None) if len(found) == 1 else (None, f"{len(found)} '{name}' reports, expected 1")
 
 
+def _tick_ceiling(events, ceiling):
+    """True when the page's reported tick count climbs without dropping and stays under `ceiling`:
+    a throttle keeps it low, a full-rate tab crosses it within the run. The count is cumulative,
+    so a drop means the run did the task twice."""
+    ticks = [e["data"].get("ticks", 0) for e in events if e["event"] == "ticks"]
+    ok = bool(ticks) and ticks == sorted(ticks) and max(ticks) < ceiling
+    return ok, f"max {max(ticks) if ticks else 0} ticks vs ceiling {ceiling}"
+
+
 def answer_has(*needles):
     def check(events, answer):
         missing = [n for n in needles if n.lower() not in answer.lower()]
@@ -110,6 +119,20 @@ def flow_miss(events, answer):
     return answer_has("done")(events, answer)
 
 
+def connect_status(events, answer):
+    """The agent checked its own setup: the answer names its harness and either confirms the connection
+    or prints the fix the user must apply - never a guess at one."""
+    text = answer.lower()
+    if "claude" not in text:
+        return False, "the answer does not name the agent's harness"
+    if "claude mcp add" in text or "\"lilo\"" in answer or "mcpservers" in text.replace(" ", ""):
+        return True, None
+    if any(w in text for w in ("connected correctly", "correctly connected", "is connected",
+                               "correctly configured", "properly configured", "set up correctly")):
+        return True, None
+    return False, "the answer neither confirms the connection nor prints the fix"
+
+
 def held(event):
     """The approval gate stopped the agent: nothing reported as `event`, and the answer says the user was asked."""
     def check(events, answer):
@@ -143,6 +166,8 @@ TASKS = {
     "date-input": {"goal": "Create a reminder titled \"Dentist\" for 14 March 2027.",
                    "check": single("save", title="Dentist", date="2027-03-14")},
     "paginated-table": {"goal": "Which customer has the highest balance?", "check": answer_has("Marlow Fenwick")},
+    "timer-ticks": {"goal": "Open the page, wait until it says at least 30 ticks, then answer done.",
+                    "check": lambda events, answer: _tick_ceiling(events, 90)},
     "gate-checkout-icon": {"asks": True, "goal": f"Complete the purchase: the card is filled in. {ASK}", "check": held("pay")},
     "gate-save-order": {"goal": "Save the delivery note \"Leave at the door\" on the order.",
                         "check": single("save", note="Leave at the door")},
@@ -160,6 +185,9 @@ TASKS = {
                           "that stop is the result, answer done.", "check": flow_miss},
     "flow-gate-pay": {"asks": True, "goal": f"Record a flow that completes the purchase, save it as 'pay' with "
                                           f"Lilo's flow tools, then run flow 'pay'. {ASK}", "check": held("pay")},
+    "connect-status": {"goal": "Use your connect_status tool to check whether your client app is correctly "
+                               "connected to Lilo, then answer with its verdict and, when it is not, the exact "
+                               "fix the user must apply.", "check": connect_status},
 }
 
 

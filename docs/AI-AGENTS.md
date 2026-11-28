@@ -11,6 +11,13 @@ clients it finds. The first time a client connects, Lilo asks you to allow it; t
 tied to the program behind the connection (its code signature, or its path when unsigned), not to
 the name the client announces.
 
+### Connect a harness without opening Lilo
+
+Every supported harness (Claude Code, Claude Desktop, Codex, Cursor, Zed, VS Code, OpenCode and Gemini CLI) can be connected from a shell, a script or a dotfiles repository.
+The documentation site lists the command or file entry for each one, with the file it writes and the consent step that follows: [Connect snippets](https://docs.getlilo.app/reference/connect-snippets).
+The page is generated from `Lilo/Agent/HarnessDefinition.swift` and `AgentClientConfig.swift`, the same source Settings uses, so it cannot drift from the app.
+Lilo still asks you to allow the harness the first time it connects, whichever way it was set up.
+
 ## What agents can do
 
 Agents work in their own Agents Space, in a throwaway profile wiped after each session, and never
@@ -112,11 +119,13 @@ An agent can record a task once and replay it later with three tools:
 - `flow_start`: start recording. Every mutating call it makes from then on becomes a step - a click or a filled
   field as a stable locator (the role and name `read_page` gives the element, never a ref or a pixel),
   `navigate` and `wait_for` verbatim. Reads, scripts and coordinate clicks record nothing.
-- `flow_save` with a name: stop and write the flow as JSONL in `Agents/Flows/` of Lilo's support folder,
+- `flow_save` with a name: stop and write the flow as JSONL in the agent's own folder under `Agents/Flows/` of Lilo's support folder,
   readable only by you, with a hash that fails a file edited on disk.
 - `flow_run` with the name and a tab: replay each step through the same tool path a live call takes, so a
   replayed click asks for your approval exactly as the agent's own click would. A saved flow is a recording,
   not a standing authorization.
+
+Saved flows belong to the agent that saved them, known as its approval is: by its name and signing identity (its path when unsigned). Another agent cannot run or overwrite them, and two agents can each keep a flow of the same name. Connections of one agent share its flows. An agent whose identity Lilo cannot read keeps them for that connection only. Flows saved before this separation have no owner and no longer run: record them again.
 
 A value the user must supply each run is a parameter (`{"param": name}` in the file): the agent marks it with
 `flowParam` at record time or declares it at `flow_save`, and a password, card or one-time code field always
@@ -147,6 +156,12 @@ Each line is a JSON object:
 What is never logged: what you or the agent typed, a password, a card or a one-time code, cookie values, request or response bodies, page text, screenshots, error messages and URLs past their host.
 
 Each file stops at 1 MB and rotates to a single `.1.jsonl` next to it, so a source never holds more than 2 MB. Closing a conversation deletes its log when Lilo quits. To delete the rest, quit Lilo and remove the `Agents/Actions` folder. To stop logging, turn off Settings > Agents > "Keep a log of agent actions"; lines already written stay until you delete them.
+
+## The run ledger
+
+Beside the per-call logs, `runs.jsonl` in the same folder keeps one `start` line when an agent is let in and one `end` line when its session finishes, so a restart can still show recent past runs: live sessions themselves are memory-only. Each run is the session's id, the client's handshake name and a pseudonymous hash of its name and signing identity (`clientKey`, never the identity itself), its connect and start times, how it ended (`disconnected`, `revoked`, `stopped` or `adopted` when a reconnect took its tabs over), coarse tool and error counts, and its tab, folder, space, profile, isolated-space and conversation ids when it had them. A run with a `start` but no `end` yet is live, or was cut short by a quit.
+
+It carries even less than the action log: no tool names, no hosts, no arguments, nothing a page or a person typed — only the shape of the work. It follows the same switch ("Keep a log of agent actions") and the same rotation, and it is deleted with the `Agents/Actions` folder. The chrome UI reads it through the `agentRuns` bridge event for the agent cockpit.
 
 ## Known limitations
 

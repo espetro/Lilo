@@ -983,6 +983,7 @@ export const createDemoHost = (
               busy: agentBusy || agentSessionActive,
               name: text().playgroundClient,
               spaceIds: ["playground-agents"],
+              waitingForUser: false,
             },
           ]
         : [],
@@ -1377,6 +1378,11 @@ export const createDemoHost = (
       emit("updaterStatus", {
         automatic: settings.automaticUpdates !== "false",
         available: false,
+        betaAvailable: null,
+        betaFeed: false,
+        betaFeedURL: null,
+        betaFeedURLOverride: null,
+        betaLastCheck: null,
         lastCheck: null,
         version,
         webKitFork: false,

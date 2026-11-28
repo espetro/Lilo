@@ -1,0 +1,3 @@
+kind: Added
+body: "The Linux container's MCP surface can drive the user's real Chromium instead of its headless WebKitGTK: LILO_DRIVER=companion speaks the companion extension's framed unix-socket protocol (tabs, snapshot, scripting), injecting the same AgentPage.js into the browser's isolated world"
+time: 2026-11-25T00:00:00.000000000Z

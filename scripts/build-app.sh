@@ -31,6 +31,9 @@ Notarization (a keychain profile, or an Apple ID and app-specific password):
 Architecture:
   LILO_NATIVE_ARCH=1          Build this Mac's architecture only, as install does.
 
+Fork-only:
+  LILO_BETA=1                 Build the espetro/Lilo rolling beta (docs/FORK-BETA.md): own identity, no updates.
+
 Artifacts:
   build/<config>/archive/Lilo.xcarchive   (Developer ID signing only)
   build/<config>/export/Lilo.app
@@ -84,12 +87,32 @@ elif [ -n "$DEBUG_TEAM_ID" ]; then
     SIGNING_LABEL="$DEBUG_IDENTITY ($DEBUG_TEAM_ID)"
 else
     SIGNING="ad-hoc"
-    SIGNING_SETTINGS=("DEVELOPMENT_TEAM=" "CODE_SIGN_IDENTITY=-")
+    # Release.xcconfig enables the hardened runtime, whose library validation rejects the
+    # ad-hoc signed frameworks the bundle embeds (Sparkle): the app would crash in dyld.
+    SIGNING_SETTINGS=("DEVELOPMENT_TEAM=" "CODE_SIGN_IDENTITY=-" "ENABLE_HARDENED_RUNTIME=NO")
     SIGNING_LABEL="ad-hoc"
 fi
 
+# Fork-only (espetro/Lilo, never sent upstream): LILO_BETA=1 builds the rolling beta of .github/workflows/beta.yml.
+# It has an identity of its own (BuildIdentity's BETA branch), no Sparkle key so it never updates itself, and no
+# hardened runtime, whose library validation rejects the ad-hoc signed Sparkle.framework.
+BETA_SETTINGS=()
+if [ "${LILO_BETA:-}" = 1 ]; then
+    BETA_SETTINGS=(
+        LILO_BUNDLE_ID_SUFFIX=.beta
+        "LILO_APP_NAME=Lilo Beta"
+        SPARKLE_PUBLIC_ED_KEY=
+        "LILO_BETA_UPDATE_FEED_URL=${LILO_BETA_UPDATE_FEED_URL:-https://api.github.com/repos/espetro/Lilo/releases?per_page=30}"
+        "LILO_BETA_TAG=${LILO_BETA_TAG:-}"
+        SWIFT_ACTIVE_COMPILATION_CONDITIONS=BETA
+        ASSETCATALOG_COMPILER_APPICON_NAME=AppIconBeta
+        ENABLE_HARDENED_RUNTIME=NO
+        "EXCLUDED_SOURCE_FILE_NAMES=fr.arouillard.lilo.power.plist fr.arouillard.lilo.debug.power.plist"
+    )
+fi
+
 # A distributed release without the Sparkle public key could never update itself.
-if [ "$CONFIG" = "release" ] && [ "$INSTALL" != true ] \
+if [ "$CONFIG" = "release" ] && [ "$INSTALL" != true ] && [ "${LILO_BETA:-}" != 1 ] \
     && ! grep -Eq '^SPARKLE_PUBLIC_ED_KEY = [A-Za-z0-9+/=]{40,}$' "$ROOT/Xcode/Configs/Base.xcconfig"; then
     echo "SPARKLE_PUBLIC_ED_KEY is empty in Xcode/Configs/Base.xcconfig: see docs/RELEASING.md (Sparkle key)." >&2
     exit 1
@@ -108,6 +131,24 @@ fi
 rm -rf "$OUT_DIR"
 mkdir -p "$EXPORT_DIR" "$(dirname "$ZIP")"
 
+# The compilation cache is shared by every worktree (the Makefile's XCC_* settings, same defaults); CI keeps Xcode's.
+CACHE_SETTINGS=()
+if [ -z "${CI:-}" ]; then
+    CACHE_SETTINGS=(
+        COMPILATION_CACHE_ENABLE_CACHING=YES
+        COMPILATION_CACHE_CAS_PATH="${XCC_DIR:-$HOME/.cache/lilo/xcc}"
+        COMPILATION_CACHE_LIMIT_SIZE="${XCC_LIMIT:-10737418240}"
+        COMPILER_INDEX_STORE_ENABLE=NO
+    )
+fi
+
+# The package checkouts are shared by every worktree, one folder per Package.resolved (the Makefile's SPM_PACKAGES_DIR).
+PACKAGE_SETTINGS=()
+if [ -z "${CI:-}" ]; then
+    RESOLVED="$(shasum -a 256 "$ROOT/Lilo.xcodeproj/project.xcworkspace/xcshareddata/swiftpm/Package.resolved" | cut -d' ' -f1)"
+    PACKAGE_SETTINGS=(-clonedSourcePackagesDirPath "${SPM_PACKAGES_DIR:-$HOME/.cache/lilo/spm-$RESOLVED}" -onlyUsePackageVersionsFromResolvedFile)
+fi
+
 # A build with an archive's postprocessing rather than xcodebuild archive, which starts from an empty build folder
 # every time: this one compiles only what changed, and a change of signing settings compiles nothing.
 xcodebuild \
@@ -116,10 +157,13 @@ xcodebuild \
     -configuration "$XCODE_CONFIGURATION" \
     -derivedDataPath "$DERIVED_DATA_DIR" \
     -destination "generic/platform=macOS" \
+    ${PACKAGE_SETTINGS[@]+"${PACKAGE_SETTINGS[@]}"} \
+    ${CACHE_SETTINGS[@]+"${CACHE_SETTINGS[@]}"} \
     CODE_SIGN_STYLE=Manual \
     AD_HOC_CODE_SIGNING_ALLOWED=YES \
     DEPLOYMENT_POSTPROCESSING=YES \
     "${SIGNING_SETTINGS[@]}" \
+    ${BETA_SETTINGS[@]+"${BETA_SETTINGS[@]}"} \
     build
 BUILT_APP="$DERIVED_DATA_DIR/Build/Products/$XCODE_CONFIGURATION/Lilo.app"
 # Xcode registers each app it builds with LaunchServices: the build folder's copy must never open links.

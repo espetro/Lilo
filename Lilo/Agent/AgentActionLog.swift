@@ -36,6 +36,9 @@ final class AgentActionLog {
         return "client-" + String(String(client).prefix(40))
     }
 
+    /// The file the run ledger appends to: a `start` and an `end` line per authorized session.
+    nonisolated static let runsFile = "runs"
+
     /// The arguments as logged: ids, actions and numbers as given, a URL as its host, every other string as its length.
     static func redact(_ arguments: [String: Any]) -> [String: Any] {
         var kept: [String: Any] = [:]
@@ -64,10 +67,11 @@ final class AgentActionLog {
         return ["redacted": true]
     }
 
-    /// Appends the call as one line, off the main thread.
+    /// Appends the call as one line, off the main thread. `plugin` is the id of the plugin
+    /// whose tool ran, so a line says who owned it: `plugin: <id>`.
     func record(
         tool: String, arguments: [String: Any], session: AgentSession, host: String?,
-        ok: Bool, code: String?, possibleCommit: Bool, startedAt: Date
+        ok: Bool, code: String?, possibleCommit: Bool, startedAt: Date, plugin: String? = nil
     ) {
         var line: [String: Any] = [
             "ts": startedAt.formatted(Date.ISO8601FormatStyle(includingFractionalSeconds: true)),
@@ -75,12 +79,21 @@ final class AgentActionLog {
             "duration_ms": Int(Date().timeIntervalSince(startedAt) * 1000)
         ]
         if let code { line["code"] = code }
+        if let plugin { line["plugin"] = plugin }
         if possibleCommit { line["possibleCommit"] = true }
         if let tab = (arguments["tabId"] as? NSNumber)?.intValue { line["tabId"] = tab }
         if let host { line["host"] = host }
         guard var data = try? JSONSerialization.data(withJSONObject: line, options: [.sortedKeys, .withoutEscapingSlashes]) else { return }
         data.append(0x0A)
         writer.append(data, to: Self.name(for: session))
+    }
+
+    /// Appends one run-ledger line, off the main thread like `record`. The caller builds the entry:
+    /// names, ids and counts only, never content — see `AgentRunLedger`.
+    func recordRun(_ entry: [String: Any]) {
+        guard var data = try? JSONSerialization.data(withJSONObject: entry, options: [.sortedKeys, .withoutEscapingSlashes]) else { return }
+        data.append(0x0A)
+        writer.append(data, to: Self.runsFile)
     }
 
     /// Waits for the lines queued so far, for a test and a quit.

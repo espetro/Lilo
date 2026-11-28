@@ -98,7 +98,13 @@
     <key>CFBundleVersion</key>
     <string>$(CURRENT_PROJECT_VERSION)</string>
     <key>SUFeedURL</key>
-    <string>https://github.com/Alexays/Lilo/releases/latest/download/appcast.xml</string>
+    <string>$(LILO_UPDATE_FEED_URL)</string>
+    <!-- The unsigned beta's plain release feed; empty outside the beta, which only Sparkle feeds. -->
+    <key>LILOBetaUpdateFeedURL</key>
+    <string>$(LILO_BETA_UPDATE_FEED_URL)</string>
+    <!-- The beta-N tag this beta was published as; empty on local builds, which fall back to first check. -->
+    <key>LILOBetaTag</key>
+    <string>$(LILO_BETA_TAG)</string>
     <key>SUPublicEDKey</key>
     <string>$(SPARKLE_PUBLIC_ED_KEY)</string>
     <!-- Checks and downloads in the background from the first launch, without Sparkle's permission prompt. -->
@@ -123,7 +129,7 @@
     <key>NSPrincipalClass</key>
     <string>Lilo.LiloApplication</string>
     <key>CFBundleIconFile</key>
-    <string>AppIcon</string>
+    <string>$(ASSETCATALOG_COMPILER_APPICON_NAME)</string>
     <key>NSHumanReadableCopyright</key>
     <string>Copyright © 2026 Alexis Rouillard. MIT License.</string>
     <key>NSCameraUsageDescription</key>

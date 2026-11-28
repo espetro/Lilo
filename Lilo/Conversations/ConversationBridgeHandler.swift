@@ -10,7 +10,7 @@ final class ConversationBridgeHandler: BridgeHandler {
         "setConversationMode", "setConversationConfig", "showConversation", "restoreConversation",
         "undoConversationFile", "loadAgentCatalog", "loadConversations", "chooseConversationProject",
         "openConversationChanges", "authenticateConversation", "answerConversationSignIn", "openConversationSignInTerminal",
-        "loadConversationCommands",
+        "loadConversationCommands", "probeAgent", "signInAgent", "switchConversationAgent",
         "searchConversationFiles", "previewConversationArtifact", "openConversationFile"
     ]
 
@@ -28,9 +28,26 @@ final class ConversationBridgeHandler: BridgeHandler {
         let tabId = (payload["tabId"] as? String).flatMap(UUID.init(uuidString:))
         switch message.action {
         case "startConversation":
-            guard let agentId = payload["agentId"] as? String, let cwd = payload["cwd"] as? String else { return nil }
+            let surfaceRequestId = payload["surfaceRequestId"] as? String
+            guard let agentId = payload["agentId"] as? String, let cwd = payload["cwd"] as? String else {
+                if let surfaceRequestId { sendSurfaceFailed(surfaceRequestId, in: window) }
+                return nil
+            }
             let background = payload["background"] as? Bool ?? false
-            guard let tab = await window.startConversation(agentId: agentId, cwd: cwd, activate: !background) else { return nil }
+            guard let tab = await window.startConversation(
+                agentId: agentId, cwd: cwd, activate: !background,
+                placement: payload["placement"] as? String,
+                sourceTabId: (payload["sourceTabId"] as? String).flatMap(UUID.init(uuidString:)),
+                surfaceRequestId: surfaceRequestId
+            ) else {
+                // A pending mini or dialog surface waits on this id: tell it the start failed.
+                if let surfaceRequestId { sendSurfaceFailed(surfaceRequestId, in: window) }
+                return nil
+            }
+            // A model picked before the first prompt: the agent's record names the option that sets it.
+            if let model = payload["model"] as? String, !model.isEmpty, let configId = host.readiness.record(for: agentId)?.modelConfigId {
+                host.setConfigOption(tab.id, configId: configId, value: model)
+            }
             await prompt(tab.id, payload, interrupt: false)
         case "sendConversationPrompt":
             guard let tabId else { return nil }
@@ -59,22 +76,22 @@ final class ConversationBridgeHandler: BridgeHandler {
             }
         case "loadAgentCatalog":
             if payload["refresh"] as? Bool ?? false { await host.catalog.load() }
-            let featuredIds = Set(ACPAgentCatalog.featured.map(\.id))
             window.bridgeRouter.send(event: "agentCatalog", data: [
-                "agents": await host.catalog.runnableAgents().map { agent in
-                    var data: [String: Any] = ["id": agent.id, "name": agent.name, "description": agent.description]
-                    if case .command = agent.distribution {
-                        data["featured"] = true
-                        data["command"] = true
-                    } else if featuredIds.contains(agent.id) {
-                        data["featured"] = true
-                    }
-                    if let icon = host.catalog.iconDataURL(for: agent.id) { data["icon"] = icon }
-                    return data
-                },
+                "agents": await host.catalog.runnableAgents().map(host.agentPayload),
                 "projects": projects(),
                 "home": NSHomeDirectory()
             ])
+        case "probeAgent":
+            // Answers through the `agentReadiness` event, to every window; a record that is still fresh is not probed again.
+            // Not awaited: a probe can take a minute, which must not hold this message's turn open.
+            if let agentId = payload["agentId"] as? String, let agent = host.catalog.agent(id: agentId) {
+                let force = payload["force"] as? Bool ?? false
+                Task { await host.readiness.refresh(agent, force: force) }
+            }
+        case "signInAgent":
+            if let agentId = payload["agentId"] as? String, let methodId = payload["methodId"] as? String, let agent = host.catalog.agent(id: agentId) {
+                Task { await host.readiness.signIn(agent, methodId: methodId, in: window) }
+            }
         case "loadConversations":
             window.bridgeRouter.send(event: "conversationsChanged", data: ["conversations": host.summaries()])
         case "chooseConversationProject":
@@ -99,6 +116,8 @@ final class ConversationBridgeHandler: BridgeHandler {
             if let tabId { host.openSignInTerminal(tabId) }
         case "loadConversationCommands":
             if let tabId { host.loadCommands(tabId) }
+        case "switchConversationAgent":
+            if let tabId, let agentId = payload["agentId"] as? String { host.switchAgent(tabId, to: agentId) }
         case "openConversationChanges":
             if let tabId { window.openChanges(forConversation: tabId) }
         case "openConversationFile":
@@ -120,6 +139,14 @@ final class ConversationBridgeHandler: BridgeHandler {
             break
         }
         return nil
+    }
+
+    /// A start that never produced a conversation still owes a pending surface its failure.
+    private func sendSurfaceFailed(_ surfaceRequestId: String, in window: MainWindowController) {
+        window.bridgeRouter.send(event: "conversationSurfaceFailed", data: [
+            "surfaceRequestId": surfaceRequestId,
+            "message": "The conversation could not be started.".localized
+        ])
     }
 
     /// The folders a conversation can work in, most likely first: the active terminal's, then those of

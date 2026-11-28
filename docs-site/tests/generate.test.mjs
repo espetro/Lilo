@@ -8,9 +8,11 @@ import { test } from "node:test";
 import {
   checkToolCount,
   compatibilityPartials,
+  connectSnippet,
   errorReport,
   loadSettings,
   mcpPartial,
+  parseHarnesses,
   parseShortcuts,
   parseTools,
   partials,
@@ -56,7 +58,7 @@ test("every setting is listed once, in both locales", async () => {
     const settingRows = rows(markdown).filter((row) => !/^\| (Setting|Réglage) \|/u.test(row));
     assert.equal(settingRows.length, model.SETTINGS.length, locale);
     for (const setting of model.SETTINGS) {
-      const title = catalogs[locale].settings.items[setting.id].title.replace("{version}", "{{version}}");
+      const title = catalogs[locale].settings.items[setting.id].title.replace("{version}", "{{version}}").replace("{tag}", "`{tag}`");
       assert.ok(settingRows.some((row) => row.startsWith(`| ${title} |`)), `${locale}: ${setting.id}`);
     }
   }
@@ -66,7 +68,7 @@ test("every setting is listed once, in both locales", async () => {
 test("every tool is read with its parameters", () => {
   const declared = SOURCES.tools.reduce((count, file) => count + read(file).match(/^\s*(?:AgentTools\.)?tool\("/gmu).length, 0);
   assert.equal(Object.keys(byName).length, declared);
-  assert.equal(declared, 34);
+  assert.equal(declared, 36);
   assert.deepEqual(byName.navigate.required, ["url", "tabId"]);
   assert.deepEqual(byName.read_page.properties.filter.enum, ["interactive", "all"]);
   assert.deepEqual(byName.browser_batch.properties.actions.items.required, ["name", "input"]);
@@ -137,7 +139,7 @@ test("a tool list the reader would only partly read fails", () => {
     assert.throws(() => parseTools(changed, file), /AgentDevTools\.swift:\d+: a tool list must end at its closing \]/u);
   }
   const [main, mainSource] = [SOURCES.tools[0], read(SOURCES.tools[0])];
-  const composed = "tabAndPageDefinitions + AgentInteractionTools.definitions + AgentDevTools.definitions";
+  const composed = "tabAndPageDefinitions + AgentInteractionTools.definitions + AgentDevTools.umbrella";
   assert.ok(mainSource.includes(composed));
   const declaration = `static let definitions: [[String: Any]] = ${composed}`;
   assert.ok(mainSource.includes(declaration));
@@ -154,10 +156,10 @@ test("a tool list the reader would only partly read fails", () => {
   const sources = Object.fromEntries(SOURCES.tools.map((name) => [name, read(name)]));
   assert.doesNotThrow(() => checkToolCount(tools, sources));
   const more = { ...sources, "Lilo/Agent/AgentMoreTools.swift": 'enum AgentMoreTools {\n    static let definitions: [ToolDefinition] = [\n        AgentTools.tool("new_tool", "x", [:]),\n    ]\n}\n' };
-  assert.throws(() => checkToolCount(tools, more), /Lilo\/Agent: 35 tool\(…\) definitions are in the code but the generator read 34 .+SOURCES\.tools/u);
+  assert.throws(() => checkToolCount(tools, more), /Lilo\/Agent: 37 tool\(…\) definitions are in the code but the generator read 36 .+SOURCES\.tools/u);
   // Mid-line and one-line lists count too; a tool named in a description's text does not.
   const inline = { ...sources, "Lilo/Agent/AgentMoreTools.swift": 'let more = [Self.tool("a", "Calls tool(\\"b\\", x).", [:]), tool("c", """\n    Calls tool("d").\n    """, [:])]\n' };
-  assert.throws(() => checkToolCount(tools, inline), /Lilo\/Agent: 36 tool\(…\) definitions are in the code but the generator read 34/u);
+  assert.throws(() => checkToolCount(tools, inline), /Lilo\/Agent: 38 tool\(…\) definitions are in the code but the generator read 36/u);
   const twice = source.replace("static let definitions: [[String: Any]] = [", 'static let definitions: [[String: Any]] = [\n        AgentTools.tool("navigate", "dup", [:]),');
   assert.throws(() => mcpPartial([tools[0], tools[1], parseTools(twice, file)], summaries), /two tools are named "navigate"/u);
 });
@@ -200,4 +202,35 @@ test("a shortcut title or setting without a catalog string fails", async () => {
   const items = { ...catalogs.en.settings.items, theme: { title: "Theme" } };
   const catalog = { ...catalogs.en, settings: { ...catalogs.en.settings, items } };
   assert.throws(() => settingsPartial(model, catalog, "en"), /en\.json: no string "settings\.items\.theme\.description"/u);
+});
+
+test("every harness of the app has a connect snippet, in both locales", () => {
+  const harnesses = parseHarnesses(read(SOURCES.harnesses), read(SOURCES.harnessCatalog), read(SOURCES.clientConfig));
+  assert.equal(harnesses.length, JSON.parse(read(SOURCES.harnessCatalog)).length);
+  for (const locale of ["en", "fr"]) {
+    const markdown = output[`content/${locale === "fr" ? "fr/" : ""}reference/_generated/connect-snippets.md`];
+    assert.equal(markdown.match(/^## .+ \[#[\w-]+\]$/gmu).length, harnesses.length, locale);
+    for (const harness of harnesses) assert.ok(markdown.includes(`~/${harness.path}`), `${locale}: ${harness.id}`);
+  }
+});
+
+test("a connect snippet is the text the app's manualSnippet builds", () => {
+  const byId = Object.fromEntries(parseHarnesses(read(SOURCES.harnesses), read(SOURCES.harnessCatalog), read(SOURCES.clientConfig)).map((harness) => [harness.id, connectSnippet(harness)]));
+  const helper = "/Applications/Lilo.app/Contents/MacOS/lilo-mcp";
+  assert.equal(byId.claudeCode.text, `claude mcp add --scope user lilo -- ${helper}`);
+  assert.equal(byId.codex.text, `[mcp_servers.lilo]\ncommand = "${helper}"`);
+  assert.deepEqual(JSON.parse(byId.zed.text), { context_servers: { lilo: { command: helper } } });
+  assert.deepEqual(JSON.parse(byId.vscode.text), { mcpServers: { lilo: { type: "stdio", command: helper, tools: ["*"] } } });
+  assert.deepEqual(JSON.parse(byId.opencode.text), { mcp: { lilo: { type: "local", command: [helper] } } });
+  assert.equal(byId.cursor.text, `{\n  "mcpServers": {\n    "lilo": {\n      "command": "${helper}"\n    }\n  }\n}`);
+});
+
+test("a harness list or snippet shape the reader does not know fails loudly", () => {
+  const source = read(SOURCES.harnesses);
+  const catalog = read(SOURCES.harnessCatalog);
+  const config = read(SOURCES.clientConfig);
+  assert.throws(() => parseHarnesses(source, catalog.replace('"kind": "toml"', '"kind": "xml"'), config), /config the reference cannot read/u);
+  assert.throws(() => parseHarnesses(source.replace("case .stdio:", "case .stdio2:"), catalog, config), /Entry\.fields.+ENTRY_SOURCE/u);
+  assert.throws(() => parseHarnesses(source, catalog.replace('"entry": "stdio"', '"entry": "other"'), config), /entry shape other/u);
+  assert.throws(() => parseHarnesses(source, catalog, config.replace("tomlTable([10])", "tomlTable([13])")), /manualSnippet changed/u);
 });

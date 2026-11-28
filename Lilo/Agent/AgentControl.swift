@@ -1,13 +1,8 @@
 import AppKit
 import Security
+import UserNotifications
 import WebKit
 import os
-
-/// How the user's answer to a consent question ended: allowed, declined, or no answer at all (the question
-/// expired unanswered, or no window could ask). `AgentToolError.consent` carries the raw value to the agent.
-enum ConsentAnswer: String {
-    case allowed, denied, expired, unavailable
-}
 
 /// Lets local AI agents drive Lilo over MCP: one session per socket connection.
 @MainActor
@@ -24,13 +19,20 @@ final class AgentControl {
     /// How long a dropped connection's session waits for lilo-mcp to reconnect (it tries for 30 seconds) before
     /// its tabs go.
     static var reconnectGrace: Duration = .seconds(35)
-    /// How long the question letting a client in waits for the user: long enough to come back to the Mac, as the
-    /// client is told it waits, so nothing times out meanwhile.
-    static var connectionConsentTimeout: TimeInterval = 600
-    /// How long a consent question waits for the user unless the caller says otherwise.
-    static var consentTimeout: TimeInterval = 120
-    /// How long a question about a page action waits, inside the tool call's deadline.
-    static var actionConsentTimeout: TimeInterval = 45
+    /// The consent timeouts, by kind: the question letting a client in waits long enough to come back to
+    /// the Mac, as the client is told it waits, so nothing times out meanwhile.
+    static var connectionConsentTimeout: TimeInterval {
+        get { AgentConsentCore.connectionConsentTimeout }
+        set { AgentConsentCore.connectionConsentTimeout = newValue }
+    }
+    static var consentTimeout: TimeInterval {
+        get { AgentConsentCore.consentTimeout }
+        set { AgentConsentCore.consentTimeout = newValue }
+    }
+    static var actionConsentTimeout: TimeInterval {
+        get { AgentConsentCore.actionConsentTimeout }
+        set { AgentConsentCore.actionConsentTimeout = newValue }
+    }
     /// Chrome-style integer ids for tabs, stable for the app's lifetime.
     var tabNumbers: [UUID: Int] = [:]
     var nextTabNumber = 1
@@ -55,6 +57,14 @@ final class AgentControl {
     static var sleepDelay: TimeInterval = 10
     /// Parked tabs put to sleep, woken by the agent's next call on them.
     var sleepingTabIds: Set<UUID> = []
+    /// Each tool call on a tab holds App Nap off from `wake` until the call settles and `sleepWhenIdle`
+    /// ends it: never an always-on assertion, an idle agent's tabs must not keep the app awake.
+    var napAssertions: [UUID: NSObjectProtocol] = [:]
+    /// Seams for the App Nap assertions above, faked in tests.
+    static var beginNapAssertion: (ProcessInfo.ActivityOptions, String) -> NSObjectProtocol = {
+        ProcessInfo.processInfo.beginActivity(options: $0, reason: $1)
+    }
+    static var endNapAssertion: (NSObjectProtocol) -> Void = { ProcessInfo.processInfo.endActivity($0) }
     /// Tabs a `performance` profile records, which never sleep: it spans the calls between its start and its stop.
     var profilingTabIds: Set<UUID> = []
     /// The per-call record of what agents did, in the app's support folder.
@@ -68,9 +78,14 @@ final class AgentControl {
     /// Frames of each tab `gif_creator` recorded, and the tabs still recording.
     var recordings: [UUID: [CGImage]] = [:]
     var recordingTabs: Set<UUID> = []
-    /// Screenshots an agent took, by id, for `upload_image`.
-    var screenshots: [(id: String, png: Data)] = []
+    /// Numbers screenshot ids across sessions, so one session's id never names another's image.
     var nextScreenshotNumber = 1
+    /// The host the agent surface reads plugin tools from: the app's shared one — the panel's
+    /// sessions are these — unless a test substituted `pluginHostOverride`.
+    var pluginHostOverride: PluginHost?
+    var pluginHost: PluginHost? {
+        pluginHostOverride ?? context?.settingsStore.flatMap { context?.pluginHost(settingsStore: $0) }
+    }
 
     init(context: BrowserContext, socketURL: URL = AgentControl.defaultSocketURL) {
         self.context = context
@@ -117,20 +132,7 @@ final class AgentControl {
     }
 
     /// Handshake names as people know them: "claude-code" is Claude Code, "gemini-cli-mcp-client" Gemini CLI.
-    static func displayName(_ clientName: String) -> String {
-        let name = clientName.lowercased()
-        // The Claude app's agent mode names itself after the MCP server it connects to.
-        if name.hasPrefix("local-agent-mode-") { return "Claude" }
-        if let known = [
-            "claude-code": "Claude Code", "claude-ai": "Claude", "codex": "Codex", "codex-mcp-client": "Codex",
-            "cursor": "Cursor", "cursor-vscode": "Cursor"
-        ][name] { return known }
-        // A name the agent styled itself ("Test Agent", "Goose") stays as it is.
-        guard name == clientName, name.contains(where: { "-_.".contains($0) }) else { return clientName }
-        let words = name.split(whereSeparator: { "-_. ".contains($0) }).filter { $0 != "mcp" && $0 != "client" }
-        guard !words.isEmpty else { return clientName }
-        return words.map { ["ai": "AI", "cli": "CLI", "ide": "IDE", "vscode": "VS Code"][$0] ?? $0.capitalized }.joined(separator: " ")
-    }
+    static func displayName(_ clientName: String) -> String { AgentClientNaming.displayName(clientName) }
 
     /// The user stopped a conversation's turn: its agent's Lilo tools stop too, and each answers with an
     /// error, as the agent's turn waits on them to end.
@@ -148,8 +150,9 @@ final class AgentControl {
     /// Stopped for good: no reconnection takes the sessions back.
     func stopAll() {
         for session in sessions {
+            // End before close: closing calls onClose, which ends the session as "disconnected".
+            end(session, reason: "stopped")
             session.connection.close()
-            end(session)
         }
     }
 
@@ -189,7 +192,8 @@ final class AgentControl {
                 actingTabIds.formUnion(acting)
                 return [
                     "name": name, "busy": mine.contains { $0.activeCalls > 0 }, "actingTabIds": acting.map(\.uuidString).sorted(),
-                    "spaceIds": Set(mine.compactMap { working[$0.id] }).map(\.uuidString).sorted()
+                    "spaceIds": Set(mine.compactMap { working[$0.id] }).map(\.uuidString).sorted(),
+                    "waitingForUser": mine.contains { $0.waitingForUser }
                 ] as [String: Any]
             }
             // The latest call running on a tab sets its cursor's mood; one that just ended leaves it until the dot goes out.
@@ -237,13 +241,15 @@ final class AgentControl {
     }
 
     private static let allowedClientsKey = "agentAllowedClients"
-    /// The question asked of each client, by name and identity, and how many of its connections still wait on it.
-    private var pendingConsents: [String: (question: Task<Bool?, Never>, waiting: Int)] = [:]
-    /// Questions shown in the drawers, by request id, with what the drawers show, until the user answers. `tabId` is
-    /// the tab of a question about a page: only the window holding it shows the question.
-    private(set) var pendingConsentAnswers: [String: (answer: CheckedContinuation<ConsentAnswer, Never>, request: [String: Any], tabId: UUID?)] = [:]
+
+    /// The consent question state machine, over the drawers and notifications here: what waits, what the
+    /// windows show, how answers and timeouts resolve. See `AgentConsentCore`.
+    private(set) var consentCore = AgentConsentCore()
     /// The conversations whose agent waits on a question about a page, with how many: their rows turn amber.
     private var askingConversations: [UUID: Int] = [:]
+
+    /// Questions shown in the drawers, by request id, with what the drawers show, until the user answers.
+    var pendingConsentAnswers: [String: AgentConsentCore.Waiting] { consentCore.pendingConsentAnswers }
 
     func isAsking(conversation tabId: UUID) -> Bool { askingConversations[tabId] != nil }
 
@@ -267,8 +273,10 @@ final class AgentControl {
         setClientPermission(AgentClientConfig.Client(clientName: name)?.rawValue ?? name, AgentClientPermission())
         forgetProfileGrants(of: name)
         for session in sessions where session.clientName == name {
+            // End before close: closing calls onClose, which ends the session as "disconnected" and
+            // would make the "revoked" line a no-op.
+            end(session, reason: "revoked")
             session.connection.close()
-            end(session)
         }
     }
 
@@ -354,39 +362,36 @@ final class AgentControl {
         guard asking else { return nil }
         let key = name + "\n" + session.identity
         let identity = session.identity
-        let question = pendingConsents[key]?.question ?? Task { @MainActor in
+        let question: Task<ConsentAnswer?, Never> = consentCore.pendingConsents[key]?.question ?? Task { @MainActor in
             Self.logger.notice("Asking the user to allow \(name, privacy: .public)")
             let answer = await self.askConsent(name, executable: session.executable, timeout: Self.connectionConsentTimeout)
-            // The connection gate's three outcomes: allowed, refused, and unanswered, asked again at the next call.
-            let allowed: Bool?
-            switch answer {
-            case .allowed: allowed = true
-            case .denied: allowed = false
-            case .expired, .unavailable: allowed = nil
-            }
-            Self.logger.notice("\(name, privacy: .public) \(allowed.map { $0 ? "allowed" : "denied" } ?? "unanswered", privacy: .public)")
+            Self.logger.notice("\(name, privacy: .public) \(answer == .allowed ? "allowed" : answer == .denied ? "denied" : "unanswered", privacy: .public)")
             // Dropped here, as every connection waiting on it may have left: a finished question is never reused.
-            self.pendingConsents[key] = nil
+            self.consentCore.pendingConsents[key] = nil
             // Remembered here rather than by a waiting connection: a client that reconnects in between is let in.
-            if allowed == true, !identity.isEmpty, self.allowedClients[name]?.contains(identity) != true {
+            if answer == .allowed, !identity.isEmpty, self.allowedClients[name]?.contains(identity) != true {
                 var clients = self.allowedClients
                 clients[name, default: []].append(identity)
                 self.saveAllowedClients(clients)
                 self.markSeen(name)
             }
-            return allowed
+            return answer
         }
-        pendingConsents[key] = (question, (pendingConsents[key]?.waiting ?? 0) + 1)
+        consentCore.pendingConsents[key] = .init(question: question, waiting: (consentCore.pendingConsents[key]?.waiting ?? 0) + 1)
         // Clients such as an agent app's local mode open a connection per try and leave while the user is
         // still on the way: the question stays up for the next one. Only an unidentified client's question
         // goes with its last connection, as its approval could reach no one.
-        return await withTaskCancellationHandler { await question.value } onCancel: {
+        let value = await withTaskCancellationHandler {
+            await question.value
+        } onCancel: {
             Task { @MainActor in
-                guard let pending = self.pendingConsents[key], pending.question == question else { return }
-                self.pendingConsents[key]?.waiting -= 1
+                guard let pending = self.consentCore.pendingConsents[key], pending.question == question else { return }
+                self.consentCore.pendingConsents[key]?.waiting -= 1
                 if pending.waiting == 1, identity.isEmpty { question.cancel() }
             }
         }
+        // The connection gate's three outcomes: allowed, refused, and unanswered, asked again at the next call.
+        return value == .allowed ? true : value == .denied ? false : nil
     }
 
     /// Asked in the address-bar drawer, which leaves the user's typing alone, of every window, or of the one holding
@@ -403,34 +408,42 @@ final class AgentControl {
             switch ProcessInfo.processInfo.environment["LILO_AGENT_CLICKS"] {
             case "allow": return .allowed
             case "deny": return .denied
+            case "expire": return .expired
             default: break
             }
         }
         #endif
-        guard let windows = context?.windows.windows, !windows.isEmpty else { return .unavailable }
-        let requestId = UUID().uuidString
+        guard let context else { return .unavailable }
         let request: [String: Any] = [
-            "requestId": requestId, "clientName": Self.displayName(name), "executable": executable, "profileName": profileName ?? "",
+            "clientName": Self.displayName(name), "executable": executable, "profileName": profileName ?? "",
             "action": action ?? NSNull()
         ]
-        for window in shows(tabId, among: windows) { window.bridgeRouter.send(event: "agentControlRequested", data: request) }
-        if !NSApp.isActive { NSApp.requestUserAttention(.informationalRequest) }
-        DispatchQueue.main.asyncAfter(deadline: .now() + timeout) { [weak self] in self?.answerConsent(requestId, granted: nil) }
-        return await withTaskCancellationHandler {
-            await withCheckedContinuation { pendingConsentAnswers[requestId] = ($0, request, tabId) }
-        } onCancel: {
-            Task { @MainActor [weak self] in self?.answerConsent(requestId, granted: nil) }
+        let windows = context.windows.windows
+        // The drawers know the question by its request id, which the core adds; the notification carries
+        // the same dictionary, whose tap opens a window at the question.
+        let notify = windows.isEmpty || Headless.isOn
+        unsafe consentCore.presentAsNotification = { [weak self] requestId, request in
+            guard let self else { return }
+            unsafe Self.consentNotificationPoster(Self.notification(requestId: requestId, request: request))
         }
+        unsafe consentCore.present = { [weak self] _, request in
+            for window in (self?.shows(tabId, among: self?.context?.windows.windows ?? []) ?? []) {
+                window.bridgeRouter.send(event: "agentControlRequested", data: request)
+            }
+        }
+        unsafe consentCore.requestAttention = { if !NSApp.isActive { NSApp.requestUserAttention(.informationalRequest) } }
+        unsafe consentCore.withdraw = { [weak self] requestId in self?.dropConsent(requestId) }
+        return await consentCore.ask(name + "\n" + UUID().uuidString, request: request, tabId: tabId, timeout: timeout, canPresent: !notify)
     }
 
     /// Shows the questions still waiting in a window whose chrome page just loaded: one that loaded or reloaded
     /// after a question was sent never got it.
     func resendPendingConsents(to router: BridgeRouter?) {
+        guard let router else { return }
         let windows = context?.windows.windows ?? []
-        for pending in pendingConsentAnswers.values {
-            guard let router, pending.tabId == nil || shows(pending.tabId, among: windows).contains(where: { $0.bridgeRouter === router }) else { continue }
-            router.send(event: "agentControlRequested", data: pending.request)
-        }
+        consentCore.resendPending(to: [(holdsTab: { [weak self] tabId in
+            (self?.shows(tabId, among: windows).contains { $0.bridgeRouter === router }) == true
+        }, show: { request in router.send(event: "agentControlRequested", data: request) })])
     }
 
     private func shows(_ tabId: UUID?, among windows: [MainWindowController]) -> [MainWindowController] {
@@ -438,24 +451,60 @@ final class AgentControl {
         return [holder]
     }
 
-    static let asksBeforeActionsKey = "agentAskBeforeActions"
-    static let alwaysAllowedSitesKey = "agentAlwaysAllowedSites"
-
-    /// Sites where the user always lets agents send, pay, delete or publish, their subdomains included.
-    var alwaysAllowedSites: [String] {
-        context?.settingsStore?.get(Self.alwaysAllowedSitesKey)
-            .flatMap { try? JSONDecoder().decode([String].self, from: Data($0.utf8)) } ?? []
+    /// A consent notification's tap: a window shows the question it carried, asked again in its
+    /// drawer. The question stays held: the user answers it, never the notification itself.
+    func revealConsent(requestId: String) {
+        guard let pending = consentCore.pendingConsentAnswers[requestId], let context else { return }
+        Headless.leave(revealing: context.windows.windows.compactMap(\.window))
+        if context.windows.windows.isEmpty, let spaceId = context.spaceManager?.spaces.first?.id {
+            context.openWindow(on: spaceId, opening: .nothing)
+        }
+        NSApp.activate(ignoringOtherApps: true)
+        for router in shows(pending.tabId, among: context.windows.windows).map(\.bridgeRouter) {
+            router.send(event: "agentControlRequested", data: pending.request)
+        }
     }
+
+    /// Posts the notification of a question no window could show; tests substitute a recorder.
+    nonisolated(unsafe) static var consentNotificationPoster: (sending UNNotificationRequest) -> Void = { UNUserNotificationCenter.requestAuthorizationAndAdd($0) }
+
+    nonisolated static func consentNotificationId(_ requestId: String) -> String { "lilo.agent.consent.\(requestId)" }
+
+    /// The notification of a question no window could show, worded as the drawer asks it.
+    private nonisolated static func notification(requestId: String, request: [String: Any]) -> sending UNNotificationRequest {
+        let content = UNMutableNotificationContent()
+        let name = request["clientName"] as? String ?? ""
+        let profileName = request["profileName"] as? String ?? ""
+        if let action = request["action"] as? [String: String] {
+            let label = action["label"] ?? "", site = action["site"] ?? "", tab = action["tab"] ?? ""
+            content.title = switch action["kind"] {
+            case "enter": unsafe String(format: "%@ wants to press Enter to submit \"%@\" in %@ (%@).".localized, name, label, tab, site)
+            case "fetch": unsafe String(format: "%@ wants to send \"%@\" from %@ (%@), with your cookies.".localized, name, label, tab, site)
+            case "upload": unsafe String(format: "%@ wants to upload %@ to %@.".localized, name, label, site)
+            case "tool": unsafe String(format: "%@ wants to run the tool \"%@\".".localized, name, label)
+            default: unsafe String(format: "%@ wants to click \"%@\" in %@ (%@).".localized, name, label, tab, site)
+            }
+        } else {
+            content.title = profileName.isEmpty
+                ? unsafe String(format: "%@ wants to control Lilo".localized, name)
+                : unsafe String(format: "%@ wants to use the profile %@".localized, name, profileName)
+        }
+        content.body = "Open Lilo to answer.".localized
+        content.sound = .default
+        content.threadIdentifier = "lilo.agent.consent"
+        content.userInfo = ["agentConsentRequestId": requestId]
+        return UNNotificationRequest(identifier: consentNotificationId(requestId), content: content, trigger: nil)
+    }
+
+    var alwaysAllowedSites: [String] { AgentConsentRules.alwaysAllowedSites(from: context?.settingsStore) }
 
     /// How each agent acts on pages, by app id, or by agent name when no app is known.
     var clientPermissions: [String: AgentClientPermission] {
-        AgentClientPermission.decode(context?.settingsStore?.get(AgentClientPermission.settingKey))
+        AgentConsentRules.clientPermissions(from: context?.settingsStore)
     }
 
     func setClientPermission(_ key: String, _ permission: AgentClientPermission) {
-        var all = clientPermissions
-        all[key] = permission
-        context?.settingsStore?.set(AgentClientPermission.settingKey, value: AgentClientPermission.encode(all))
+        AgentConsentRules.setClientPermission(key, permission, store: context?.settingsStore)
     }
 
     /// Asks the user before a click or Enter whose target signs in, pays, buys, deletes, publishes, sends or signs
@@ -467,7 +516,7 @@ final class AgentControl {
         _ kind: String, target: [String: Any] = [:], label: String? = nil, sensitive: Bool = false,
         frame: WKFrameInfo?, engine: WKWebViewTab, session: AgentSession
     ) async throws -> Bool {
-        let globalAsks = context?.settingsStore?.get(Self.asksBeforeActionsKey) != "false"
+        let globalAsks = context?.settingsStore?.get(AgentConsentRules.asksBeforeActionsKey) != "false"
         let site = engine.currentURL?.host() ?? ""
         guard AgentClientPermission.asks(sensitive: true, site: site, globalAsks: globalAsks, globalSites: alwaysAllowedSites, client: nil) else { return false }
         var found = label.map { ($0, sensitive) }
@@ -488,12 +537,29 @@ final class AgentControl {
             sensitive: sensitive, site: site, globalAsks: globalAsks, globalSites: alwaysAllowedSites, client: client
         ) else { return false }
         let action = ["kind": kind, "label": label, "site": site, "tab": engine.currentTitle ?? ""]
-        switch await askAboutAction(action, engine: engine, session: session) {
+        switch await askAboutAction(action, who: session.clientName, tabId: engine.id, session: session) {
         case .allowed:
             return true
         case .denied:
             let what = ["enter": "pressing Enter to submit", "fetch": "sending"][kind] ?? "clicking"
             throw AgentToolError("The user declined \(what) \"\(label)\" on \(site): do not try again, report that it was declined and ask what to do instead", code: "needs_user", consent: .denied)
+        case .expired:
+            throw Self.expiredConsentError(timeout: Self.actionConsentTimeout)
+        case .unavailable:
+            throw Self.unavailableConsentError
+        }
+    }
+
+    /// Asks the user before a plugin's `commit`/`irreversible` tool runs: the same question a page
+    /// action gets, every call as the consent tiers require, only asked by the plugin's title
+    /// rather than the agent's. A plugin tool call is indistinguishable from a core one to the gate.
+    func approvePluginTool(_ name: String, pluginTitle: String, session: AgentSession) async throws {
+        let action = ["kind": "tool", "label": name, "site": "", "tab": ""]
+        switch await askAboutAction(action, who: pluginTitle, tabId: nil, session: session) {
+        case .allowed:
+            return
+        case .denied:
+            throw AgentToolError("The user declined \(pluginTitle) running \"\(name)\": do not try again, report that it was declined and ask what to do instead", code: "needs_user", consent: .denied)
         case .expired:
             throw Self.expiredConsentError(timeout: Self.actionConsentTimeout)
         case .unavailable:
@@ -507,14 +573,15 @@ final class AgentControl {
         return (label, flagged["sensitive"] as? Bool ?? true)
     }
 
-    /// Asks about an action on `engine`'s page in the window holding it, where its agent's conversation row turns amber
-    /// until the answer. Answered before the tool's own deadline, so the agent learns the user is needed.
-    private func askAboutAction(_ action: [String: String], engine: WKWebViewTab, session: AgentSession) async -> ConsentAnswer {
+    /// Asks `who` about an action in the window holding `tabId` (every window when nil, as a
+    /// plugin tool has no page), where the agent's conversation row turns amber until the answer.
+    /// Answered before the tool's own deadline, so the agent learns the user is needed.
+    private func askAboutAction(_ action: [String: String], who: String, tabId: UUID?, session: AgentSession) async -> ConsentAnswer {
         session.waitingForUser = true
         let conversation = session.conversationTabId
         if let conversation { askingConversations[conversation, default: 0] += 1; context?.conversations.questionChanged(tabId: conversation) }
         publishActivity()
-        let answer = await askConsent(session.clientName, action: action, tabId: engine.id, timeout: Self.actionConsentTimeout)
+        let answer = await askConsent(who, action: action, tabId: tabId, timeout: Self.actionConsentTimeout)
         session.waitingForUser = false
         if let conversation {
             askingConversations[conversation] = askingConversations[conversation].flatMap { $0 > 1 ? $0 - 1 : nil }
@@ -531,7 +598,7 @@ final class AgentControl {
         let site = engine.currentURL?.host() ?? ""
         let path = (file.path as NSString).abbreviatingWithTildeInPath
         let action = ["kind": "upload", "label": path, "site": site, "tab": engine.currentTitle ?? ""]
-        switch await askAboutAction(action, engine: engine, session: session) {
+        switch await askAboutAction(action, who: session.clientName, tabId: engine.id, session: session) {
         case .allowed:
             break
         case .denied:
@@ -546,32 +613,41 @@ final class AgentControl {
 
     /// `needs_user` for a question that expired unanswered: withdrawn, and the agent may ask once more.
     static func expiredConsentError(timeout: TimeInterval) -> AgentToolError {
-        AgentToolError("The user did not answer within \(Int(timeout)) s, so the question was withdrawn: call the tool again once to ask again; if it expires again, stop and tell the user what is waiting", code: "needs_user", consent: .expired)
+        AgentConsentRules.expiredConsentError(timeout: timeout)
     }
 
     /// `needs_user` for a question no window could show.
     static var unavailableConsentError: AgentToolError {
-        AgentToolError("Lilo has no window to ask the user in: ask them to open one, then call again", code: "needs_user", consent: .unavailable)
+        AgentConsentRules.unavailableConsentError
     }
 
     /// The user's answer from a window's drawer, nil when nobody answered: the others drop the same question.
     /// `alwaysAllowSite` is the site of an action the user always allows from now on.
     func answerConsent(_ requestId: String, granted: Bool?, alwaysAllowSite: String? = nil) {
-        guard let answer = pendingConsentAnswers.removeValue(forKey: requestId)?.answer else { return }
-        if granted == true, let site = alwaysAllowSite, !site.isEmpty, !alwaysAllowedSites.contains(site),
-           let data = try? JSONEncoder().encode(alwaysAllowedSites + [site]), let list = String(bytes: data, encoding: .utf8) {
-            context?.settingsStore?.set(Self.alwaysAllowedSitesKey, value: list)
+        guard consentCore.pendingConsentAnswers[requestId] != nil else { return }
+        if let sites = consentCore.answer(requestId, granted: granted, alwaysAllowSite: alwaysAllowSite, allowedSites: alwaysAllowedSites),
+           let data = try? JSONEncoder().encode(sites), let list = String(bytes: data, encoding: .utf8) {
+            context?.settingsStore?.set(AgentConsentRules.alwaysAllowedSitesKey, value: list)
         }
+        dropConsent(requestId)
+    }
+
+    /// A question nobody answers any more leaves the drawers and the notification: the caller gave up
+    /// on it, or it timed out.
+    private func dropConsent(_ requestId: String) {
         for window in context?.windows.windows ?? [] {
             window.bridgeRouter.send(event: "permissionRequestClosed", data: ["requestId": requestId])
         }
-        answer.resume(returning: granted.map { $0 ? .allowed : .denied } ?? .expired)
+        UNUserNotificationCenter.current().removeDeliveredNotifications(withIdentifiers: [Self.consentNotificationId(requestId)])
     }
 
     /// The session's tabs go back to normal first, then close: an engine held elsewhere keeps no agent state.
-    private func end(_ closing: AgentSession) {
+    /// `reason` is how the run ledger says the run finished: "disconnected" (the socket closed or the
+    /// reconnect grace ran out), "revoked", "stopped" or "adopted" (a reconnect took its tabs over).
+    private func end(_ closing: AgentSession, reason: String = "disconnected") {
         guard sessions.contains(where: { $0 === closing }) else { return }
         sessions.removeAll { $0 === closing }
+        recordRunEnd(closing, reason: reason)
         refreshControlledTabs()
         for request in closing.requests.values { request.cancel() }
         if closing.isAuthorized { markSeen(closing.clientName) }
@@ -579,7 +655,6 @@ final class AgentControl {
         dropFolders(of: closing)
         dropIsolatedSpace(of: closing)
         publishActivity()
-        if sessions.isEmpty { screenshots = [] }
         // The last agent with tabs in the agents' profile gone, nothing it did there is kept for the next one.
         if !sessions.contains(where: { $0.profileId == nil && !agentsSpaceFolders(of: $0).isEmpty }) { Task { await wipeAgentsProfile() } }
     }
@@ -603,11 +678,14 @@ final class AgentControl {
     }
 
     private func handOver(_ dropped: AgentSession, to session: AgentSession) {
+        // The dropped session's run ends here, before its folders and space become the heir's.
+        recordRunEnd(dropped, reason: "adopted")
         session.folders = dropped.folders
         session.isolatedSpaceId = dropped.isolatedSpaceId
         session.title = dropped.title
         session.projectName = dropped.projectName
         session.actedOn = dropped.actedOn
+        session.screenshots = dropped.screenshots
         session.profileId = dropped.profileId
         sessions.removeAll { $0 === dropped }
         context?.powerKeeper.terminalEnded(dropped.id)
@@ -726,6 +804,13 @@ final class AgentSession {
     var flow: AgentFlows.Recording?
     /// The name `flow_start` gave, which `flow_save` uses when its own `name` is empty.
     var flowName: String?
+    /// Screenshots it took, by id: `upload_image` looks nowhere else.
+    var screenshots: [(id: String, png: Data)] = []
+    /// Tool calls this run made and how many failed, for the run ledger's coarse counts.
+    var toolCalls = 0
+    var toolErrors = 0
+    /// The run ledger wrote this session's `start`; its `end` line is still owed.
+    var runOpen = false
 
     init(connection: AgentConnection) {
         self.connection = connection

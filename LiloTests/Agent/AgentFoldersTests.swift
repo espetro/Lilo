@@ -387,6 +387,24 @@ final class AgentFoldersTests: AgentToolTestCase {
         XCTAssertTrue(navigate.isError, "the conversation's tab never loads a page")
     }
 
+    func testAConversationsAgentKeepsItsPagesInItsFolderWhenTheConversationIsSplit() async throws {
+        let anchor = try XCTUnwrap(window.tabManager.activeTab)
+        let agentTab = Tab(title: "Conversation", spaceId: space.id, kind: .agent, cwd: NSTemporaryDirectory(), agentId: "test-agent")
+        let folder = TabFolder(spaceId: space.id, name: "Conversation", color: "#795ceb", conversationTabId: agentTab.id)
+        _ = try window.applyBrowserCommand(.createFolder(spaceId: space.id, folder: folder, section: .unpinned))
+        _ = try window.applyBrowserCommand(.createTab(spaceId: space.id, tab: agentTab, activate: false))
+        _ = try window.applyBrowserCommand(.splitTabs(spaceId: space.id, tabId: agentTab.id, targetTabId: anchor.id, vertical: false, before: false))
+        context.conversations.register(agentTab, folderId: folder.id)
+        let session = try XCTUnwrap(control.sessions.first)
+        session.conversationTabId = agentTab.id
+        session.folders[nil] = nil
+
+        let number = try await newAgentTab()
+
+        let tabId = try tabId(of: number)
+        XCTAssertEqual(context.browserState.durableTab(for: tabId)?.tab.groupId, folder.id, "a split conversation tab still files its pages in its own folder")
+    }
+
     func testAConversationsAgentOpensItsTabsWhereTheConversationMoved() async throws {
         let first = TabFolder(spaceId: space.id, name: "Before", color: "#795ceb")
         let moved = TabFolder(spaceId: space.id, name: "After", color: "#795ceb")
@@ -481,6 +499,60 @@ final class AgentFoldersTests: AgentToolTestCase {
         XCTAssertTrue(slept, "nobody sees a parked tab the agent left alone")
         XCTAssertEqual(visibility.text, "\"visible\"", "awake before the tool reads the page")
         XCTAssertEqual(animating.text, "true")
+    }
+
+    func testACallHoldsAppNapOffOnlyUntilItSettles() async throws {
+        var begun = 0
+        var ended = 0
+        let beginNap = AgentControl.beginNapAssertion
+        let endNap = AgentControl.endNapAssertion
+        AgentControl.beginNapAssertion = { _, _ in begun += 1; return NSObject() }
+        AgentControl.endNapAssertion = { _ in ended += 1 }
+        defer {
+            AgentControl.beginNapAssertion = beginNap
+            AgentControl.endNapAssertion = endNap
+        }
+        let number = try await agentTab(showing: "<title>Nap</title>")
+
+        _ = await client.callTool("get_page_text", ["tabId": number])
+
+        XCTAssertGreaterThan(begun, 0, "a tool call on a tab takes the assertion in wake")
+        XCTAssertEqual(begun, ended, "each assertion ends when its call settles, none stays on")
+    }
+
+    func testBrowserConfigReportsTheSessionsIdlePosture() async throws {
+        let sleepDelay = AgentControl.sleepDelay
+        AgentControl.sleepDelay = 0.2
+        defer { AgentControl.sleepDelay = sleepDelay }
+        let number = try await agentTab(showing: "<title>Posture</title>")
+        let id = try tabId(of: number)
+
+        let wakeReply = await client.callTool("browser_config")
+        let awake = try XCTUnwrap(JSONSerialization.jsonObject(with: Data(wakeReply.text.utf8)) as? [String: Any])
+        let slept = await pollUntil(timeout: 5) { self.control.sleepingTabIds.contains(id) }
+        let sleepReply = await client.callTool("browser_config")
+        let sleeping = try XCTUnwrap(JSONSerialization.jsonObject(with: Data(sleepReply.text.utf8)) as? [String: Any])
+
+        XCTAssertEqual((awake["agent"] as? [String: Any])?["idlePosture"] as? String, "full-rate", wakeReply.text)
+        XCTAssertTrue(slept, "the parked tab slept before the second read")
+        XCTAssertEqual((sleeping["agent"] as? [String: Any])?["idlePosture"] as? String, "sleeping", sleepReply.text)
+    }
+
+    func testASleptParkedTabIsCapturedAfterItsWakeCall() async throws {
+        let sleepDelay = AgentControl.sleepDelay
+        AgentControl.sleepDelay = 0.2
+        defer { AgentControl.sleepDelay = sleepDelay }
+        let number = try await agentTab(showing: "<body style='margin:0;background:#00ff00'>")
+        let engine = try engine(forTab: number)
+        let throttled = await pollUntil(timeout: 5) { (try? await engine.wkWebView.evaluateJavaScript("document.visibilityState")) as? String == "hidden" }
+
+        let shot = await client.callTool("computer", ["tabId": number, "action": "screenshot"])
+
+        XCTAssertTrue(throttled, "the capture starts from a tab WebKit hides")
+        let image = try XCTUnwrap(shot.images.first.flatMap(NSBitmapImageRep.init(data:)), shot.text)
+        let color = try XCTUnwrap(image.colorAt(x: image.pixelsWide / 2, y: image.pixelsHigh / 2)?.usingColorSpace(.sRGB))
+        XCTAssertGreaterThan(color.greenComponent, 0.65, "the page is painted, not blank: \(color)")
+        XCTAssertLessThan(color.redComponent, 0.35, "\(color)")
     }
 
     func testAProfiledTabNeverSleeps() async throws {

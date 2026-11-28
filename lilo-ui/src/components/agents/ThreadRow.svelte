@@ -24,6 +24,7 @@
   import type { ThreadItem } from "./conversationModel";
   import Icon from "../ui/Icon.svelte";
   import SiteFavicon from "../ui/SiteFavicon.svelte";
+  import { getAgent } from "../../stores/conversations.svelte";
   import { getOpenTabs } from "../../stores/tabs.svelte";
   import Markdown from "./Markdown.svelte";
   import PlanTray from "./PlanTray.svelte";
@@ -60,7 +61,7 @@
   // Mounted on first open, then kept so closing can animate.
   let opened = $state(false);
   // Only a question answered while on screen settles; one answered before the replay draws still.
-  const askedHere = untrack(() => (item.kind === "permission" || item.kind === "question") && item.answer === null);
+  const askedHere = untrack(() => (item.kind === "permission" || item.kind === "question" || item.kind === "signInLink") && item.answer === null);
   let confirmingRestore = $state(false);
   let copied = $state(false);
 </script>
@@ -263,7 +264,17 @@
         : view.answer.action === "decline" ? t("agents.question.skipped") : t("agents.conversation.cancelled")}
     </span>
   </div>
+{:else if view.kind === "signInLink" && view.answer !== null}
+  <!-- A pending sign-in link docks over the composer; once answered, its answer stays in the thread. -->
+  <div class="permission" class:settled={askedHere}>
+    <span class="permission-title">{view.message}</span>
+    <span class="permission-answer">
+      {view.answer.action === "accept" ? t("agents.signInLink.opened") : t("agents.conversation.cancelled")}
+    </span>
+  </div>
 {:else if view.kind === "notice"}
+  {@const [verb, switchedTo] = view.text.split(":")}
+  {@const agent = getAgent(switchedTo)?.name ?? switchedTo}
   <div class="notice">
     {view.text === "restored"
       ? t("agents.conversation.notice.restored")
@@ -271,7 +282,11 @@
         ? t("agents.conversation.notice.restoreFailed")
         : view.text === "signedIn"
           ? t("agents.conversation.notice.signedIn")
-          : view.text}
+          : verb === "switched"
+            ? t("agents.conversation.notice.switched", { agent })
+            : verb === "handoff"
+              ? t("agents.conversation.notice.handoff", { agent })
+              : view.text}
   </div>
 {/if}
 

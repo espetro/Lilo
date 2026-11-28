@@ -32,7 +32,7 @@ final class AgentBrowserConfigTests: AgentToolTestCase {
     }
 
     func testEveryAllowlistedKeySerializes() async throws {
-        context.settingsStore!.set(AgentControl.asksBeforeActionsKey, value: "false")
+        context.settingsStore!.set(AgentConsentRules.asksBeforeActionsKey, value: "false")
         context.settingsStore!.set(AgentActionLog.settingKey, value: "false")
         context.settingsStore!.set("contentBlockerEnabled", value: "false")
         context.settingsStore!.set("defaultZoom", value: "1.25")
@@ -47,7 +47,8 @@ final class AgentBrowserConfigTests: AgentToolTestCase {
             "features.defaultZoom": 1.25,
             "agent.profile": "Agents",
             "agent.askBeforeActions": false,
-            "agent.actionLog": false
+            "agent.actionLog": false,
+            "agent.idlePosture": "full-rate"
         ]
         XCTAssertEqual(Set(AgentBrowserConfig.allowlist), Set(expected.keys), "the test's table must cover the whole allowlist")
         for key in AgentBrowserConfig.allowlist {
@@ -59,7 +60,7 @@ final class AgentBrowserConfigTests: AgentToolTestCase {
     func testNoKeyOutsideTheAllowlistIsExposed() async throws {
         // Keys an agent must not read stay unreadable even when the store holds them.
         context.settingsStore!.set("customAgent", value: #"{"executable":"/secret/path/agent"}"#)
-        context.settingsStore!.set(AgentControl.alwaysAllowedSitesKey, value: #"["example.com"]"#)
+        context.settingsStore!.set(AgentConsentRules.alwaysAllowedSitesKey, value: #"["example.com"]"#)
         let object = try await snapshot()
         XCTAssertEqual(paths(object), Set(AgentBrowserConfig.allowlist))
         XCTAssertNil(resolve("agent.customAgent", in: object))
@@ -81,7 +82,7 @@ final class AgentBrowserConfigTests: AgentToolTestCase {
         XCTAssertEqual(reply.text, AgentTools.json(before))
         let after = AgentTools.json(try await snapshot())
         XCTAssertEqual(after, AgentTools.json(before))
-        XCTAssertNil(context.settingsStore!.get(AgentControl.asksBeforeActionsKey))
+        XCTAssertNil(context.settingsStore!.get(AgentConsentRules.asksBeforeActionsKey))
     }
 
     func testNothingSensitiveIsExposed() async throws {

@@ -66,17 +66,17 @@ class AgentToolTestCase: XCTestCase {
     }
 
     /// Creates an agent tab and returns its number.
-    func newAgentTab() async throws -> Int {
-        let reply = await client.callTool("tabs_create_mcp")
+    func newAgentTab(_ client: AgentTestClient? = nil) async throws -> Int {
+        let reply = await (client ?? self.client).callTool("tabs_create_mcp")
         XCTAssertFalse(reply.isError, reply.text)
         return try XCTUnwrap(reply.text.split(separator: " ").last.flatMap { Int($0) })
     }
 
     /// Creates an agent tab showing `html`, and returns its number.
-    func agentTab(showing html: String) async throws -> Int {
-        let tabId = try await newAgentTab()
+    func agentTab(showing html: String, _ client: AgentTestClient? = nil) async throws -> Int {
+        let tabId = try await newAgentTab(client)
         let encoded = try XCTUnwrap(html.addingPercentEncoding(withAllowedCharacters: .alphanumerics))
-        let reply = await client.callTool("navigate", ["tabId": tabId, "url": "data:text/html;charset=utf-8,\(encoded)"])
+        let reply = await (client ?? self.client).callTool("navigate", ["tabId": tabId, "url": "data:text/html;charset=utf-8,\(encoded)"])
         XCTAssertFalse(reply.isError, reply.text)
         return tabId
     }

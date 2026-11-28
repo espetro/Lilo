@@ -56,6 +56,9 @@ final class WKWebViewTab: NSObject {
         /// Open a right-clicked link in a freshly created ephemeral private space and switch to it.
         func tab(_ tab: WKWebViewTab, openLinkInNewPrivateSpace url: URL)
         func tab(_ tab: WKWebViewTab, openLinkInNewWindow url: URL)
+        /// Open a right-clicked link in a split view beside the tab, or in a Little window.
+        func tab(_ tab: WKWebViewTab, openLinkInSplitView url: URL)
+        func tab(_ tab: WKWebViewTab, openLinkInLittleWindow url: URL)
         /// Names the search engine in the page's context menu.
         var searchEngineName: String { get }
         /// Opens the default search engine's results for `text` in a new tab.
@@ -92,6 +95,8 @@ final class WKWebViewTab: NSObject {
         func tabRequestsForeground(_ tab: WKWebViewTab)
         /// A call outside activation resumed this frozen tab.
         func tabDidWake(_ tab: WKWebViewTab)
+        /// The page was suspended in place or resumed.
+        func tab(_ tab: WKWebViewTab, didUpdateSleeping isSleeping: Bool)
         /// The page handed us raw bytes to save to a file (blob/canvas export).
         func tab(_ tab: WKWebViewTab, saveData data: Data, suggestedFilename: String, mimeType: String, originatingURL: URL)
         /// The user asked to bookmark the current page (page context menu / Cmd+D).
@@ -253,6 +258,8 @@ final class WKWebViewTab: NSObject {
         onOpenInNewTab: { [weak self] url in if let self { delegate?.tab(self, didCreateNewTab: url, inBackground: true) } },
         onOpenInPrivateSpace: { [weak self] url in if let self { delegate?.tab(self, openLinkInNewPrivateSpace: url) } },
         onOpenInNewWindow: { [weak self] url in if let self { delegate?.tab(self, openLinkInNewWindow: url) } },
+        onOpenInSplitView: { [weak self] url in if let self { delegate?.tab(self, openLinkInSplitView: url) } },
+        onOpenInLittleWindow: { [weak self] url in if let self { delegate?.tab(self, openLinkInLittleWindow: url) } },
         onTogglePiP: { [weak self] in self?.togglePictureInPicture() },
         onBookmark: { [weak self] in if let self { delegate?.tabRequestsBookmark(self) } },
         onHideElement: { [weak self] in if let self { delegate?.tabRequestsHideElement(self) } },
@@ -642,6 +649,7 @@ final class WKWebViewTab: NSObject {
         guard !isFrozen, lentToExtensionAt.map({ now.timeIntervalSince($0) >= 2 }) ?? true else { return }
         isFrozen = true
         freezer.freeze(webView)
+        delegate?.tab(self, didUpdateSleeping: true)
         if let adapter = tabManager?.tabAdapter(for: id) { tabManager?.reportExtensionTabChange(of: adapter, ["frozen"]) }
     }
 
@@ -650,6 +658,7 @@ final class WKWebViewTab: NSObject {
     func resume(completion: @escaping () -> Void = {}) {
         guard isFrozen, !isPageLost else { return completion() }
         isFrozen = false
+        delegate?.tab(self, didUpdateSleeping: false)
         if let adapter = tabManager?.tabAdapter(for: id) { tabManager?.reportExtensionTabChange(of: adapter, ["frozen"]) }
         freezer.resume(webView) { [weak self] in
             self?.capturePageColorIfStale()
@@ -1695,6 +1704,8 @@ extension WKWebViewTab.Delegate {
     func tab(_ tab: WKWebViewTab, openAgentPopupWith configuration: WKWebViewConfiguration, url: URL?) -> WKWebView? { nil }
     func tab(_ tab: WKWebViewTab, openLinkInNewPrivateSpace url: URL) {}
     func tab(_ tab: WKWebViewTab, openLinkInNewWindow url: URL) {}
+    func tab(_ tab: WKWebViewTab, openLinkInSplitView url: URL) {}
+    func tab(_ tab: WKWebViewTab, openLinkInLittleWindow url: URL) {}
     var searchEngineName: String { "Google" }
     func tab(_ tab: WKWebViewTab, searchWebFor text: String) {}
     var imageSearchEngineName: String { "Google Lens" }
@@ -1721,6 +1732,7 @@ extension WKWebViewTab.Delegate {
     func tab(_ tab: WKWebViewTab, didHoverLink href: String?) {}
     func tabRequestsForeground(_ tab: WKWebViewTab) {}
     func tabDidWake(_ tab: WKWebViewTab) {}
+    func tab(_ tab: WKWebViewTab, didUpdateSleeping isSleeping: Bool) {}
     func tab(_ tab: WKWebViewTab, saveData data: Data, suggestedFilename: String, mimeType: String, originatingURL: URL) {}
     func tabRequestsBookmark(_ tab: WKWebViewTab) {}
     var hidesElements: Bool { false }

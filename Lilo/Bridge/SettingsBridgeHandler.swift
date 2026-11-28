@@ -48,12 +48,14 @@ final class SettingsBridgeHandler: BridgeHandler {
         "setAgentClientPermission",
         "getAgentActionLog",
         "openAgentActionLog",
+        "getAgentRuns",
         "getUpdaterStatus",
         "checkForUpdates",
         "installUpdate",
         "dismissUpdate",
         "unlockDeveloperTools",
         "setAutomaticUpdates",
+        "setBetaFeedURL",
         "getShortcuts",
         "recordShortcut",
         "setShortcut",
@@ -197,6 +199,7 @@ final class SettingsBridgeHandler: BridgeHandler {
                 if key == "contentBlockerAllowedDomains" { blockerAllowlistChanged(reloadTabId: nil) }
                 if key == SettingsStore.hiddenElementsKey { engineFactory?.setHiddenElements(store.hiddenElements) }
                 if key == "sendGPC" { engineFactory?.setGlobalPrivacyControl(value == "true") }
+                if key == "updateChannel" { Self.betaUpdateChecker.updateChannel = value }
                 if key == "preventCrossSiteTracking" { engineFactory?.setTrackingPrevention(value == "true") }
                 if key == "httpsOnly" { engineFactory?.setHTTPSOnly(value == "true") }
                 if key == "minimumFontSize" { engineFactory?.setMinimumFontSize(CGFloat(Double(value) ?? 0)) }
@@ -320,11 +323,18 @@ final class SettingsBridgeHandler: BridgeHandler {
                 NSWorkspace.shared.open(directory)
             }
 
+        case "getAgentRuns":
+            await publishAgentRuns()
+
         case "getUpdaterStatus":
             publishUpdaterStatus()
 
         case "checkForUpdates":
             updaterController?.checkForUpdates(nil)
+            Task { [weak self] in
+                await Self.betaUpdateChecker.check()
+                self?.publishUpdaterStatus()
+            }
             publishUpdaterStatus()
 
         case "installUpdate":
@@ -349,6 +359,10 @@ final class SettingsBridgeHandler: BridgeHandler {
                 updater.automaticallyChecksForUpdates = message.bool("enabled")
                 updater.automaticallyDownloadsUpdates = message.bool("enabled")
             }
+            publishUpdaterStatus()
+
+        case "setBetaFeedURL":
+            Self.betaUpdateChecker.setFeedURLOverride(message.string("url") ?? "")
             publishUpdaterStatus()
 
         case "getShortcuts":
@@ -578,15 +592,25 @@ final class SettingsBridgeHandler: BridgeHandler {
         (NSApp.delegate as? AppDelegate)?.updaterController
     }
 
+    /// The plain release feed of an unsigned build (the fork beta); nil when no feed is compiled in.
+    /// Shared: every window's handler instance points at the one check, and AppDelegate starts it.
+    static let betaUpdateChecker = BetaUpdateChecker()
+
     private func publishUpdaterStatus() {
         let updater = updaterController?.updater
+        let beta = Self.betaUpdateChecker.isConfigured ? Self.betaUpdateChecker : nil
         bridgeRouter?.send(event: "updaterStatus", data: [
             "version": Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "",
             "webKitVersion": Bundle(for: WKWebView.self).object(forInfoDictionaryKey: "CFBundleVersion") as? String ?? "",
             "webKitFork": WKEngineFactory.isForkedWebKit,
             "available": updater != nil,
             "automatic": updater.map { $0.automaticallyChecksForUpdates && $0.automaticallyDownloadsUpdates } ?? false,
-            "lastCheck": updater?.lastUpdateCheckDate?.timeIntervalSince1970 ?? NSNull()
+            "lastCheck": updater?.lastUpdateCheckDate?.timeIntervalSince1970 ?? NSNull(),
+            "betaFeed": beta != nil,
+            "betaFeedURL": beta?.feedURL?.absoluteString ?? NSNull(),
+            "betaFeedURLOverride": beta?.feedURLOverride ?? NSNull(),
+            "betaAvailable": beta?.available.map { ["tag": $0.tag, "url": $0.url] } ?? NSNull(),
+            "betaLastCheck": beta?.lastCheck?.timeIntervalSince1970 ?? NSNull()
         ])
     }
 
@@ -630,6 +654,28 @@ final class SettingsBridgeHandler: BridgeHandler {
             ["name": client.name, "calls": client.calls.map { call in
                 ["time": call.time, "tool": call.tool, "host": call.host ?? NSNull(), "ok": call.ok, "code": call.code ?? NSNull()] as [String: Any]
             }] as [String: Any]
+        }])
+    }
+
+    /// The run ledger's recent runs, read off the main thread when the page asks: the record a cockpit
+    /// lists to say which agents worked, where and for how long, live ones included.
+    private func publishAgentRuns() async {
+        guard let control = context?.agentControl else { return }
+        let directory = control.actionLog.directory
+        let live = Set(control.sessions.map(\.id.uuidString))
+        let runs = await Task.detached { AgentRunLedger.recent(in: directory) }.value
+        bridgeRouter?.send(event: "agentRuns", data: ["runs": runs.map { run in
+            let state = run.ended != nil ? "ended" : live.contains(run.id) ? "running" : "interrupted"
+            return [
+                "id": run.id, "client": run.client, "clientKey": run.clientKey,
+                "started": run.started, "connected": run.connected ?? NSNull(),
+                "ended": run.ended ?? NSNull(), "reason": run.reason ?? NSNull(),
+                "state": state,
+                "tools": run.tools, "errors": run.errors, "tabs": run.tabs,
+                "folders": run.folders, "space": run.space ?? NSNull(),
+                "profile": run.profile ?? NSNull(), "isolated": run.isolated,
+                "conversation": run.conversation ?? NSNull()
+            ] as [String: Any]
         }])
     }
 

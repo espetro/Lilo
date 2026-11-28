@@ -14,8 +14,11 @@ export const read = (path) => readFileSync(`${repo}${path}`, "utf-8");
 export const SOURCES = {
   shortcuts: "Lilo/App/KeyboardShortcuts.swift",
   settings: "lilo-ui/src/components/settings/settingsPanelModel.ts",
-  tools: ["Lilo/Agent/AgentTools.swift", "Lilo/Agent/AgentInteractionTools.swift", "Lilo/Agent/AgentDevTools.swift", "Lilo/Agent/AgentFlows.swift", "Lilo/Agent/AgentBrowserConfig.swift"],
+  tools: ["Lilo/Agent/AgentTools.swift", "Lilo/Agent/AgentInteractionTools.swift", "Lilo/Agent/AgentDevTools.swift", "Lilo/Agent/AgentFlows.swift", "Lilo/Agent/AgentBrowserConfig.swift", "Lilo/Agent/AgentConnectStatus.swift"],
   summaries: "docs-site/scripts/mcp-tools.json",
+  harnesses: "Lilo/Agent/HarnessDefinition.swift",
+  harnessCatalog: "Plugins/connectors/harnesses.json",
+  clientConfig: "Lilo/Agent/AgentClientConfig.swift",
   compatibility: "COMPATIBILITY.md",
   catalog: (locale) => `lilo-ui/src/lib/i18n/locales/${locale}.json`,
 };
@@ -25,8 +28,32 @@ const fail = (file, message) => {
 };
 
 const LABELS = {
-  en: { action: "Action", shortcut: "Shortcut", or: " or ", none: "—", setting: "Setting", description: "Description", default: "Default", on: "On", off: "Off" },
-  fr: { action: "Action", shortcut: "Raccourci", or: " ou ", none: "—", setting: "Réglage", description: "Description", default: "Par défaut", on: "Activé", off: "Désactivé" },
+  en: {
+    action: "Action", shortcut: "Shortcut", or: " or ", none: "—", setting: "Setting", description: "Description", default: "Default", on: "On", off: "Off",
+    store: (path) => `Its MCP servers of your user, in \`~/${path}\`, which only its \`claude\` command edits.`,
+    file: (path, where) => `\`~/${path}\`, ${where}.`,
+    entry: (key) => `the \`lilo\` entry of \`${key}\``,
+    table: "the table `[mcp_servers.lilo]`",
+    consent: "The first time it connects, Lilo asks you to allow it. **Allow** is remembered for that program, not for the name it gives.",
+    source: (url, day) => `Shape checked on ${day} against [its documentation](${url}).`,
+    writes: "Writes",
+    command: "Run in Terminal",
+    snippet: "Add to a file that does not exist yet, or merge the `lilo` entry into the one you have",
+    next: "Then",
+  },
+  fr: {
+    action: "Action", shortcut: "Raccourci", or: " ou ", none: "—", setting: "Réglage", description: "Description", default: "Par défaut", on: "Activé", off: "Désactivé",
+    store: (path) => `Ses serveurs MCP d'utilisateur, dans \`~/${path}\`, que seule sa commande \`claude\` modifie.`,
+    file: (path, where) => `\`~/${path}\`, ${where}.`,
+    entry: (key) => `l'entrée \`lilo\` de \`${key}\``,
+    table: "la table `[mcp_servers.lilo]`",
+    consent: "La première fois qu'il se connecte, Lilo vous demande de l'autoriser. **Autoriser** est retenu pour ce programme, pas pour le nom qu'il donne.",
+    source: (url, day) => `Forme vérifiée le ${day} d'après [sa documentation](${url}).`,
+    writes: "Écrit",
+    command: "À exécuter dans le Terminal",
+    snippet: "À ajouter à un fichier qui n'existe pas encore, ou à fusionner (entrée `lilo`) dans celui que vous avez",
+    next: "Ensuite",
+  },
 };
 
 /** Text for a Markdown table cell read as MDX: code spans kept, everything else literal. */
@@ -115,11 +142,12 @@ export function shortcutsPartial(actions, catalog, locale) {
 const lookup = (catalog, locale, key) =>
   key.split(".").reduce((node, part) => node?.[part], catalog) ?? fail(SOURCES.catalog(locale), `no string "${key}"`);
 
-/** A catalog string whose `{placeholders}` are Blume variables (`{version}` becomes `{{version}}`). */
+/** A catalog string whose `{placeholders}` are Blume variables (`{version}` becomes `{{version}}`); a runtime-only one like `{tag}` stays, as inline code. */
 function catalogText(catalog, locale, key) {
   const text = lookup(catalog, locale, key);
   if (typeof text !== "string") fail(SOURCES.catalog(locale), `"${key}" is not a string`);
   return cell(text).replace(/\\\{(\w+)\\\}/gu, (_, name) => {
+    if (name === "tag") return "`{tag}`";
     if (name !== "version") fail(SOURCES.catalog(locale), `"${key}" has a placeholder {${name}} the reference cannot fill`);
     return `{{${name}}}`;
   });
@@ -282,7 +310,7 @@ function checkSchema(schema, where, file) {
   }
 }
 
-const COMPOSED = "tabAndPageDefinitions + AgentInteractionTools.definitions + AgentDevTools.definitions + AgentFlows.definitions + AgentBrowserConfig.definitions";
+const COMPOSED = "tabAndPageDefinitions + AgentInteractionTools.definitions + AgentDevTools.umbrella + AgentFlows.definitions + AgentBrowserConfig.definitions + AgentConnectStatus.definitions";
 
 /** The tools a file defines in its `static let …: [[String: Any]] = [ … ]` lists. */
 export function parseTools(source, file) {
@@ -337,7 +365,7 @@ function parameterRows(properties, required, prefix = "") {
   });
 }
 
-const GROUPS = { "Lilo/Agent/AgentTools.swift": "Tabs and pages", "Lilo/Agent/AgentInteractionTools.swift": "Interaction", "Lilo/Agent/AgentDevTools.swift": "Developer tools", "Lilo/Agent/AgentFlows.swift": "Flows", "Lilo/Agent/AgentBrowserConfig.swift": "Lilo" };
+const GROUPS = { "Lilo/Agent/AgentTools.swift": "Tabs and pages", "Lilo/Agent/AgentInteractionTools.swift": "Interaction", "Lilo/Agent/AgentDevTools.swift": "Developer tools", "Lilo/Agent/AgentFlows.swift": "Flows", "Lilo/Agent/AgentBrowserConfig.swift": "Lilo", "Lilo/Agent/AgentConnectStatus.swift": "Lilo" };
 
 export function mcpPartial(parsed, summaries) {
   const tools = parsed.flatMap((file) => file.tools);
@@ -350,16 +378,84 @@ export function mcpPartial(parsed, summaries) {
     if (typeof summaries[tool.name] !== "string" || !summaries[tool.name].trim()) fail(SOURCES.summaries, `no summary for the tool "${tool.name}" (${tool.file}): add one to ${SOURCES.summaries}`);
   }
   for (const name of Object.keys(summaries)) if (!names.has(name)) fail(SOURCES.summaries, `summary for "${name}", a tool no Swift file defines: rename or remove it in ${SOURCES.summaries}`);
-  const sections = parsed.map(({ tools: own }) => {
-    const file = own[0].file;
-    const body = own.map((tool) => {
+  // Tools of files sharing a group land in one section, in the order SOURCES.tools lists them.
+  const sections = [];
+  const byGroup = new Map();
+  for (const { tools: own } of parsed) {
+    const group = GROUPS[own[0].file] ?? fail(own[0].file, "no group heading for this file");
+    if (!byGroup.has(group)) {
+      byGroup.set(group, []);
+      sections.push(group);
+    }
+    byGroup.get(group).push(...own);
+  }
+  return sections.map((group) => {
+    const body = byGroup.get(group).map((tool) => {
       const rows = parameterRows(tool.properties, tool.required);
       const params = rows.length ? table(["Parameter", "Type", "Required", "Description"], rows) : "No parameters.";
       return `### \`${tool.name}\` [#${tool.name}]\n\n${cell(summaries[tool.name])}\n\n${params}\n`;
     });
-    return `## ${GROUPS[file] ?? fail(file, "no group heading for this file")} [#${anchor(GROUPS[file])}]\n\n${body.join("\n")}`;
+    return `## ${group} [#${anchor(group)}]\n\n${body.join("\n")}`;
+  }).join("\n");
+}
+
+// MARK: Connect snippets
+
+/** What Lilo's agent socket helper is called in the app bundle, at the path a Lilo in /Applications has. */
+const HELPER = "/Applications/Lilo.app/Contents/MacOS/lilo-mcp";
+
+// The shapes `HarnessDefinition.Entry.fields` writes. Written here as the app writes them: when its source
+// changes, the check in `parseHarnesses` fails and this table is updated with it.
+const ENTRY_SOURCE = [
+  'case .command: ["command": helper]',
+  'case .stdio: ["type": "\\"stdio\\"", "command": helper, "tools": "[\\"*\\"]"]',
+  'case .local: ["type": "\\"local\\"", "command": "[\\(helper)]"]',
+];
+const ENTRY_FIELDS = {
+  command: (helper) => [["command", JSON.stringify(helper)]],
+  stdio: (helper) => [["type", '"stdio"'], ["command", JSON.stringify(helper)], ["tools", '["*"]']],
+  local: (helper) => [["type", '"local"'], ["command", `[${JSON.stringify(helper)}]`]],
+};
+
+/** Every harness of the connectors plugin's catalog in order: where its configuration lives and how Lilo's server is written there. */
+export function parseHarnesses(source, catalog, definition, file = SOURCES.harnessCatalog) {
+  for (const line of ENTRY_SOURCE) if (!source.includes(line)) fail(SOURCES.harnesses, `\`Entry.fields\` no longer reads \`${line}\`: update ENTRY_SOURCE and ENTRY_FIELDS in docs-site/scripts/generate.mjs with it`);
+  if (!definition.includes("Contents/MacOS/lilo-mcp")) fail(SOURCES.clientConfig, "helperPath no longer ends in Contents/MacOS/lilo-mcp");
+  for (const snippet of ['"claude mcp add --scope user lilo -- \\(helperPath)"', 'tomlTable([10])', 'newJSON(key: key, entry: entry)', '"command = \\"\\(helperPath)\\""', '"[mcp_servers.lilo]"']) {
+    if (!definition.includes(snippet)) fail(SOURCES.clientConfig, `manualSnippet changed (no \`${snippet}\`): update parseHarnesses in docs-site/scripts/generate.mjs`);
+  }
+  const rows = (() => { try { return JSON.parse(catalog); } catch { return fail(file, "the catalog is not JSON"); } })();
+  if (!Array.isArray(rows) || rows.length === 0) fail(file, "the catalog holds no rows");
+  return rows.map((row) => {
+    if (typeof row.id !== "string" || row.id === "") fail(file, "a row has no id");
+    const kind = row.config?.kind === "claudeCLI" ? "claude" : row.config?.kind;
+    if (!["claude", "toml", "json"].includes(kind) || typeof row.config.path !== "string") fail(file, `${row.id} has a config the reference cannot read`);
+    const entry = row.config.entry ?? "command";
+    if (kind === "json" && !ENTRY_FIELDS[entry]) fail(file, `${row.id} uses the entry shape ${entry}, which the reference does not know`);
+    if (typeof row.docsURL !== "string" || !/^\d{4}-\d{2}-\d{2}$/u.test(row.verified ?? "")) fail(file, `${row.id} has no docsURL and verified date`);
+    return { id: row.id, kind, path: row.config.path, key: row.config.key ?? "mcpServers", entry, url: row.docsURL, verified: row.verified };
   });
-  return sections.join("\n");
+}
+
+/** `manualSnippet`: the whole file holding only Lilo's entry, or Claude Code's command. */
+export function connectSnippet(harness) {
+  if (harness.kind === "claude") return { language: "sh", text: `claude mcp add --scope user lilo -- ${HELPER}` };
+  if (harness.kind === "toml") return { language: "toml", text: `[mcp_servers.lilo]\ncommand = ${JSON.stringify(HELPER)}` };
+  const fields = ENTRY_FIELDS[harness.entry](HELPER).map(([key, value]) => `      ${JSON.stringify(key)}: ${value}`);
+  return { language: "json", text: `{\n  ${JSON.stringify(harness.key)}: {\n    "lilo": {\n${fields.join(",\n")}\n    }\n  }\n}` };
+}
+
+export function connectPartial(harnesses, catalog, locale) {
+  const labels = LABELS[locale];
+  return harnesses
+    .map((harness) => {
+      const name = lookup(catalog, locale, `settings.agents.names.${harness.id}`);
+      const { language, text } = connectSnippet(harness);
+      const writes = harness.kind === "claude" ? labels.store(harness.path) : labels.file(harness.path, harness.kind === "toml" ? labels.table : labels.entry(`${harness.key}`));
+      const head = harness.kind === "claude" ? labels.command : labels.snippet;
+      return `## ${cell(name)} [#${anchor(harness.id)}]\n\n**${labels.writes}.** ${writes}\n\n**${head}:**\n\n\`\`\`${language}\n${text}\n\`\`\`\n\n**${labels.next}.** ${labels.consent} ${labels.source(harness.url, harness.verified)}\n`;
+    })
+    .join("\n");
 }
 
 // MARK: Compatibility
@@ -448,7 +544,10 @@ export async function partials() {
     "/reference/extension-compatibility": ["Chrome extensions"],
     "/reference/web-compatibility": ["Web APIs", "Known Limitations (WebKit/macOS level - no fix possible in Lilo)"],
   });
+  const harnesses = parseHarnesses(read(SOURCES.harnesses), read(SOURCES.harnessCatalog), read(SOURCES.clientConfig));
   return {
+    "content/reference/_generated/connect-snippets.md": connectPartial(harnesses, catalogs.en, "en"),
+    "content/fr/reference/_generated/connect-snippets.md": connectPartial(harnesses, catalogs.fr, "fr"),
     "content/reference/_generated/shortcuts.md": shortcutsPartial(actions, catalogs.en, "en"),
     "content/fr/reference/_generated/shortcuts.md": shortcutsPartial(actions, catalogs.fr, "fr"),
     "content/reference/_generated/settings.md": settingsPartial(model, catalogs.en, "en"),

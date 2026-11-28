@@ -5,29 +5,10 @@ import WebKit
 /// to the surface that owns it, and hands unhandled keys to the content.
 @MainActor
 final class ChromeEventRouter {
-    enum Target: Equatable {
-        case chrome
-        case content
-        case none
-    }
-
-    enum EventFamily {
-        case leftMouseDown
-        case leftMouseDragged
-        case leftMouseUp
-        case rightMouseDown
-        case rightMouseDragged
-        case rightMouseUp
-        case otherMouseDown
-        case otherMouseDragged
-        case otherMouseUp
-        case cursorUpdate
-        case scrollWheel
-        case magnify
-        case rotate
-        case swipe
-        case smartMagnify
-    }
+    /// The classification and the event families live in the framework-free core; the router
+    /// keeps the AppKit plumbing that turns them into calls.
+    typealias Target = ChromeEventTarget
+    typealias EventFamily = ChromeEventFamily
 
     /// Set by the overlay when it takes this router.
     weak var chromeView: OverlayWebView?
@@ -61,11 +42,13 @@ final class ChromeEventRouter {
         }
     }
 
-    /// The single point classification for the chrome and content boundary: `.chrome` inside a zone
-    /// the chrome registered, else `.content`, or `.none` with nothing in the content area.
+    /// The single point classification for the chrome and content boundary; the rule itself is the
+    /// core's `ChromeHitClassification`.
     func target(forWindowPoint windowPoint: NSPoint) -> Target {
-        if let chromeView, zoneStore.isInteractive(windowPoint: windowPoint, in: chromeView) { return .chrome }
-        return currentContentView() == nil ? .none : .content
+        ChromeHitClassification.target(
+            isOverChromeZone: chromeView.map({ zoneStore.isInteractive(windowPoint: windowPoint, in: $0) }) ?? false,
+            hasContent: currentContentView() != nil
+        )
     }
 
     /// The content view, except the chrome view itself, which is never its own content destination.
@@ -168,13 +151,16 @@ final class ChromeEventRouter {
     }
 
     private func dragTarget(for sender: any NSDraggingInfo) -> Target {
-        guard target(forWindowPoint: sender.draggingLocation) != .chrome,
-              routesDragToChrome?(sender) != true else {
-            return .chrome
-        }
-        // A page under its tab-modal dialog takes no drop.
-        guard let content = currentContentView(), !content.subviews.contains(where: { $0 is TabModalDialogView }) else { return .none }
-        return .content
+        let content = currentContentView()
+        let isOverChromeZone = target(forWindowPoint: sender.draggingLocation) == .chrome
+        return ChromeHitClassification.dragTarget(
+            isOverChromeZone: isOverChromeZone,
+            // The window's handover is only asked for when the pointer is not already on the chrome.
+            routesToChrome: !isOverChromeZone && routesDragToChrome?(sender) == true,
+            hasContent: content != nil,
+            // A page under its tab-modal dialog takes no drop.
+            contentIsModal: content?.subviews.contains(where: { $0 is TabModalDialogView }) ?? false
+        )
     }
 
     /// Turn the machine's ordered `CaptureEffect`s into real chrome / content-destination
@@ -236,6 +222,14 @@ final class ChromeEventRouter {
     }
 }
 
+extension ChromeInteractiveZoneStore {
+    /// The view conversion stays in the AppKit layer; the store itself speaks Foundation geometry.
+    @MainActor
+    func isInteractive(windowPoint: NSPoint, in chromeView: NSView) -> Bool {
+        isInteractive(chromeView.convert(windowPoint, from: nil), in: chromeView.bounds, isFlipped: chromeView.isFlipped)
+    }
+}
+
 extension NSEvent {
     /// The single NSEvent-to-phase mapping; the capture machine never reads NSEvent. Only scroll,
     /// zoom, rotate and swipe carry a phase, so no other family ever latches. Momentum arrives after
@@ -247,26 +241,20 @@ extension NSEvent {
         default:
             return .none
         }
+        return ChromeGesturePhase.resolve(phase: ChromeRawPhase(phase), momentumPhase: ChromeRawPhase(momentumPhase))
+    }
+}
+
+extension ChromeRawPhase {
+    /// The event's phase, named as the core's raw phase.
+    init(_ phase: NSEvent.Phase) {
         switch phase {
-        case .began:
-            return .began
-        case .changed, .stationary:
-            return .changed
-        case .ended:
-            return .ended
-        case .cancelled:
-            return .cancelled
-        default:
-            switch momentumPhase {
-            case .began:
-                return .momentumBegan
-            case .changed, .stationary:
-                return .changed
-            case .ended, .cancelled:
-                return .ended
-            default:
-                return .none
-            }
+        case .began: self = .began
+        case .changed: self = .changed
+        case .stationary: self = .stationary
+        case .ended: self = .ended
+        case .cancelled: self = .cancelled
+        default: self = .other
         }
     }
 }

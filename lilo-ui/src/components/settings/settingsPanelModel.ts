@@ -36,6 +36,7 @@ export const SETTINGS_NAV_GROUPS: { id: string; labelKey?: string; sections: Set
     sections: [
       { id: "terminal", labelKey: "settings.sections.terminal" },
       { id: "agents", labelKey: "settings.sections.agents" },
+      { id: "plugins", labelKey: "settings.sections.plugins" },
     ],
   },
   { id: "advanced", sections: [{ id: "advanced", labelKey: "settings.sections.advanced" }] },
@@ -60,6 +61,10 @@ export type SettingId =
   | "autoDevices"
   | "deviceSetup"
   | "appUpdates"
+  | "updateChannel"
+  | "betaUpdateCheck"
+  | "betaUpdateRelease"
+  | "betaFeedURL"
   | "autoUpdate"
   | "shortcuts"
   | "holdToQuit"
@@ -107,6 +112,7 @@ export type SettingId =
   | "checkExtensionUpdates"
   | "passwordManager"
   | "agentsEnabled"
+  | "agentConversationPlacement"
   | "agentsNotifyDone"
   | "agentSystemPrompt"
   | "agentSystemPromptText"
@@ -114,6 +120,7 @@ export type SettingId =
   | "agentControl"
   | "agentAskBeforeActions"
   | "agentActionLog"
+  | "agentBackgroundHost"
   | "agentAlwaysAllowed"
   | "agentOther"
   | "agentActivity"
@@ -171,6 +178,7 @@ export const SETTING_TOGGLES: Partial<Record<SettingId, { key: string; fallback:
   agentControl: { key: "agentControlEnabled", fallback: false },
   agentAskBeforeActions: { key: "agentAskBeforeActions", fallback: true },
   agentActionLog: { key: "agentActionLog", fallback: true },
+  agentBackgroundHost: { key: "agentBackgroundHost", fallback: false },
   developMenu: { key: "showDevelopMenu", fallback: true },
 };
 
@@ -202,6 +210,10 @@ export const SETTINGS: SettingModel[] = [
   { id: "autoUpdate", section: "general", groupKey: "settings.groups.lilo" },
   { id: "shortcuts", section: "general", groupKey: "settings.groups.lilo" },
   { id: "holdToQuit", section: "general", groupKey: "settings.groups.lilo" },
+  { id: "updateChannel", section: "general", groupKey: "settings.groups.updateChannel" },
+  { id: "betaUpdateCheck", section: "general", groupKey: "settings.groups.updateChannel" },
+  { id: "betaUpdateRelease", section: "general", groupKey: "settings.groups.updateChannel" },
+  { id: "betaFeedURL", section: "general", groupKey: "settings.groups.updateChannel" },
   { id: "theme", section: "appearance", groupKey: "settings.groups.theme" },
   { id: "appIcon", section: "appearance", groupKey: "settings.groups.theme" },
   { id: "seasonalAppIcon", section: "appearance", groupKey: "settings.groups.theme" },
@@ -243,6 +255,7 @@ export const SETTINGS: SettingModel[] = [
   { id: "checkExtensionUpdates", section: "extensions", groupKey: "settings.groups.updates" },
   { id: "passwordManager", section: "extensions", groupKey: "settings.groups.passwords" },
   { id: "agentsEnabled", section: "agents", groupKey: "settings.groups.agentConversations" },
+  { id: "agentConversationPlacement", section: "agents", groupKey: "settings.groups.agentConversations", requires: "agentsEnabled" },
   { id: "agentsNotifyDone", section: "agents", groupKey: "settings.groups.agentConversations", requires: "agentsEnabled" },
   { id: "agentSystemPrompt", section: "agents", groupKey: "settings.groups.agentConversations", requires: "agentsEnabled" },
   { id: "agentSystemPromptText", section: "agents", groupKey: "settings.groups.agentConversations", requires: "agentsEnabled" },
@@ -250,6 +263,7 @@ export const SETTINGS: SettingModel[] = [
   { id: "agentControl", section: "agents", groupKey: "settings.groups.agentAccess" },
   { id: "agentAskBeforeActions", section: "agents", groupKey: "settings.groups.agentAccess", requires: "agentControl" },
   { id: "agentActionLog", section: "agents", groupKey: "settings.groups.agentAccess", requires: "agentControl" },
+  { id: "agentBackgroundHost", section: "agents", groupKey: "settings.groups.agentAccess", requires: "agentControl" },
   { id: "agentAlwaysAllowed", section: "agents", groupKey: "settings.groups.agentAccess", requires: "agentControl" },
   { id: "agentOther", section: "agents", groupKey: "settings.groups.agentClients", requires: "agentControl" },
   { id: "agentActivity", section: "agents", groupKey: "settings.groups.agentActivity", requires: "agentControl" },

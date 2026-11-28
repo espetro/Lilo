@@ -4,6 +4,32 @@ import WebKit
 /// Devtools beyond Claude in Chrome's set, mostly through the tab's own Web Inspector.
 @MainActor
 enum AgentDevTools {
+    /// The names `definitions` holds, in the one umbrella tool `tools/list` advertises instead: still callable
+    /// directly, through `run` and `browser_batch`, and from a saved flow, and whose full schema `devtools`'s
+    /// `help` returns. Replacing seven large schemas with one compact one is most of the size this saves.
+    static let umbrellaNames = ["devtools_command", "devtools_events", "network_mock", "network_response", "cookies", "emulate", "performance"]
+
+    static let umbrella: [[String: Any]] = [
+        AgentTools.tool("devtools", """
+            One compact entry point to Lilo's seven developer tools: pass tool and that tool's own arguments \
+            flat beside it, like devtools({tool: "network_mock", tabId, action: "add", ...}); or help: true \
+            to get that tool's full schema and documentation instead of calling it.
+            devtools_command: send a Web Inspector protocol command to a tab, or list every command it supports.
+            devtools_events: read a tab's buffered Web Inspector protocol events.
+            network_mock: intercept a tab's requests to mock, fail, rewrite or delay them.
+            network_response: a tab's requests in full, one, several, or saved as a HAR file.
+            cookies: read and change a tab's profile's cookies.
+            emulate: make a tab look like another environment (user agent, color scheme, cache, text redaction...).
+            performance: measure a tab's load and memory, a timeline profile, or a heap snapshot.
+            """, [
+                "tool": ["type": "string",
+                         "enum": ["devtools_command", "devtools_events", "network_mock", "network_response", "cookies", "emulate", "performance"],
+                         "description": "Which of the seven tools to run."],
+                "help": AgentTools.prop("boolean", "Return that tool's full schema and documentation instead of calling it."),
+                "tabId": AgentTools.prop("number", "The tab, for every one of the seven tools.")
+            ], required: ["tool"])
+    ]
+
     static let definitions: [[String: Any]] = [
         AgentTools.tool("devtools_command", """
             Send a command of WebKit's Web Inspector protocol to a tab (not the Chrome DevTools Protocol: \
@@ -83,8 +109,8 @@ enum AgentDevTools {
                 "tabId": AgentTools.prop("number", "The tab.")
             ], required: ["tabId"]),
         AgentTools.tool("cookies", """
-            Read and change the cookies of a tab's profile, HttpOnly ones included. get, delete and clear reach \
-            only the cookies sent to the sites your tabs show. Actions: get (filter by url or domain), set, \
+            Read and change the cookies of a tab's profile, HttpOnly ones included. get, set, delete and clear \
+            reach only the cookies sent to the sites your tabs show. Actions: get (filter by url or domain), set, \
             delete (name and domain), clear (every cookie of a domain; a domain is required).
             """, [
                 "action": ["type": "string", "enum": ["get", "set", "delete", "clear"]],
@@ -405,7 +431,7 @@ enum AgentDevTools {
         return url
     }
 
-    /// `hosts`: the sites the agent's tabs show; get, delete and clear reach only the cookies sent to them.
+    /// `hosts`: the sites the agent's tabs show; every action reaches only the cookies sent to them.
     private static func cookies(_ arguments: [String: Any], store: WKHTTPCookieStore, hosts: Set<String>) async throws -> String {
         // A cookie's domain covers its subdomains; a leading dot changes nothing.
         let bare = { (domain: String) in domain.hasPrefix(".") ? String(domain.dropFirst()) : domain }
@@ -443,6 +469,9 @@ enum AgentDevTools {
             default: break
             }
             guard let cookie = HTTPCookie(properties: properties) else { throw AgentToolError("Invalid cookie") }
+            // "com" would plant a cookie every .com site of the profile sends.
+            guard bare(cookieDomain).contains(".") || bare(cookieDomain) == "localhost" else { throw AgentToolError("\(cookieDomain) is not a site's domain") }
+            guard reachable(cookie) else { throw AgentToolError("\(cookieDomain) is not a site your tabs show") }
             await store.setCookie(cookie)
             return "Set cookie \(name) for \(cookieDomain)"
         case "delete", "clear":
